@@ -1,0 +1,63 @@
+<script setup>
+import { PackageOpen, RefreshCw, Wifi, WifiOff } from '@lucide/vue'
+import PatchCard from '../components/PatchCard.vue'
+
+defineProps({
+  catalogState: { type: Object, required: true },
+  installations: { type: Object, required: true },
+  targets: { type: Object, required: true },
+  operations: { type: Object, required: true },
+  loading: { type: Boolean, default: false }
+})
+
+defineEmits(['refresh', 'choose-target', 'install', 'restore'])
+</script>
+
+<template>
+  <section class="view-shell">
+    <div class="view-header">
+      <div>
+        <p class="eyebrow">PATCH CATALOG</p>
+        <h1>汉化补丁</h1>
+      </div>
+      <div class="header-actions">
+        <div class="source-status" :data-offline="catalogState.source !== 'github'">
+          <Wifi v-if="catalogState.source === 'github'" :size="15" />
+          <WifiOff v-else :size="15" />
+          <span>{{ catalogState.source === 'github' ? 'GitHub 已同步' : catalogState.source === 'cache' ? '使用本地缓存' : '等待同步' }}</span>
+        </div>
+        <button class="icon-button" type="button" title="刷新补丁目录" aria-label="刷新补丁目录" :disabled="loading" @click="$emit('refresh')">
+          <RefreshCw :size="18" :class="{ spinning: loading }" />
+        </button>
+      </div>
+    </div>
+
+    <div v-if="catalogState.error" class="inline-alert">{{ catalogState.error }}</div>
+
+    <div v-if="catalogState.catalog?.patches?.length" class="patch-list">
+      <PatchCard
+        v-for="patch in catalogState.catalog.patches"
+        :key="patch.id"
+        :patch="patch"
+        :installation="installations[patch.id]"
+        :target-path="targets[patch.id] || installations[patch.id]?.targetPath || ''"
+        :progress="operations[patch.id] || null"
+        :busy="operations[patch.id]?.busy || false"
+        @choose-target="$emit('choose-target', patch)"
+        @install="$emit('install', patch)"
+        @restore="$emit('restore', patch)"
+      />
+    </div>
+
+    <div v-else-if="!loading" class="empty-state">
+      <PackageOpen :size="36" stroke-width="1.5" />
+      <h2>暂无已发布补丁</h2>
+      <p>补丁仓库已经就绪，最新版本完成后会显示在这里。</p>
+    </div>
+
+    <div v-else class="catalog-loading">
+      <RefreshCw :size="24" class="spinning" />
+      <span>正在读取 GitHub 补丁目录</span>
+    </div>
+  </section>
+</template>
