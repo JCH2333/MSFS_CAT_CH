@@ -17,8 +17,9 @@ const updateLabel = computed(() => {
     available: `发现 v${props.updateStatus.info?.version || ''}`,
     downloading: `下载中 ${Math.round(props.updateStatus.progress?.percent || 0)}%`,
     downloaded: '更新已下载',
+    unpublished: '当前版本尚未发布',
     development: '开发模式',
-    error: props.updateStatus.message || '检查失败'
+    error: props.updateStatus.message || '暂时无法检查软件更新，请稍后再试'
   }
   return labels[props.updateStatus.state] || props.updateStatus.state
 })
@@ -56,14 +57,14 @@ const updateLabel = computed(() => {
     </div>
 
     <div class="settings-list">
-      <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/gsx-chinese-tool')">
+      <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH')">
         <GitBranch :size="20" />
-        <span><strong>软件仓库</strong><small>JCH2333/gsx-chinese-tool</small></span>
+        <span><strong>软件仓库</strong><small>JCH2333/MSFS_CAT_CH</small></span>
         <ExternalLink :size="17" />
       </button>
-      <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/gsx-chinese-patches')">
+      <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES')">
         <GitBranch :size="20" />
-        <span><strong>补丁仓库</strong><small>JCH2333/gsx-chinese-patches</small></span>
+        <span><strong>补丁仓库</strong><small>JCH2333/MSFS_CAT_CH_PATCHES</small></span>
         <ExternalLink :size="17" />
       </button>
     </div>

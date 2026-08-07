@@ -2,21 +2,21 @@
 
 ## Purpose
 
-GSX 汉化工具 is a Windows desktop application that installs, updates, verifies, and restores Chinese localization patches for GSX without a custom server or user account.
+MSFS_CAT_CH is a Windows desktop application that installs, updates, verifies, and restores Chinese localization patches for Microsoft Flight Simulator add-ons without a custom server or user account.
 
 ## Domain Glossary
 
 ### Software Release
 
-An installable desktop application version published in `JCH2333/gsx-chinese-tool` GitHub Releases. Avoid: OTA record, app package stored by our server.
+An installable desktop application version published in `JCH2333/MSFS_CAT_CH` GitHub Releases. Avoid: OTA record, app package stored by our server.
 
 ### Patch Catalog
 
-The versioned `manifest.json` in `JCH2333/gsx-chinese-patches`. It is the only remote index the desktop application reads to discover patches. Avoid: patch database, patch list endpoint.
+The versioned `manifest.json` in `JCH2333/MSFS_CAT_CH_PATCHES`. It is the only remote index the desktop application reads to discover patches. Avoid: patch database, patch list endpoint.
 
 ### Patch Package
 
-A ZIP asset attached to a `JCH2333/gsx-chinese-patches` GitHub Release. It contains only files that should be copied below an Installation Target. Every published package has a SHA-256 checksum in the Patch Catalog.
+A ZIP asset attached to a `JCH2333/MSFS_CAT_CH_PATCHES` GitHub Release. It contains only files that should be copied below an Installation Target. Every published package has a SHA-256 checksum in the Patch Catalog.
 
 ### Installation Target
 

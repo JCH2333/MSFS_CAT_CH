@@ -12,11 +12,11 @@ Use the domain terms from `CONTEXT.md` consistently in code, tests, documentatio
 
 ## Product Boundary
 
-This repository contains a Windows Electron application for installing and managing GSX Chinese localization patches.
+This repository contains a Windows Electron application for installing and managing Microsoft Flight Simulator add-on Chinese localization patches.
 
 - GitHub is the only remote service.
-- Software releases come from `JCH2333/gsx-chinese-tool` GitHub Releases.
-- The Patch Catalog and Patch Package releases come from `JCH2333/gsx-chinese-patches`.
+- Software releases come from `JCH2333/MSFS_CAT_CH` GitHub Releases.
+- The Patch Catalog and Patch Package releases come from `JCH2333/MSFS_CAT_CH_PATCHES`.
 - Do not add a custom server, login, activation, database, Redis, WebSocket, telemetry, feedback upload, queue, or watermark system.
 - Keep catalog caching so local operations remain available during temporary GitHub outages.
 - Development of the newest localization content is tracked separately in GitHub issue `#1` and is deferred until network access permits it.
@@ -81,7 +81,7 @@ For interface changes, also inspect desktop and narrow layouts and check the bro
 
 ### Issue Tracker
 
-Tasks and PRDs live in GitHub Issues at `JCH2333/gsx-chinese-tool`. See `docs/agents/issue-tracker.md`.
+Tasks and PRDs live in GitHub Issues at `JCH2333/MSFS_CAT_CH`. See `docs/agents/issue-tracker.md`.
 
 ### Triage Labels
 

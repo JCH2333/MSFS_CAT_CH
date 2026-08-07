@@ -1,10 +1,12 @@
 <script setup>
 import { computed } from 'vue'
-import { Download, FolderSearch, RotateCcw, ShieldCheck } from '@lucide/vue'
+import { Download, FolderSearch, ShieldAlert, ShieldCheck, RotateCcw } from '@lucide/vue'
+import { compareVersions } from '../lib/versioning'
 
 const props = defineProps({
   patch: { type: Object, required: true },
   installation: { type: Object, default: null },
+  installationCheck: { type: Object, default: null },
   progress: { type: Object, default: null },
   targetPath: { type: String, default: '' },
   busy: { type: Boolean, default: false }
@@ -13,12 +15,23 @@ const props = defineProps({
 defineEmits(['choose-target', 'install', 'restore'])
 
 const published = computed(() => props.patch.status === 'published')
-const hasUpdate = computed(() => props.installation && props.installation.version !== props.patch.version)
+const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
 const status = computed(() => {
   if (!published.value) return { label: '等待发布', tone: 'muted' }
-  if (hasUpdate.value) return { label: '可更新', tone: 'warning' }
+  if (props.installationCheck && props.installationCheck.state !== 'intact') return { label: '需要修复', tone: 'danger' }
+  if (versionComparison.value > 0) return { label: '可更新', tone: 'warning' }
+  if (versionComparison.value < 0) return { label: '本地版本较新', tone: 'muted' }
   if (props.installation) return { label: '已安装', tone: 'success' }
   return { label: '未安装', tone: 'neutral' }
+})
+
+const verificationLabel = computed(() => {
+  if (!props.installation) return ''
+  if (!props.installationCheck) return '尚未检查文件完整性'
+  if (props.installationCheck.state === 'intact') return `已验证 ${props.installationCheck.checkedFiles} 个文件`
+  const changed = props.installationCheck.modifiedFiles?.length || 0
+  const missing = props.installationCheck.missingFiles?.length || 0
+  return `需处理：${changed} 个已修改，${missing} 个缺失`
 })
 
 const packageSize = computed(() => {
@@ -72,8 +85,9 @@ const packageSize = computed(() => {
 
     <div class="patch-actions">
       <div v-if="installation" class="verified-copy">
-        <ShieldCheck :size="16" />
-        <span>{{ new Date(installation.installedAt).toLocaleDateString('zh-CN') }}</span>
+        <ShieldCheck v-if="installationCheck?.state === 'intact'" :size="16" />
+        <ShieldAlert v-else :size="16" />
+        <span>{{ verificationLabel }} · {{ new Date(installation.installedAt).toLocaleDateString('zh-CN') }}</span>
       </div>
       <div class="action-buttons">
         <button v-if="installation" class="button button-secondary" type="button" :disabled="busy" @click="$emit('restore', patch)">
@@ -82,7 +96,7 @@ const packageSize = computed(() => {
         </button>
         <button class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />
-          {{ installation ? '更新补丁' : '安装补丁' }}
+          {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : '安装补丁' }}
         </button>
       </div>
     </div>

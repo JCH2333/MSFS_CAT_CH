@@ -8,7 +8,7 @@ const bridge = window.gsxTool
   <header class="title-bar">
     <div class="title-drag-area">
       <img src="/logo.png" alt="" class="title-logo" />
-      <span>GSX 汉化工具</span>
+      <span>MSFS_CAT_CH</span>
     </div>
     <div class="window-actions">
       <button class="window-button" type="button" title="最小化" aria-label="最小化" @click="bridge?.app.minimize()">

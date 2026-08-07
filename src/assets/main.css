@@ -141,6 +141,9 @@ button { color: inherit; }
 .icon-button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .inline-alert { margin-bottom: 16px; padding: 10px 12px; border-left: 3px solid var(--warning); background: rgba(227, 178, 83, 0.08); color: #e9ce95; font-size: 12px; }
+.verification-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; padding: 11px 13px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); font-size: 12px; }
+.verification-bar > div { display: flex; align-items: center; gap: 9px; }
+.verification-bar svg { color: var(--signal); }
 .patch-list { display: grid; gap: 12px; }
 .patch-card {
   display: grid;

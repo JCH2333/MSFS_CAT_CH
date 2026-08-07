@@ -85,7 +85,7 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
   const temporaryPath = `${destination}.part`
 
   return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers: { 'User-Agent': 'gsx-chinese-tool' } }, (response) => {
+    const request = https.get(url, { headers: { 'User-Agent': 'msfs-cat-ch' } }, (response) => {
       const status = response.statusCode || 0
       if (status >= 300 && status < 400 && response.headers.location) {
         response.resume()
@@ -131,11 +131,12 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
 }
 
 class PatchInstaller {
-  constructor({ userDataDirectory, onProgress = () => {} }) {
+  constructor({ userDataDirectory, onProgress = () => {}, download = downloadToFile }) {
     this.userDataDirectory = userDataDirectory
     this.statePath = path.join(userDataDirectory, 'installations.json')
     this.backupRoot = path.join(userDataDirectory, 'backups')
     this.onProgress = onProgress
+    this.download = download
   }
 
   async readState() {
@@ -158,6 +159,41 @@ class PatchInstaller {
 
   async listInstallations() {
     return (await this.readState()).installations
+  }
+
+  async verifyInstallations() {
+    const installations = await this.listInstallations()
+    const result = {}
+
+    for (const [patchId, installation] of Object.entries(installations)) {
+      const missingFiles = []
+      const modifiedFiles = []
+      const files = Array.isArray(installation.files) ? installation.files : []
+
+      for (const file of files) {
+        try {
+          const destination = ensureWithin(installation.targetPath, path.join(installation.targetPath, file.relativePath))
+          const stats = await fsp.stat(destination).catch(() => null)
+          if (!stats?.isFile()) {
+            missingFiles.push(file.relativePath)
+          } else if (await sha256(destination) !== file.installedHash) {
+            modifiedFiles.push(file.relativePath)
+          }
+        } catch {
+          missingFiles.push(file.relativePath)
+        }
+      }
+
+      result[patchId] = {
+        state: missingFiles.length > 0 ? 'missing' : modifiedFiles.length > 0 ? 'modified' : 'intact',
+        checkedAt: new Date().toISOString(),
+        checkedFiles: files.length,
+        missingFiles,
+        modifiedFiles
+      }
+    }
+
+    return result
   }
 
   emit(patchId, payload) {
@@ -195,7 +231,7 @@ class PatchInstaller {
 
     try {
       this.emit(patchId, { phase: 'download', percent: 0, message: '正在下载补丁' })
-      await downloadToFile(patch.package.downloadUrl, archivePath, ({ received, total }) => {
+      await this.download(patch.package.downloadUrl, archivePath, ({ received, total }) => {
         const percent = total > 0 ? Math.min(55, Math.round((received / total) * 55)) : 0
         this.emit(patchId, { phase: 'download', percent, received, total, message: '正在下载补丁' })
       })

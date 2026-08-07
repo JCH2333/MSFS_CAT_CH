@@ -12,8 +12,8 @@ The previous system required a Spring server, MySQL, Redis, email, authenticatio
 
 Use two public GitHub repositories:
 
-- `JCH2333/gsx-chinese-tool` for source code and Software Releases.
-- `JCH2333/gsx-chinese-patches` for the Patch Catalog and Patch Package releases.
+- `JCH2333/MSFS_CAT_CH` for source code and Software Releases.
+- `JCH2333/MSFS_CAT_CH_PATCHES` for the Patch Catalog and Patch Package releases.
 
 The desktop application accesses GitHub without embedded credentials. Cached catalog data provides read-only fallback during temporary network failures.
 

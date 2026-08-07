@@ -1,16 +1,18 @@
 <script setup>
-import { PackageOpen, RefreshCw, Wifi, WifiOff } from '@lucide/vue'
+import { PackageOpen, RefreshCw, ShieldCheck, ShieldAlert, Wifi, WifiOff } from '@lucide/vue'
 import PatchCard from '../components/PatchCard.vue'
 
-defineProps({
+const props = defineProps({
   catalogState: { type: Object, required: true },
   installations: { type: Object, required: true },
+  installationChecks: { type: Object, required: true },
   targets: { type: Object, required: true },
   operations: { type: Object, required: true },
   loading: { type: Boolean, default: false }
 })
 
-defineEmits(['refresh', 'choose-target', 'install', 'restore'])
+defineEmits(['refresh', 'choose-target', 'install', 'restore', 'verify'])
+
 </script>
 
 <template>
@@ -34,12 +36,25 @@ defineEmits(['refresh', 'choose-target', 'install', 'restore'])
 
     <div v-if="catalogState.error" class="inline-alert">{{ catalogState.error }}</div>
 
+    <div v-if="Object.keys(installations).length" class="verification-bar">
+      <div>
+        <ShieldCheck v-if="Object.values(installationChecks).every((check) => check.state === 'intact')" :size="18" />
+        <ShieldAlert v-else :size="18" />
+        <span>{{ Object.values(installationChecks).every((check) => check.state === 'intact') ? '已检查：已安装文件完整' : '发现文件被修改或缺失，请重新安装或还原' }}</span>
+      </div>
+      <button class="button button-secondary" type="button" :disabled="loading" @click="$emit('verify')">
+        <RefreshCw :size="16" :class="{ spinning: loading }" />
+        检查完整性
+      </button>
+    </div>
+
     <div v-if="catalogState.catalog?.patches?.length" class="patch-list">
       <PatchCard
         v-for="patch in catalogState.catalog.patches"
         :key="patch.id"
         :patch="patch"
         :installation="installations[patch.id]"
+        :installation-check="installationChecks[patch.id] || null"
         :target-path="targets[patch.id] || installations[patch.id]?.targetPath || ''"
         :progress="operations[patch.id] || null"
         :busy="operations[patch.id]?.busy || false"

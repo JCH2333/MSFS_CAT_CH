@@ -1,6 +1,6 @@
 # Patch Catalog v1
 
-The live catalog is `manifest.json` on the `main` branch of `JCH2333/gsx-chinese-patches`.
+The live catalog is `manifest.json` on the `main` branch of `JCH2333/MSFS_CAT_CH_PATCHES`.
 
 ```json
 {

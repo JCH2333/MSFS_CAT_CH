@@ -18,6 +18,7 @@ const developmentBridge = {
   patches: {
     chooseTarget: async () => null,
     listInstallations: async () => ({}),
+    verifyInstallations: async () => ({}),
     install: async () => { throw new Error('请在 Electron 中运行安装') },
     restore: async () => ({ restored: true, conflicts: [] }),
     onProgress: () => () => {}
@@ -36,6 +37,7 @@ const activeView = ref('catalog')
 const appInfo = reactive({ version: '0.1.0', platform: 'win32', packaged: false })
 const catalogState = reactive({ catalog: null, source: 'idle', stale: false, error: null })
 const installations = reactive({})
+const installationChecks = reactive({})
 const targets = reactive(JSON.parse(localStorage.getItem('patch-targets') || '{}'))
 const operations = reactive({})
 const updateStatus = reactive({ state: 'idle', info: null, progress: null, message: '' })
@@ -50,6 +52,11 @@ function replaceReactive(target, value) {
 
 async function loadInstallations() {
   replaceReactive(installations, await bridge.patches.listInstallations())
+  await verifyInstallations()
+}
+
+async function verifyInstallations() {
+  replaceReactive(installationChecks, await bridge.patches.verifyInstallations())
 }
 
 async function refreshCatalog() {
@@ -57,6 +64,7 @@ async function refreshCatalog() {
   catalogState.error = null
   try {
     Object.assign(catalogState, await bridge.catalog.refresh())
+    await verifyInstallations()
   } catch (error) {
     catalogState.source = 'error'
     catalogState.error = error.message
@@ -155,8 +163,8 @@ onBeforeUnmount(() => {
     <div class="workspace">
       <aside class="sidebar">
         <div class="brand-block">
-          <img src="/logo.png" alt="GSX 汉化工具" />
-          <div><strong>GSX</strong><span>中文工具</span></div>
+          <img src="/logo.png" alt="MSFS_CAT_CH" />
+          <div><strong>MSFS_CAT</strong><span>CH</span></div>
         </div>
 
         <nav class="primary-nav" aria-label="主导航">
@@ -181,6 +189,7 @@ onBeforeUnmount(() => {
           v-if="activeView === 'catalog'"
           :catalog-state="catalogState"
           :installations="installations"
+          :installation-checks="installationChecks"
           :targets="targets"
           :operations="operations"
           :loading="loadingCatalog"
@@ -188,6 +197,7 @@ onBeforeUnmount(() => {
           @choose-target="chooseTarget"
           @install="installPatch"
           @restore="restorePatch"
+          @verify="verifyInstallations"
         />
         <SettingsView
           v-else

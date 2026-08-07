@@ -20,7 +20,7 @@ function createWindow() {
     height: 760,
     minWidth: 900,
     minHeight: 620,
-    title: 'GSX 汉化工具',
+    title: 'MSFS_CAT_CH',
     icon: path.join(__dirname, '../public/logo.png'),
     autoHideMenuBar: true,
     frame: false,
@@ -52,7 +52,13 @@ function configureUpdater() {
   autoUpdater.on('update-not-available', (info) => send('updates:status', { state: 'current', info }))
   autoUpdater.on('download-progress', (progress) => send('updates:status', { state: 'downloading', progress }))
   autoUpdater.on('update-downloaded', (info) => send('updates:status', { state: 'downloaded', info }))
-  autoUpdater.on('error', (error) => send('updates:status', { state: 'error', message: error.message }))
+  autoUpdater.on('error', (error) => {
+    if (/no published versions on github/i.test(error.message)) {
+      send('updates:status', { state: 'unpublished' })
+      return
+    }
+    send('updates:status', { state: 'error', message: '暂时无法检查软件更新，请稍后再试' })
+  })
 }
 
 function registerIpc() {
@@ -71,6 +77,7 @@ function registerIpc() {
 
   ipcMain.handle('catalog:refresh', () => catalog.refresh())
   ipcMain.handle('patch:list-installations', () => installer.listInstallations())
+  ipcMain.handle('patch:verify-installations', () => installer.verifyInstallations())
   ipcMain.handle('patch:choose-target', async (_event, options = {}) => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: options.title || '选择补丁安装目录',
@@ -86,8 +93,8 @@ function registerIpc() {
     if (!app.isPackaged) {
       return { state: 'development', version: app.getVersion() }
     }
-    const result = await autoUpdater.checkForUpdates()
-    return { state: result?.updateInfo?.version === app.getVersion() ? 'current' : 'checked', info: result?.updateInfo }
+    await autoUpdater.checkForUpdates()
+    return { state: 'checking' }
   })
   ipcMain.handle('updates:download', async () => {
     if (!app.isPackaged) return { state: 'development' }
@@ -120,6 +127,9 @@ app.whenReady().then(() => {
   configureUpdater()
   registerIpc()
   createWindow()
+  if (app.isPackaged) {
+    setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 1500)
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

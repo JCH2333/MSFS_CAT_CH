@@ -28,7 +28,7 @@ test('validates and derives a GitHub release asset URL', () => {
   }))
 
   assert.equal(result.patches[0].package.downloadUrl,
-    'https://github.com/JCH2333/gsx-chinese-patches/releases/download/gsx-pro-v1.0.0/gsx-pro-zh-cn.zip')
+    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/gsx-pro-v1.0.0/gsx-pro-zh-cn.zip')
 })
 
 test('allows planned patches without a package', () => {
@@ -63,4 +63,13 @@ test('rejects duplicate patch ids', () => {
     updatedAt: 'now',
     patches: [patch, patch]
   }), /重复/)
+})
+
+test('rejects a patch version that is not semantic versioning', () => {
+  assert.throws(() => validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro 简体中文',
+    version: 'latest',
+    status: 'planned'
+  })), /语义化/)
 })

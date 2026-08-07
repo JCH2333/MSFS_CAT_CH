@@ -1,14 +1,14 @@
 {
-  "name": "gsx-chinese-tool",
-  "version": "0.1.0",
+  "name": "msfs-cat-ch",
+  "version": "1.1.0",
   "private": true,
-  "description": "GSX Chinese localization installer with GitHub-based updates",
+  "description": "MSFS_CAT_CH Microsoft Flight Simulator localization patch manager with GitHub-based updates",
   "author": "JCH2333",
   "license": "MIT",
   "main": "electron/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/JCH2333/gsx-chinese-tool.git"
+    "url": "https://github.com/JCH2333/MSFS_CAT_CH.git"
   },
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
@@ -36,8 +36,8 @@
     "wait-on": "^8.0.5"
   },
   "build": {
-    "appId": "com.jch2333.gsxchinese",
-    "productName": "GSX 汉化工具",
+    "appId": "com.jch2333.msfscatch",
+    "productName": "MSFS_CAT_CH",
     "asar": true,
     "directories": {
       "output": "release"
@@ -62,13 +62,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "GSX 汉化工具"
+      "shortcutName": "MSFS_CAT_CH"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "JCH2333",
-        "repo": "gsx-chinese-tool"
+        "repo": "MSFS_CAT_CH"
       }
     ]
   }

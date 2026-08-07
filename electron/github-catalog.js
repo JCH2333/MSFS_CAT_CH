@@ -1,8 +1,9 @@
 const fs = require('node:fs/promises')
 const path = require('node:path')
+const { isSemanticVersion } = require('./versioning')
 
-const CATALOG_URL = 'https://api.github.com/repos/JCH2333/gsx-chinese-patches/contents/manifest.json'
-const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/gsx-chinese-patches/releases/download'
+const CATALOG_URL = 'https://api.github.com/repos/JCH2333/MSFS_CAT_CH_PATCHES/contents/manifest.json'
+const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download'
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
 
 function assertString(value, label) {
@@ -65,7 +66,13 @@ function validateCatalog(input) {
       id,
       name: assertString(patch.name, `补丁 ${id} name`),
       summary: typeof patch.summary === 'string' ? patch.summary.trim() : '',
-      version: assertString(patch.version, `补丁 ${id} version`),
+      version: (() => {
+        const version = assertString(patch.version, `补丁 ${id} version`)
+        if (!isSemanticVersion(version)) {
+          throw new Error(`补丁 ${id} version 必须采用语义化格式`)
+        }
+        return version
+      })(),
       status,
       compatibility: Array.isArray(patch.compatibility)
         ? patch.compatibility.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
@@ -114,7 +121,7 @@ class GitHubCatalog {
       const response = await this.fetchImpl(`${this.catalogUrl}?t=${Date.now()}`, {
         headers: {
           Accept: 'application/vnd.github.raw+json',
-          'User-Agent': 'gsx-chinese-tool'
+          'User-Agent': 'msfs-cat-ch'
         },
         signal: AbortSignal.timeout(15000)
       })
