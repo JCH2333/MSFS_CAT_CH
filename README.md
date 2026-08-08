@@ -1,26 +1,26 @@
-# MSFS_CAT_CH
+# MSFS CAT CH
 
-Windows desktop application for installing, checking, updating, and restoring Microsoft Flight Simulator add-on Chinese localization patches. Software releases and Patch Packages are distributed only through GitHub; the application has no account, activation, telemetry, or custom server.
+用于安装、检查、更新和还原 Microsoft Flight Simulator 插件简体中文补丁的 Windows 桌面工具。软件版本和补丁包均通过 GitHub 发布；本工具不需要账号、激活或自建服务器，也不会收集遥测数据。
 
-## For users
+## 使用说明
 
-1. Download and run the Windows installer from the latest [Software Release](https://github.com/JCH2333/MSFS_CAT_CH/releases).
-2. In **Chinese Patches**, select the GSX installation directory when prompted.
-3. Select **Install Patch**. The tool downloads a Patch Package, verifies its SHA-256 checksum, backs up replaced files, then installs it.
-4. Use **Check Integrity** to confirm installed files still match the recorded patch. A modified or missing file is never silently changed during the check.
-5. Use **Restore** to recover backed-up original files. Files introduced by a Patch Package are removed only when they still match the installed hash.
+1. 前往[最新软件版本](https://github.com/JCH2333/MSFS_CAT_CH/releases/latest)下载并运行 Windows 安装程序。
+2. 打开软件后，进入“设置”。工具会自动检测 Steam 与 Microsoft Store 版本的插件目录；也可以手动指定每个补丁的安装目录。
+3. 在“汉化补丁”中选择需要的补丁并点击“安装补丁”。工具会下载补丁包、校验 SHA-256、备份被替换的文件，然后完成安装。
+4. 使用“检查完整性”确认已安装文件仍与安装记录一致。检查不会静默修改缺失或被用户改动的文件。
+5. 使用“还原”恢复备份的原始文件。补丁新增的文件仅在仍与安装时的哈希一致时才会删除；已被用户修改的文件会保留并提示冲突。
 
-The application refreshes the Patch Catalog from GitHub when it starts. If GitHub is temporarily unavailable, it uses the most recent locally cached catalog. Packaged releases also check GitHub Releases for software updates shortly after launch; downloading and installing an update always remains an explicit user action.
+软件启动时会从 GitHub 刷新补丁目录。GitHub 暂时不可用时，工具会使用本机最近一次缓存的补丁目录。已安装的软件会在启动后检查软件更新；下载和安装更新始终需要用户主动确认。
 
-## Patch states
+## 补丁状态说明
 
-- **Not installed**: no Installation Record exists on this computer.
-- **Installed**: the Installation Record matches the Patch Catalog and all recorded files are intact.
-- **Update available**: the Patch Catalog has a newer semantic version.
-- **Needs repair**: an installed file was changed or is missing. Reinstall only after reviewing local changes; Restore preserves user-modified introduced files as conflicts.
-- **Local version is newer**: the currently installed patch is newer than the catalog entry.
+- **未安装**：本机没有该补丁的安装记录。
+- **已安装**：安装记录与补丁目录一致，且所有已记录文件均完整。
+- **可更新**：补丁目录提供了更高的补丁版本。
+- **需要修复**：已安装文件缺失或被修改。重新安装前请先确认本地改动；还原操作会把被用户修改的新增文件作为冲突保留。
+- **本地版本较新**：本机安装的补丁版本高于补丁目录中的版本。
 
-## Development
+## 本地开发
 
 ```powershell
 npm ci
@@ -29,6 +29,6 @@ npm run build
 npm run dist:win
 ```
 
-## Release process
+## 发布说明
 
-`v*` tags trigger the Windows release workflow. Before publishing, run the tests and build, inspect the installer asset and its version, then create the matching Software Release. Publish a Patch Catalog entry only after its Patch Package asset exists and its SHA-256 checksum has been verified. See [docs/patch-catalog.md](docs/patch-catalog.md).
+推送符合 `v*` 格式的标签会触发 Windows 发布工作流。发布前应运行测试和构建，确认安装程序及其版本号正确。只有在补丁包资产已发布且 SHA-256 已校验后，才可在补丁目录中发布对应条目。补丁目录格式见 [docs/patch-catalog.md](docs/patch-catalog.md)。
