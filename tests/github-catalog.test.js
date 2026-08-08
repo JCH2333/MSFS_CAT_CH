@@ -17,6 +17,7 @@ test('validates and derives a GitHub release asset URL', () => {
     name: 'GSX Pro 简体中文',
     summary: 'Test patch',
     version: '1.0.0',
+    addonVersion: '4.0.14',
     status: 'published',
     compatibility: ['MSFS 2024'],
     package: {
@@ -29,6 +30,7 @@ test('validates and derives a GitHub release asset URL', () => {
 
   assert.equal(result.patches[0].package.downloadUrl,
     'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/gsx-pro-v1.0.0/gsx-pro-zh-cn.zip')
+  assert.equal(result.patches[0].addonVersion, '4.0.14')
 })
 
 test('allows planned patches without a package', () => {
@@ -36,9 +38,20 @@ test('allows planned patches without a package', () => {
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro 简体中文',
     version: '0.0.0',
+    addonVersion: '4.0.14',
     status: 'planned'
   }))
   assert.equal(result.patches[0].package, null)
+})
+
+test('keeps legacy cached catalogs readable when add-on version metadata is absent', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'legacy-patch',
+    name: 'Legacy Patch',
+    version: '1.0.0',
+    status: 'planned'
+  }))
+  assert.equal(result.patches[0].addonVersion, null)
 })
 
 test('rejects published patches with an invalid checksum', () => {
@@ -46,6 +59,7 @@ test('rejects published patches with an invalid checksum', () => {
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro 简体中文',
     version: '1.0.0',
+    addonVersion: '4.0.14',
     status: 'published',
     package: {
       releaseTag: 'gsx-pro-v1.0.0',
@@ -56,7 +70,7 @@ test('rejects published patches with an invalid checksum', () => {
 })
 
 test('rejects duplicate patch ids', () => {
-  const patch = { id: 'same', name: 'Same', version: '1.0.0', status: 'planned' }
+  const patch = { id: 'same', name: 'Same', version: '1.0.0', addonVersion: '4.0.14', status: 'planned' }
   assert.throws(() => validateCatalog({
     schemaVersion: 1,
     catalogVersion: '1',
@@ -70,6 +84,17 @@ test('rejects a patch version that is not semantic versioning', () => {
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro 简体中文',
     version: 'latest',
+    addonVersion: '4.0.14',
     status: 'planned'
   })), /语义化/)
+})
+
+test('rejects a patch add-on version that is not semantic versioning', () => {
+  assert.throws(() => validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro 简体中文',
+    version: '1.0.0',
+    addonVersion: 'current',
+    status: 'planned'
+  })), /addonVersion/)
 })

@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
 const { GitHubCatalog } = require('./github-catalog')
+const { detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 
 let mainWindow = null
@@ -78,6 +79,10 @@ function registerIpc() {
   ipcMain.handle('catalog:refresh', () => catalog.refresh())
   ipcMain.handle('patch:list-installations', () => installer.listInstallations())
   ipcMain.handle('patch:verify-installations', () => installer.verifyInstallations())
+  ipcMain.handle('patch:detect-targets', (_event, patches) => detectPatchTargets(patches, {
+    appData: app.getPath('appData'),
+    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')
+  }))
   ipcMain.handle('patch:choose-target', async (_event, options = {}) => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: options.title || '选择补丁安装目录',

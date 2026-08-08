@@ -7,11 +7,12 @@ const props = defineProps({
   installations: { type: Object, required: true },
   installationChecks: { type: Object, required: true },
   targets: { type: Object, required: true },
+  detectedTargets: { type: Object, required: true },
   operations: { type: Object, required: true },
   loading: { type: Boolean, default: false }
 })
 
-defineEmits(['refresh', 'choose-target', 'install', 'restore', 'verify'])
+defineEmits(['refresh', 'install', 'restore', 'verify'])
 
 </script>
 
@@ -48,17 +49,17 @@ defineEmits(['refresh', 'choose-target', 'install', 'restore', 'verify'])
       </button>
     </div>
 
-    <div v-if="catalogState.catalog?.patches?.length" class="patch-list">
+    <div v-if="catalogState.catalog?.patches?.length" class="patch-list compact-card-grid">
       <PatchCard
         v-for="patch in catalogState.catalog.patches"
         :key="patch.id"
         :patch="patch"
         :installation="installations[patch.id]"
         :installation-check="installationChecks[patch.id] || null"
-        :target-path="targets[patch.id] || installations[patch.id]?.targetPath || ''"
+        :target-ready="Boolean(targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath)"
+        :detected-target="detectedTargets[patch.id] || null"
         :progress="operations[patch.id] || null"
         :busy="operations[patch.id]?.busy || false"
-        @choose-target="$emit('choose-target', patch)"
         @install="$emit('install', patch)"
         @restore="$emit('restore', patch)"
       />

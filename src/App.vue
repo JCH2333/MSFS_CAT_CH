@@ -17,6 +17,7 @@ const developmentBridge = {
   },
   patches: {
     chooseTarget: async () => null,
+    detectTargets: async () => ({}),
     listInstallations: async () => ({}),
     verifyInstallations: async () => ({}),
     install: async () => { throw new Error('请在 Electron 中运行安装') },
@@ -39,6 +40,7 @@ const catalogState = reactive({ catalog: null, source: 'idle', stale: false, err
 const installations = reactive({})
 const installationChecks = reactive({})
 const targets = reactive(JSON.parse(localStorage.getItem('patch-targets') || '{}'))
+const detectedTargets = reactive({})
 const operations = reactive({})
 const updateStatus = reactive({ state: 'idle', info: null, progress: null, message: '' })
 const loadingCatalog = ref(false)
@@ -59,12 +61,20 @@ async function verifyInstallations() {
   replaceReactive(installationChecks, await bridge.patches.verifyInstallations())
 }
 
+async function detectTargets(patches = catalogState.catalog?.patches || []) {
+  const descriptors = patches.map((patch) => ({
+    id: patch.id,
+    targetFolders: Array.isArray(patch.targetFolders) ? [...patch.targetFolders] : []
+  }))
+  replaceReactive(detectedTargets, await bridge.patches.detectTargets(descriptors))
+}
+
 async function refreshCatalog() {
   loadingCatalog.value = true
   catalogState.error = null
   try {
     Object.assign(catalogState, await bridge.catalog.refresh())
-    await verifyInstallations()
+    await Promise.all([detectTargets(catalogState.catalog?.patches), verifyInstallations()])
   } catch (error) {
     catalogState.source = 'error'
     catalogState.error = error.message
@@ -77,25 +87,30 @@ async function refreshCatalog() {
 async function chooseTarget(patch) {
   const selected = await bridge.patches.chooseTarget({
     title: patch.targetHint,
-    defaultPath: targets[patch.id] || installations[patch.id]?.targetPath
+    defaultPath: targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath
   })
   if (!selected) return
   targets[patch.id] = selected
   localStorage.setItem('patch-targets', JSON.stringify(targets))
 }
 
+function clearTarget(patchId) {
+  delete targets[patchId]
+  localStorage.setItem('patch-targets', JSON.stringify(targets))
+}
+
 async function installPatch(patch) {
-  if (!targets[patch.id] && installations[patch.id]?.targetPath) {
-    targets[patch.id] = installations[patch.id].targetPath
+  const targetPath = targets[patch.id]
+    || installations[patch.id]?.targetPath
+    || detectedTargets[patch.id]?.targetPath
+  if (!targetPath) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: '请先在设置中选择安装目录' }
+    return
   }
-  if (!targets[patch.id]) {
-    await chooseTarget(patch)
-  }
-  if (!targets[patch.id]) return
 
   operations[patch.id] = { busy: true, phase: 'prepare', percent: 0, message: '准备安装' }
   try {
-    await bridge.patches.install(patch, targets[patch.id])
+    await bridge.patches.install(patch, targetPath)
     await loadInstallations()
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
@@ -164,7 +179,7 @@ onBeforeUnmount(() => {
       <aside class="sidebar">
         <div class="brand-block">
           <img src="/logo.png" alt="MSFS_CAT_CH" />
-          <div><strong>MSFS_CAT</strong><span>CH</span></div>
+          <div><strong>MSFS</strong><span>CAT CH</span></div>
         </div>
 
         <nav class="primary-nav" aria-label="主导航">
@@ -191,10 +206,10 @@ onBeforeUnmount(() => {
           :installations="installations"
           :installation-checks="installationChecks"
           :targets="targets"
+          :detected-targets="detectedTargets"
           :operations="operations"
           :loading="loadingCatalog"
           @refresh="refreshCatalog"
-          @choose-target="chooseTarget"
           @install="installPatch"
           @restore="restorePatch"
           @verify="verifyInstallations"
@@ -203,6 +218,12 @@ onBeforeUnmount(() => {
           v-else
           :app-info="appInfo"
           :update-status="updateStatus"
+          :patches="catalogState.catalog?.patches || []"
+          :targets="targets"
+          :detected-targets="detectedTargets"
+          :installations="installations"
+          @choose-target="chooseTarget"
+          @clear-target="clearTarget"
           @check-update="checkUpdate"
           @download-update="downloadUpdate"
           @install-update="bridge.updates.install()"

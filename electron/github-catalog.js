@@ -73,11 +73,22 @@ function validateCatalog(input) {
         }
         return version
       })(),
+      addonVersion: (() => {
+        if (patch.addonVersion === undefined || patch.addonVersion === null || patch.addonVersion === '') return null
+        const addonVersion = assertString(patch.addonVersion, `补丁 ${id} addonVersion`)
+        if (!isSemanticVersion(addonVersion)) {
+          throw new Error(`补丁 ${id} addonVersion 必须采用语义化格式`)
+        }
+        return addonVersion
+      })(),
       status,
       compatibility: Array.isArray(patch.compatibility)
         ? patch.compatibility.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
         : [],
       targetHint: typeof patch.targetHint === 'string' ? patch.targetHint.trim() : '请选择安装目录',
+      targetFolders: Array.isArray(patch.targetFolders)
+        ? [...new Set(patch.targetFolders.filter((folder) => typeof folder === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(folder.trim())).map((folder) => folder.trim()))]
+        : [],
       releaseNotes: Array.isArray(patch.releaseNotes)
         ? patch.releaseNotes.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
         : [],

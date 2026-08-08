@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Download, FolderSearch, ShieldAlert, ShieldCheck, RotateCcw } from '@lucide/vue'
+import { Download, MapPin, ShieldAlert, ShieldCheck, RotateCcw } from '@lucide/vue'
 import { compareVersions } from '../lib/versioning'
 
 const props = defineProps({
@@ -8,11 +8,12 @@ const props = defineProps({
   installation: { type: Object, default: null },
   installationCheck: { type: Object, default: null },
   progress: { type: Object, default: null },
-  targetPath: { type: String, default: '' },
+  detectedTarget: { type: Object, default: null },
+  targetReady: { type: Boolean, default: false },
   busy: { type: Boolean, default: false }
 })
 
-defineEmits(['choose-target', 'install', 'restore'])
+defineEmits(['install', 'restore'])
 
 const published = computed(() => props.patch.status === 'published')
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
@@ -52,8 +53,8 @@ const packageSize = computed(() => {
           <span class="status-badge" :data-tone="status.tone">{{ status.label }}</span>
         </div>
         <div class="version-block">
-          <span>最新版本</span>
-          <strong>v{{ patch.version }}</strong>
+          <span>{{ patch.addonVersion ? `插件 v${patch.addonVersion}` : '插件版本未声明' }}</span>
+          <strong>补丁 v{{ patch.version }}</strong>
         </div>
       </div>
 
@@ -63,18 +64,7 @@ const packageSize = computed(() => {
         <span v-for="item in patch.compatibility" :key="item">{{ item }}</span>
         <span v-if="packageSize">{{ packageSize }}</span>
         <span v-if="installation">本机 v{{ installation.version }}</span>
-      </div>
-
-      <div class="target-row">
-        <div class="target-copy">
-          <span class="field-label">安装目录</span>
-          <span class="target-value" :title="targetPath || patch.targetHint">
-            {{ targetPath || installation?.targetPath || patch.targetHint }}
-          </span>
-        </div>
-        <button class="icon-button" type="button" title="选择安装目录" aria-label="选择安装目录" :disabled="busy" @click="$emit('choose-target', patch)">
-          <FolderSearch :size="18" />
-        </button>
+        <span v-else-if="detectedTarget"><MapPin :size="11" /> {{ detectedTarget.source }}</span>
       </div>
 
       <div v-if="progress" class="operation-progress" :data-error="progress.phase === 'error'">
@@ -96,7 +86,7 @@ const packageSize = computed(() => {
         </button>
         <button class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />
-          {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : '安装补丁' }}
+          {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
         </button>
       </div>
     </div>
