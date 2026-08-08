@@ -17,6 +17,7 @@ const updateLabel = computed(() => {
   const labels = {
     idle: '尚未检查',
     checking: '正在检查',
+    'checking-direct': '系统代理响应较慢，正在直连 GitHub',
     current: '当前已是最新版本',
     available: `发现 v${props.updateStatus.info?.version || ''}`,
     downloading: `下载中 ${Math.round(props.updateStatus.progress?.percent || 0)}%`,
@@ -63,8 +64,8 @@ function targetSource(patch) {
           <RotateCw :size="17" />
           重启安装
         </button>
-        <button v-else class="button button-secondary" type="button" :disabled="updateStatus.state === 'checking' || updateStatus.state === 'downloading'" @click="$emit('check-update')">
-          <RefreshCw :size="17" :class="{ spinning: updateStatus.state === 'checking' }" />
+        <button v-else class="button button-secondary" type="button" :disabled="['checking', 'checking-direct', 'downloading'].includes(updateStatus.state)" @click="$emit('check-update')">
+          <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-direct'].includes(updateStatus.state) }" />
           检查更新
         </button>
       </div>

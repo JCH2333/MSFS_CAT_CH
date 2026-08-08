@@ -4,6 +4,7 @@ const path = require('node:path')
 const { GitHubCatalog } = require('./github-catalog')
 const { detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
+const { UpdateCheckTimeoutError, checkForUpdatesWithFallback } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
@@ -98,8 +99,20 @@ function registerIpc() {
     if (!app.isPackaged) {
       return { state: 'development', version: app.getVersion() }
     }
-    await autoUpdater.checkForUpdates()
-    return { state: 'checking' }
+    try {
+      return await checkForUpdatesWithFallback({
+        updater: autoUpdater,
+        onDirectFallback: () => send('updates:status', { state: 'checking-direct' })
+      })
+    } catch (error) {
+      if (error instanceof UpdateCheckTimeoutError) {
+        return {
+          state: 'error',
+          message: '检查更新超时。已依次尝试系统代理和 GitHub 直连，请检查网络或代理设置后重试。'
+        }
+      }
+      return { state: 'error', message: '暂时无法检查软件更新，请稍后再试' }
+    }
   })
   ipcMain.handle('updates:download', async () => {
     if (!app.isPackaged) return { state: 'development' }
