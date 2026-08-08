@@ -38,6 +38,7 @@
   "build": {
     "appId": "com.jch2333.msfscatch",
     "productName": "MSFS_CAT_CH",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
     "asar": true,
     "directories": {
       "output": "release"
