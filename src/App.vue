@@ -4,6 +4,7 @@ import { Package, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
 import SettingsView from './views/SettingsView.vue'
+import { createRecognitionDescriptors } from './lib/patch-recognition.mjs'
 
 const developmentBridge = {
   app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }) },
@@ -71,11 +72,12 @@ async function detectTargets(patches = catalogState.catalog?.patches || []) {
 }
 
 async function reconcileInstallations(patches = catalogState.catalog?.patches || []) {
-  const targetPaths = Object.fromEntries(patches.map((patch) => [
+  const descriptors = createRecognitionDescriptors(patches)
+  const targetPaths = Object.fromEntries(descriptors.map((patch) => [
     patch.id,
     targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || null
   ]))
-  await bridge.patches.reconcileInstallations(patches, targetPaths)
+  await bridge.patches.reconcileInstallations(descriptors, targetPaths)
 }
 
 async function refreshCatalog() {
