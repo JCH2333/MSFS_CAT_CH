@@ -21,3 +21,25 @@ test('creates cloneable patch recognition descriptors from reactive-like catalog
   }])
   assert.deepEqual(structuredClone(descriptors), descriptors)
 })
+
+test('creates a cloneable installation request from a reactive-like catalog object', async () => {
+  const { createInstallationRequest } = await import('../src/lib/patch-recognition.mjs')
+  const patch = new Proxy({
+    id: 'fsrealistic-plus-zh-cn',
+    name: 'FSRealistic+ 简体中文',
+    version: '1.0.0',
+    status: 'published',
+    fingerprint: [new Proxy({ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }, {})],
+    package: new Proxy({
+      downloadUrl: 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/fsr/fsr.zip',
+      sha256: 'c'.repeat(64),
+      contentRoot: 'payload'
+    }, {})
+  }, {})
+
+  const request = createInstallationRequest(patch)
+
+  assert.deepEqual(structuredClone(request), request)
+  assert.equal(request.package.downloadUrl, 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/fsr/fsr.zip')
+  assert.equal(request.fingerprint[0].relativePath, 'html_ui/panel.js')
+})

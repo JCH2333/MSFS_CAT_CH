@@ -13,3 +13,15 @@ export function createRecognitionDescriptors(patches) {
       : []
   }))
 }
+
+export function createInstallationRequest(patch) {
+  return {
+    ...createRecognitionDescriptors([patch])[0],
+    status: typeof patch?.status === 'string' ? patch.status : '',
+    package: {
+      downloadUrl: typeof patch?.package?.downloadUrl === 'string' ? patch.package.downloadUrl : '',
+      sha256: typeof patch?.package?.sha256 === 'string' ? patch.package.sha256 : '',
+      contentRoot: typeof patch?.package?.contentRoot === 'string' ? patch.package.contentRoot : ''
+    }
+  }
+}

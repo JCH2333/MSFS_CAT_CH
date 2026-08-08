@@ -4,7 +4,7 @@ import { Package, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
 import SettingsView from './views/SettingsView.vue'
-import { createRecognitionDescriptors } from './lib/patch-recognition.mjs'
+import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
 
 const developmentBridge = {
   app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }) },
@@ -123,7 +123,7 @@ async function installPatch(patch) {
 
   operations[patch.id] = { busy: true, phase: 'prepare', percent: 0, message: '准备安装' }
   try {
-    await bridge.patches.install(patch, targetPath)
+    await bridge.patches.install(createInstallationRequest(patch), targetPath)
     await loadInstallations()
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
