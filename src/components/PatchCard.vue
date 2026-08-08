@@ -17,11 +17,13 @@ defineEmits(['install', 'restore'])
 
 const published = computed(() => props.patch.status === 'published')
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
+const needsInstall = computed(() => !props.installation || versionComparison.value > 0 || props.installationCheck?.state !== 'intact')
 const status = computed(() => {
   if (!published.value) return { label: '等待发布', tone: 'muted' }
   if (props.installationCheck && props.installationCheck.state !== 'intact') return { label: '需要修复', tone: 'danger' }
   if (versionComparison.value > 0) return { label: '可更新', tone: 'warning' }
   if (versionComparison.value < 0) return { label: '本地版本较新', tone: 'muted' }
+  if (props.installation?.source === 'detected') return { label: '已识别安装', tone: 'success' }
   if (props.installation) return { label: '已安装', tone: 'success' }
   return { label: '未安装', tone: 'neutral' }
 })
@@ -80,11 +82,11 @@ const packageSize = computed(() => {
         <span>{{ verificationLabel }} · {{ new Date(installation.installedAt).toLocaleDateString('zh-CN') }}</span>
       </div>
       <div class="action-buttons">
-        <button v-if="installation" class="button button-secondary" type="button" :disabled="busy" @click="$emit('restore', patch)">
+        <button v-if="installation && installation.source !== 'detected'" class="button button-secondary" type="button" :disabled="busy" @click="$emit('restore', patch)">
           <RotateCcw :size="17" />
           还原
         </button>
-        <button class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
+        <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />
           {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
         </button>

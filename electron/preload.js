@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('gsxTool', {
     detectTargets: (patches) => ipcRenderer.invoke('patch:detect-targets', patches),
     listInstallations: () => ipcRenderer.invoke('patch:list-installations'),
     verifyInstallations: () => ipcRenderer.invoke('patch:verify-installations'),
+    reconcileInstallations: (patches, targetPaths) => ipcRenderer.invoke('patch:reconcile-installations', { patches, targetPaths }),
     install: (patch, targetPath) => ipcRenderer.invoke('patch:install', { patch, targetPath }),
     restore: (patchId) => ipcRenderer.invoke('patch:restore', patchId),
     onProgress: (listener) => subscribe('patch:progress', listener)

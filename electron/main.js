@@ -80,6 +80,7 @@ function registerIpc() {
   ipcMain.handle('catalog:refresh', () => catalog.refresh())
   ipcMain.handle('patch:list-installations', () => installer.listInstallations())
   ipcMain.handle('patch:verify-installations', () => installer.verifyInstallations())
+  ipcMain.handle('patch:reconcile-installations', (_event, { patches, targetPaths }) => installer.reconcileInstallations(patches, targetPaths))
   ipcMain.handle('patch:detect-targets', (_event, patches) => detectPatchTargets(patches, {
     appData: app.getPath('appData'),
     localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')

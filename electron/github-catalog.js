@@ -35,6 +35,26 @@ function validatePackage(packageInfo, patchId) {
   }
 }
 
+function validateFingerprint(input, patchId) {
+  if (input === undefined || input === null) return []
+  if (!Array.isArray(input)) throw new Error(`补丁 ${patchId} fingerprint 必须是数组`)
+
+  const paths = new Set()
+  return input.map((file, index) => {
+    const relativePath = assertString(file?.relativePath, `补丁 ${patchId} fingerprint[${index}].relativePath`)
+    const segments = relativePath.split('/')
+    if (segments.length === 0 || segments.some((segment) => !segment || segment === '.' || segment === '..' || segment.includes('\\'))) {
+      throw new Error(`补丁 ${patchId} fingerprint 路径无效`)
+    }
+    if (paths.has(relativePath)) throw new Error(`补丁 ${patchId} fingerprint 路径重复`)
+    paths.add(relativePath)
+
+    const sha256 = assertString(file?.sha256, `补丁 ${patchId} fingerprint[${index}].sha256`).toLowerCase()
+    if (!/^[a-f0-9]{64}$/.test(sha256)) throw new Error(`补丁 ${patchId} fingerprint SHA-256 无效`)
+    return { relativePath, sha256 }
+  })
+}
+
 function validateCatalog(input) {
   if (!input || typeof input !== 'object') {
     throw new Error('补丁目录不是有效对象')
@@ -92,6 +112,7 @@ function validateCatalog(input) {
       releaseNotes: Array.isArray(patch.releaseNotes)
         ? patch.releaseNotes.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
         : [],
+      fingerprint: validateFingerprint(patch.fingerprint, id),
       package: status === 'published' ? validatePackage(patch.package, id) : null
     }
   })

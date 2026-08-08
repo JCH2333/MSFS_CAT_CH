@@ -20,6 +20,7 @@ const developmentBridge = {
     detectTargets: async () => ({}),
     listInstallations: async () => ({}),
     verifyInstallations: async () => ({}),
+    reconcileInstallations: async () => ({}),
     install: async () => { throw new Error('请在 Electron 中运行安装') },
     restore: async () => ({ restored: true, conflicts: [] }),
     onProgress: () => () => {}
@@ -69,12 +70,22 @@ async function detectTargets(patches = catalogState.catalog?.patches || []) {
   replaceReactive(detectedTargets, await bridge.patches.detectTargets(descriptors))
 }
 
+async function reconcileInstallations(patches = catalogState.catalog?.patches || []) {
+  const targetPaths = Object.fromEntries(patches.map((patch) => [
+    patch.id,
+    targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || null
+  ]))
+  await bridge.patches.reconcileInstallations(patches, targetPaths)
+}
+
 async function refreshCatalog() {
   loadingCatalog.value = true
   catalogState.error = null
   try {
     Object.assign(catalogState, await bridge.catalog.refresh())
-    await Promise.all([detectTargets(catalogState.catalog?.patches), verifyInstallations()])
+    await detectTargets(catalogState.catalog?.patches)
+    await reconcileInstallations(catalogState.catalog?.patches)
+    await loadInstallations()
   } catch (error) {
     catalogState.source = 'error'
     catalogState.error = error.message
@@ -163,7 +174,7 @@ onMounted(async () => {
     operations[progress.patchId] = { ...progress, busy: !['complete', 'error'].includes(progress.phase) }
   })
   unsubscribeUpdates = bridge.updates.onStatus((status) => Object.assign(updateStatus, status))
-  await Promise.all([refreshCatalog(), loadInstallations()])
+  await refreshCatalog()
 })
 
 onBeforeUnmount(() => {

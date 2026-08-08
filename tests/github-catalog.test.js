@@ -19,6 +19,7 @@ test('validates and derives a GitHub release asset URL', () => {
     version: '1.0.0',
     addonVersion: '4.0.14',
     status: 'published',
+    fingerprint: [{ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }],
     compatibility: ['MSFS 2024'],
     package: {
       releaseTag: 'gsx-pro-v1.0.0',
@@ -31,6 +32,7 @@ test('validates and derives a GitHub release asset URL', () => {
   assert.equal(result.patches[0].package.downloadUrl,
     'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/gsx-pro-v1.0.0/gsx-pro-zh-cn.zip')
   assert.equal(result.patches[0].addonVersion, '4.0.14')
+  assert.deepEqual(result.patches[0].fingerprint, [{ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }])
 })
 
 test('allows planned patches without a package', () => {
@@ -97,4 +99,15 @@ test('rejects a patch add-on version that is not semantic versioning', () => {
     addonVersion: 'current',
     status: 'planned'
   })), /addonVersion/)
+})
+
+test('rejects unsafe patch fingerprint paths', () => {
+  assert.throws(() => validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro',
+    version: '1.0.0',
+    addonVersion: '4.0.14',
+    status: 'planned',
+    fingerprint: [{ relativePath: '../outside.js', sha256: 'a'.repeat(64) }]
+  })), /fingerprint/)
 })

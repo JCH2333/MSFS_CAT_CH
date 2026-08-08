@@ -37,6 +37,17 @@ function normalizeContentRoot(value) {
   return normalized
 }
 
+function fingerprintFiles(patch) {
+  return Array.isArray(patch?.fingerprint)
+    ? patch.fingerprint.filter((file) => (
+      file
+      && typeof file.relativePath === 'string'
+      && typeof file.sha256 === 'string'
+      && /^[a-f0-9]{64}$/.test(file.sha256)
+    ))
+    : []
+}
+
 async function sha256(filePath) {
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('sha256')
@@ -161,6 +172,63 @@ class PatchInstaller {
     return (await this.readState()).installations
   }
 
+  async reconcileInstallations(patches, targetPaths) {
+    const state = await this.readState()
+    const result = {}
+    let changed = false
+
+    for (const patch of Array.isArray(patches) ? patches : []) {
+      const patchId = ensureSafeId(patch?.id)
+      if (state.installations[patchId]) continue
+      const targetPath = targetPaths?.[patchId]
+      const fingerprints = fingerprintFiles(patch)
+      if (!targetPath || fingerprints.length === 0) continue
+
+      const target = path.resolve(targetPath)
+      const targetStats = await fsp.stat(target).catch(() => null)
+      if (!targetStats?.isDirectory()) continue
+
+      let matches = true
+      for (const file of fingerprints) {
+        try {
+          const destination = ensureWithin(target, path.join(target, file.relativePath))
+          const stats = await fsp.stat(destination).catch(() => null)
+          if (!stats?.isFile() || await sha256(destination) !== file.sha256) {
+            matches = false
+            break
+          }
+        } catch {
+          matches = false
+          break
+        }
+      }
+
+      if (!matches) continue
+      const now = new Date().toISOString()
+      state.installations[patchId] = {
+        patchId,
+        name: patch.name,
+        version: patch.version,
+        targetPath: target,
+        installedAt: now,
+        detectedAt: now,
+        source: 'detected',
+        backupDirectory: null,
+        files: fingerprints.map((file) => ({
+          relativePath: file.relativePath,
+          hadOriginal: false,
+          backupPath: null,
+          installedHash: file.sha256
+        }))
+      }
+      result[patchId] = 'recognized'
+      changed = true
+    }
+
+    if (changed) await this.writeState(state)
+    return result
+  }
+
   async verifyInstallations() {
     const installations = await this.listInstallations()
     const result = {}
@@ -217,6 +285,10 @@ class PatchInstaller {
 
     const state = await this.readState()
     if (state.installations[patchId]) {
+      if (state.installations[patchId].source === 'detected') {
+        if (state.installations[patchId].version === patch.version) return state.installations[patchId]
+        throw new Error('检测到历史手动安装，但没有原始文件备份，无法安全自动更新。请先恢复插件原版文件后再安装新补丁。')
+      }
       const restoreResult = await this.restore(patchId)
       if (!restoreResult.restored) {
         throw new Error(`旧版本存在无法自动还原的文件：${restoreResult.conflicts.join('、')}`)
@@ -228,8 +300,22 @@ class PatchInstaller {
     const extractDirectory = path.join(workingDirectory, 'content')
     const backupDirectory = path.join(this.backupRoot, patchId, String(Date.now()))
     const appliedFiles = []
+    const preparedBackups = new Set()
 
     try {
+      const fingerprints = fingerprintFiles(patch)
+      if (fingerprints.length > 0) {
+        await fsp.mkdir(backupDirectory, { recursive: true })
+        for (const file of fingerprints) {
+          const destination = ensureWithin(target, path.join(target, file.relativePath))
+          const existingStats = await fsp.stat(destination).catch(() => null)
+          if (!existingStats?.isFile()) continue
+          const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, file.relativePath))
+          await fsp.mkdir(path.dirname(backupPath), { recursive: true })
+          await fsp.copyFile(destination, backupPath)
+          preparedBackups.add(file.relativePath)
+        }
+      }
       this.emit(patchId, { phase: 'download', percent: 0, message: '正在下载补丁' })
       await this.download(patch.package.downloadUrl, archivePath, ({ received, total }) => {
         const percent = total > 0 ? Math.min(55, Math.round((received / total) * 55)) : 0
@@ -272,7 +358,7 @@ class PatchInstaller {
         }
 
         const hadOriginal = Boolean(existingStats?.isFile())
-        if (hadOriginal) {
+        if (hadOriginal && !preparedBackups.has(relativePath)) {
           await fsp.mkdir(path.dirname(backupPath), { recursive: true })
           await fsp.copyFile(destination, backupPath)
         }
@@ -294,6 +380,7 @@ class PatchInstaller {
         version: patch.version,
         targetPath: target,
         installedAt: new Date().toISOString(),
+        source: 'managed',
         backupDirectory,
         files: recordFiles
       }
@@ -327,6 +414,15 @@ class PatchInstaller {
     const installation = state.installations[patchId]
     if (!installation) {
       return { restored: true, conflicts: [], filesRestored: 0 }
+    }
+
+    if (installation.source === 'detected') {
+      return {
+        restored: false,
+        conflicts: installation.files.map((file) => file.relativePath),
+        filesRestored: 0,
+        reason: 'detected-installation-without-original-backup'
+      }
     }
 
     const conflicts = []

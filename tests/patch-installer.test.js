@@ -150,6 +150,58 @@ test('verification reports modified and missing installed files without changing
   await fs.rm(root, { recursive: true, force: true })
 })
 
+test('recognizes a complete externally installed patch from catalog file fingerprints', async () => {
+  const root = await temporaryDirectory('gsx-installer-reconcile-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const localizedFile = path.join(target, 'panel.js')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(localizedFile, 'localized')
+
+  const installer = new PatchInstaller({ userDataDirectory: userData })
+  const result = await installer.reconcileInstallations([{
+    id: 'recognized-patch',
+    name: 'Recognized patch',
+    version: '1.0.0',
+    fingerprint: [{ relativePath: 'panel.js', sha256: await sha256(localizedFile) }]
+  }], { 'recognized-patch': target })
+
+  assert.deepEqual(result, { 'recognized-patch': 'recognized' })
+  const installation = (await installer.listInstallations())['recognized-patch']
+  assert.equal(installation.source, 'detected')
+  assert.equal((await installer.verifyInstallations())['recognized-patch'].state, 'intact')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('backs up fingerprinted files before patch download begins', async () => {
+  const root = await temporaryDirectory('gsx-installer-prebackup-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'panel.txt'), 'original')
+  await fs.mkdir(source)
+  await fs.writeFile(path.join(source, 'panel.txt'), 'localized')
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (_url, destination) => {
+      const versions = await fs.readdir(path.join(userData, 'backups', 'test-patch'))
+      const backup = await fs.readFile(path.join(userData, 'backups', 'test-patch', versions[0], 'panel.txt'), 'utf8')
+      assert.equal(backup, 'original')
+      await fs.copyFile(archive, destination)
+    }
+  })
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  patch.fingerprint = [{ relativePath: 'panel.txt', sha256: await sha256(path.join(source, 'panel.txt')) }]
+
+  await installer.install(patch, target)
+  assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'localized')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
 test('installs, verifies, updates, and restores a real Patch Package', async () => {
   const root = await temporaryDirectory('gsx-installer-lifecycle-')
   const target = path.join(root, 'target')
