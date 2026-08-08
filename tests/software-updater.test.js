@@ -3,6 +3,7 @@ const assert = require('node:assert/strict')
 const {
   UpdateCheckTimeoutError,
   checkForUpdatesWithFallback,
+  downloadUpdate,
   updateStatusFromResult
 } = require('../electron/software-updater')
 
@@ -68,4 +69,10 @@ test('maps a no-update result to current', () => {
     state: 'current',
     info: { version: '1.2.0' }
   })
+})
+
+test('reports downloaded only after the updater has completed the download', async () => {
+  const updater = { downloadUpdate: async () => ['C:\\updates\\MSFS_CAT_CH-Setup-1.2.2.exe'] }
+
+  assert.deepEqual(await downloadUpdate(updater), { state: 'downloaded' })
 })

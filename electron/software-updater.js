@@ -24,6 +24,11 @@ function updateStatusFromResult(result) {
   }
 }
 
+async function downloadUpdate(updater) {
+  await updater.downloadUpdate()
+  return { state: 'downloaded' }
+}
+
 async function resetTimedOutCheck(updater) {
   await updater.netSession.closeAllConnections?.()
   // electron-updater caches an in-flight check. The request has been closed, so allow one direct retry.
@@ -55,5 +60,6 @@ module.exports = {
   UPDATE_CHECK_TIMEOUT_MS,
   UpdateCheckTimeoutError,
   checkForUpdatesWithFallback,
+  downloadUpdate,
   updateStatusFromResult
 }

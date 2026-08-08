@@ -4,7 +4,7 @@ const path = require('node:path')
 const { GitHubCatalog } = require('./github-catalog')
 const { detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
-const { UpdateCheckTimeoutError, checkForUpdatesWithFallback } = require('./software-updater')
+const { UpdateCheckTimeoutError, checkForUpdatesWithFallback, downloadUpdate } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
@@ -116,8 +116,11 @@ function registerIpc() {
   })
   ipcMain.handle('updates:download', async () => {
     if (!app.isPackaged) return { state: 'development' }
-    await autoUpdater.downloadUpdate()
-    return { state: 'downloading' }
+    try {
+      return await downloadUpdate(autoUpdater)
+    } catch {
+      return { state: 'error', message: '更新下载未完成，请检查网络后重试。' }
+    }
   })
   ipcMain.handle('updates:install', () => {
     if (!app.isPackaged) return { state: 'development' }
