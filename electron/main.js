@@ -93,7 +93,16 @@ function registerIpc() {
     })
     return result.canceled ? null : result.filePaths[0]
   })
+  ipcMain.handle('patch:choose-package', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择离线补丁包',
+      properties: ['openFile'],
+      filters: [{ name: 'ZIP 补丁包', extensions: ['zip'] }]
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
   ipcMain.handle('patch:install', (_event, { patch, targetPath }) => installer.install(patch, targetPath))
+  ipcMain.handle('patch:install-from-file', (_event, { patch, targetPath, sourceArchivePath }) => installer.installFromFile(patch, targetPath, sourceArchivePath))
   ipcMain.handle('patch:restore', (_event, patchId) => installer.restore(patchId))
 
   ipcMain.handle('updates:check', async () => {

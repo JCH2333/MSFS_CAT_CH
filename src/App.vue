@@ -18,11 +18,13 @@ const developmentBridge = {
   },
   patches: {
     chooseTarget: async () => null,
+    choosePackage: async () => null,
     detectTargets: async () => ({}),
     listInstallations: async () => ({}),
     verifyInstallations: async () => ({}),
     reconcileInstallations: async () => ({}),
     install: async () => { throw new Error('请在 Electron 中运行安装') },
+    installFromFile: async () => { throw new Error('请在 Electron 中运行安装') },
     restore: async () => ({ restored: true, conflicts: [] }),
     onProgress: () => () => {}
   },
@@ -132,6 +134,29 @@ async function installPatch(patch) {
   setTimeout(() => { delete operations[patch.id] }, 1800)
 }
 
+async function importPatch(patch) {
+  const targetPath = targets[patch.id]
+    || installations[patch.id]?.targetPath
+    || detectedTargets[patch.id]?.targetPath
+  if (!targetPath) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: '请先在设置中选择安装目录' }
+    return
+  }
+
+  const sourceArchivePath = await bridge.patches.choosePackage()
+  if (!sourceArchivePath) return
+
+  operations[patch.id] = { busy: true, phase: 'import', percent: 0, message: '正在导入离线补丁包' }
+  try {
+    await bridge.patches.installFromFile(createInstallationRequest(patch), targetPath, sourceArchivePath)
+    await loadInstallations()
+  } catch (error) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
+    return
+  }
+  setTimeout(() => { delete operations[patch.id] }, 1800)
+}
+
 async function restorePatch(patch) {
   operations[patch.id] = { busy: true, phase: 'restore', percent: 35, message: '正在还原原文件' }
   try {
@@ -224,6 +249,7 @@ onBeforeUnmount(() => {
           :loading="loadingCatalog"
           @refresh="refreshCatalog"
           @install="installPatch"
+          @import="importPatch"
           @restore="restorePatch"
           @verify="verifyInstallations"
         />

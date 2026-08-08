@@ -18,11 +18,13 @@ contextBridge.exposeInMainWorld('gsxTool', {
   },
   patches: {
     chooseTarget: (options) => ipcRenderer.invoke('patch:choose-target', options),
+    choosePackage: () => ipcRenderer.invoke('patch:choose-package'),
     detectTargets: (patches) => ipcRenderer.invoke('patch:detect-targets', patches),
     listInstallations: () => ipcRenderer.invoke('patch:list-installations'),
     verifyInstallations: () => ipcRenderer.invoke('patch:verify-installations'),
     reconcileInstallations: (patches, targetPaths) => ipcRenderer.invoke('patch:reconcile-installations', { patches, targetPaths }),
     install: (patch, targetPath) => ipcRenderer.invoke('patch:install', { patch, targetPath }),
+    installFromFile: (patch, targetPath, sourceArchivePath) => ipcRenderer.invoke('patch:install-from-file', { patch, targetPath, sourceArchivePath }),
     restore: (patchId) => ipcRenderer.invoke('patch:restore', patchId),
     onProgress: (listener) => subscribe('patch:progress', listener)
   },

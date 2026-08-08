@@ -268,7 +268,19 @@ class PatchInstaller {
     this.onProgress({ patchId, ...payload })
   }
 
-  async install(patch, targetPath) {
+  async installFromFile(patch, targetPath, sourceArchivePath) {
+    if (typeof sourceArchivePath !== 'string' || !sourceArchivePath.trim()) {
+      throw new Error('请选择离线补丁包')
+    }
+    const source = path.resolve(sourceArchivePath)
+    const sourceStats = await fsp.stat(source).catch(() => null)
+    if (!sourceStats?.isFile()) {
+      throw new Error('离线补丁包不存在或无法访问')
+    }
+    return this.install(patch, targetPath, { localArchivePath: source })
+  }
+
+  async install(patch, targetPath, { localArchivePath = null } = {}) {
     const patchId = ensureSafeId(patch?.id)
     if (patch.status !== 'published' || !patch.package) {
       throw new Error('该补丁尚未发布')
@@ -316,11 +328,17 @@ class PatchInstaller {
           preparedBackups.add(file.relativePath)
         }
       }
-      this.emit(patchId, { phase: 'download', percent: 0, message: '正在下载补丁' })
-      await this.download(patch.package.downloadUrl, archivePath, ({ received, total }) => {
-        const percent = total > 0 ? Math.min(55, Math.round((received / total) * 55)) : 0
-        this.emit(patchId, { phase: 'download', percent, received, total, message: '正在下载补丁' })
-      })
+      if (localArchivePath) {
+        this.emit(patchId, { phase: 'import', percent: 0, message: '正在导入离线补丁包' })
+        await fsp.copyFile(localArchivePath, archivePath)
+        this.emit(patchId, { phase: 'import', percent: 55, message: '离线补丁包已导入' })
+      } else {
+        this.emit(patchId, { phase: 'download', percent: 0, message: '正在下载补丁' })
+        await this.download(patch.package.downloadUrl, archivePath, ({ received, total }) => {
+          const percent = total > 0 ? Math.min(55, Math.round((received / total) * 55)) : 0
+          this.emit(patchId, { phase: 'download', percent, received, total, message: '正在下载补丁' })
+        })
+      }
 
       this.emit(patchId, { phase: 'verify', percent: 58, message: '正在校验补丁' })
       const actualHash = await sha256(archivePath)

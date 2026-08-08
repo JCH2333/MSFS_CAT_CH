@@ -202,6 +202,50 @@ test('backs up fingerprinted files before patch download begins', async () => {
   await fs.rm(root, { recursive: true, force: true })
 })
 
+test('installs a checksum-verified local offline package without downloading', async () => {
+  const root = await temporaryDirectory('gsx-installer-offline-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'offline.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'panel.txt'), 'original')
+  await fs.mkdir(source)
+  await fs.writeFile(path.join(source, 'panel.txt'), 'localized from offline package')
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async () => { throw new Error('offline import must not download') }
+  })
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  await installer.installFromFile(patch, target, archive)
+
+  assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'localized from offline package')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('rejects an offline package that does not match the catalog checksum', async () => {
+  const root = await temporaryDirectory('gsx-installer-offline-invalid-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'offline.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'panel.txt'), 'original')
+  await fs.mkdir(source)
+  await fs.writeFile(path.join(source, 'panel.txt'), 'unexpected content')
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({ userDataDirectory: userData })
+  await assert.rejects(
+    installer.installFromFile(packageFor('1.0.0', archive, '0'.repeat(64)), target, archive),
+    /SHA-256/
+  )
+  assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'original')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
 test('installs, verifies, updates, and restores a real Patch Package', async () => {
   const root = await temporaryDirectory('gsx-installer-lifecycle-')
   const target = path.join(root, 'target')

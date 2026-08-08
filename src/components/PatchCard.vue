@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Download, MapPin, ShieldAlert, ShieldCheck, RotateCcw } from '@lucide/vue'
+import { Download, FolderArchive, MapPin, ShieldAlert, ShieldCheck, RotateCcw } from '@lucide/vue'
 import { compareVersions } from '../lib/versioning'
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const props = defineProps({
   busy: { type: Boolean, default: false }
 })
 
-defineEmits(['install', 'restore'])
+defineEmits(['install', 'import', 'restore'])
 
 const published = computed(() => props.patch.status === 'published')
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
@@ -89,6 +89,10 @@ const packageSize = computed(() => {
         <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />
           {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
+        </button>
+        <button v-if="needsInstall" class="button button-secondary" type="button" :disabled="busy || !published" title="从本地 ZIP 导入并校验" @click="$emit('import', patch)">
+          <FolderArchive :size="17" />
+          导入离线包
         </button>
       </div>
     </div>

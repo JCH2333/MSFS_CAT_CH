@@ -12,7 +12,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false }
 })
 
-defineEmits(['refresh', 'install', 'restore', 'verify'])
+defineEmits(['refresh', 'install', 'import', 'restore', 'verify'])
 
 </script>
 
@@ -61,6 +61,7 @@ defineEmits(['refresh', 'install', 'restore', 'verify'])
         :progress="operations[patch.id] || null"
         :busy="operations[patch.id]?.busy || false"
         @install="$emit('install', patch)"
+        @import="$emit('import', patch)"
         @restore="$emit('restore', patch)"
       />
     </div>
