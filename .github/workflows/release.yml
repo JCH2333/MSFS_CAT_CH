@@ -21,10 +21,6 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx electron-builder --win --publish never
-      - run: |
-          $version = '${{ github.ref_name }}'.TrimStart('v')
-          Move-Item "release\MSFS_CAT_CH Setup $version.exe" "release\MSFS_CAT_CH-Setup-$version.exe"
-          Move-Item "release\MSFS_CAT_CH Setup $version.exe.blockmap" "release\MSFS_CAT_CH-Setup-$version.exe.blockmap"
       - run: gh release create "${{ github.ref_name }}" release/latest.yml release/*.exe release/*.blockmap --title "MSFS_CAT_CH ${{ github.ref_name }}" --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
