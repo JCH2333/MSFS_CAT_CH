@@ -5,6 +5,7 @@ const https = require('node:https')
 const os = require('node:os')
 const path = require('node:path')
 const extractZip = require('extract-zip')
+const { isOfficialPatchReleaseUrl, isTimeoutError, isTrustedMirrorUrl, mirrorGitHubUrl } = require('./github-mirror')
 
 const ALLOWED_DOWNLOAD_HOSTS = new Set([
   'github.com',
@@ -58,6 +59,74 @@ async function sha256(filePath) {
   })
 }
 
+const WINDOWS_FILETIME_EPOCH_NS = 116444736000000000n
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+async function currentWindowsFileTime(filePath) {
+  const stats = await fsp.stat(filePath, { bigint: true })
+  return (stats.mtimeNs / 100n + WINDOWS_FILETIME_EPOCH_NS).toString()
+}
+
+function windowsFileTimeToSeconds(fileTime) {
+  return Number(BigInt(fileTime) - WINDOWS_FILETIME_EPOCH_NS) / 10000000
+}
+
+function replaceLayoutDate(layoutText, relativePath, fileTime) {
+  const escapedPath = escapeRegExp(relativePath.replace(/\\/g, '/'))
+  const entryPattern = new RegExp(
+    `(\\"path\\"\\s*:\\s*\\"${escapedPath}\\"\\s*,\\s*\\"size\\"\\s*:\\s*\\d+\\s*,\\s*\\"date\\"\\s*:\\s*)\\d+`,
+    'i'
+  )
+  return layoutText.replace(entryPattern, `$1${fileTime}`)
+}
+
+async function synchronizeInstalledLayoutDates(target, files) {
+  const layoutPath = path.join(target, 'layout.json')
+  const layoutStats = await fsp.stat(layoutPath).catch(() => null)
+  if (!layoutStats?.isFile()) return false
+
+  let layoutText = await fsp.readFile(layoutPath, 'utf8')
+  let changed = false
+  for (const file of files) {
+    if (file.relativePath.toLowerCase() === 'layout.json') continue
+    const destination = ensureWithin(target, path.join(target, file.relativePath))
+    const fileTime = await currentWindowsFileTime(destination)
+    const updated = replaceLayoutDate(layoutText, file.relativePath, fileTime)
+    if (updated !== layoutText) {
+      layoutText = updated
+      changed = true
+    }
+  }
+
+  if (changed) await fsp.writeFile(layoutPath, layoutText, 'utf8')
+
+  // ChasePlane validates the layout entry for layout.json itself as well as
+  // the files listed by the patch. Writing the layout changes its mtime, so
+  // update that self-entry and then pin the final mtime to the value stored
+  // in the file.
+  const layoutEntry = layoutText.match(/"path"\s*:\s*"layout\.json"\s*,\s*"size"\s*:\s*\d+\s*,\s*"date"\s*:\s*(\d+)/i)
+  if (layoutEntry) {
+    const beforeFinalWrite = await currentWindowsFileTime(layoutPath)
+    const withSelfDate = replaceLayoutDate(layoutText, 'layout.json', beforeFinalWrite)
+    if (withSelfDate !== layoutText) {
+      await fsp.writeFile(layoutPath, withSelfDate, 'utf8')
+      const finalFileTime = await currentWindowsFileTime(layoutPath)
+      const stableFileTime = (BigInt(finalFileTime) / 10000n * 10000n).toString()
+      const pinnedLayout = replaceLayoutDate(withSelfDate, 'layout.json', stableFileTime)
+      if (pinnedLayout !== withSelfDate) {
+        await fsp.writeFile(layoutPath, pinnedLayout, 'utf8')
+        const pinnedTime = windowsFileTimeToSeconds(stableFileTime)
+        await fsp.utimes(layoutPath, pinnedTime, pinnedTime)
+      }
+      changed = true
+    }
+  }
+  return changed
+}
+
 async function walkFiles(root) {
   const result = []
   async function visit(current) {
@@ -79,8 +148,93 @@ async function walkFiles(root) {
   return result
 }
 
+const PROTECTED_PATCH_FILES = {
+  'fsrealistic-plus-zh-cn': new Set([
+    'html_ui/ingamepanels/fsrealistic/fsrealistic.js',
+    'html_ui/ingamepanels/fsrealistic/port.js',
+    'manifest.json'
+  ]),
+  'chaseplane-zh-cn': new Set([
+    'html_ui/ingamepanels/p42chaseplane/p42chaseplane.js',
+    'html_ui/ingamepanels/p42chaseplane/p42chaseplane_overlay.js',
+    'html_ui/ingamepanels/p42chaseplane/p42chaseplane_worker.js',
+    'modules/chaseplanemodule.wasm',
+  ])
+}
+
+const PATCH_METADATA_FILES = new Set([
+  'layout.json',
+  'manifest.json'
+])
+
+const UNSUPPORTED_PATCH_IDS = new Set([
+  // FSR+ restores its panel HTML during startup, removing any external
+  // localization loader before the panel can use it.
+  'fsrealistic-plus-zh-cn',
+  // ChasePlane's Bridge validates its vendor package before loading the
+  // panel. Until an official extension point exists, changing any file in
+  // the vendor package makes the add-on unusable.
+  'chaseplane-zh-cn'
+])
+
+function normalizedRelativePath(value) {
+  return value.replace(/\\/g, '/').toLowerCase()
+}
+
+function validatePatchFiles(patchId, relativePaths) {
+  if (patchId === 'fsrealistic-plus-zh-cn') {
+    throw new Error('FSRealistic+ 汉化暂不可安装：官方组件会恢复被修改的插件核心文件')
+  }
+  if (patchId === 'chaseplane-zh-cn') {
+    throw new Error('ChasePlane 汉化暂不可安装：官方 Bridge 会拒绝被修改的插件核心文件')
+  }
+  const protectedFiles = PROTECTED_PATCH_FILES[patchId]
+  if (!protectedFiles) return
+
+  const blocked = relativePaths
+    .map(normalizedRelativePath)
+    .filter((relativePath) => protectedFiles.has(relativePath))
+
+  if (blocked.length > 0) {
+    throw new Error(`补丁 ${patchId} 不允许覆盖插件核心文件：${blocked.join('、')}`)
+  }
+}
+
+function validatePatchLayoutEntries(sourceFiles, contentRoot) {
+  const layoutFile = sourceFiles.find((file) => normalizedRelativePath(path.relative(contentRoot, file)) === 'layout.json')
+  if (!layoutFile) return
+
+  let layout
+  try {
+    layout = JSON.parse(fs.readFileSync(layoutFile, 'utf8'))
+  } catch {
+    throw new Error('补丁 layout.json 不是有效 JSON')
+  }
+  if (!Array.isArray(layout?.content)) {
+    throw new Error('补丁 layout.json 缺少 content 数组')
+  }
+
+  const entries = new Map(
+    layout.content
+      .filter((entry) => typeof entry?.path === 'string')
+      .map((entry) => [normalizedRelativePath(entry.path), entry])
+  )
+  for (const sourceFile of sourceFiles) {
+    const relativePath = path.relative(contentRoot, sourceFile)
+    if (PATCH_METADATA_FILES.has(normalizedRelativePath(relativePath))) continue
+    const entry = entries.get(normalizedRelativePath(relativePath))
+    if (!entry) {
+      throw new Error(`补丁 layout.json 缺少文件条目：${relativePath}`)
+    }
+    if (Number.isFinite(entry.size) && entry.size !== fs.statSync(sourceFile).size) {
+      throw new Error(`补丁 layout.json 文件大小不匹配：${relativePath}`)
+    }
+  }
+}
+
 function isAllowedDownloadUrl(input) {
   const url = new URL(input)
+  if (isTrustedMirrorUrl(input)) return true
   return url.protocol === 'https:' && (
     ALLOWED_DOWNLOAD_HOSTS.has(url.hostname)
     || url.hostname.endsWith('.githubusercontent.com')
@@ -133,7 +287,11 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
       })
       response.pipe(output)
     })
-    request.setTimeout(30000, () => request.destroy(new Error('补丁下载超时')))
+    request.setTimeout(30000, () => {
+      const error = new Error('补丁下载超时')
+      error.code = 'ETIMEDOUT'
+      request.destroy(error)
+    })
     request.on('error', reject)
   }).catch(async (error) => {
     await fsp.rm(temporaryPath, { force: true }).catch(() => {})
@@ -141,8 +299,18 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
   })
 }
 
+async function downloadWithMirrorFallback(url, destination, onProgress, download = downloadToFile) {
+  try {
+    return await download(url, destination, (progress) => onProgress?.({ ...progress, source: 'github' }))
+  } catch (error) {
+    if (!isTimeoutError(error) || !isOfficialPatchReleaseUrl(url)) throw error
+    onProgress?.({ phase: 'download', received: 0, total: 0, source: 'mirror' })
+    return download(mirrorGitHubUrl(url), destination, (progress) => onProgress?.({ ...progress, source: 'mirror' }))
+  }
+}
+
 class PatchInstaller {
-  constructor({ userDataDirectory, onProgress = () => {}, download = downloadToFile }) {
+  constructor({ userDataDirectory, onProgress = () => {}, download = downloadWithMirrorFallback }) {
     this.userDataDirectory = userDataDirectory
     this.statePath = path.join(userDataDirectory, 'installations.json')
     this.backupRoot = path.join(userDataDirectory, 'backups')
@@ -334,9 +502,15 @@ class PatchInstaller {
         this.emit(patchId, { phase: 'import', percent: 55, message: '离线补丁包已导入' })
       } else {
         this.emit(patchId, { phase: 'download', percent: 0, message: '正在下载补丁' })
-        await this.download(patch.package.downloadUrl, archivePath, ({ received, total }) => {
+        await this.download(patch.package.downloadUrl, archivePath, ({ received, total, source }) => {
           const percent = total > 0 ? Math.min(55, Math.round((received / total) * 55)) : 0
-          this.emit(patchId, { phase: 'download', percent, received, total, message: '正在下载补丁' })
+          this.emit(patchId, {
+            phase: 'download',
+            percent,
+            received,
+            total,
+            message: source === 'mirror' ? 'GitHub 超时，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
+          })
         })
       }
 
@@ -359,6 +533,9 @@ class PatchInstaller {
       if (sourceFiles.length === 0) {
         throw new Error('补丁包中没有可安装文件')
       }
+
+      validatePatchFiles(patchId, sourceFiles.map((sourceFile) => path.relative(contentRoot, sourceFile)))
+      validatePatchLayoutEntries(sourceFiles, contentRoot)
 
       await fsp.mkdir(backupDirectory, { recursive: true })
       const recordFiles = []
@@ -390,6 +567,11 @@ class PatchInstaller {
 
         const percent = 68 + Math.round(((index + 1) / sourceFiles.length) * 30)
         this.emit(patchId, { phase: 'install', percent, message: `正在安装 ${index + 1}/${sourceFiles.length}` })
+      }
+
+      if (await synchronizeInstalledLayoutDates(target, recordFiles)) {
+        const layoutRecord = recordFiles.find((file) => file.relativePath.toLowerCase() === 'layout.json')
+        if (layoutRecord) layoutRecord.installedHash = await sha256(path.join(target, layoutRecord.relativePath))
       }
 
       const installation = {
@@ -481,8 +663,14 @@ class PatchInstaller {
 
 module.exports = {
   PatchInstaller,
+  currentWindowsFileTime,
+  downloadWithMirrorFallback,
   ensureWithin,
+  synchronizeInstalledLayoutDates,
   isAllowedDownloadUrl,
   normalizeContentRoot,
-  sha256
+  validatePatchFiles,
+  validatePatchLayoutEntries,
+  sha256,
+  UNSUPPORTED_PATCH_IDS
 }

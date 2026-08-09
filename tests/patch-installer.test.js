@@ -5,7 +5,16 @@ const { execFile } = require('node:child_process')
 const os = require('node:os')
 const path = require('node:path')
 const { promisify } = require('node:util')
-const { PatchInstaller, ensureWithin, normalizeContentRoot, sha256 } = require('../electron/patch-installer')
+const {
+  PatchInstaller,
+  currentWindowsFileTime,
+  downloadWithMirrorFallback,
+  ensureWithin,
+  normalizeContentRoot,
+  sha256,
+  validatePatchFiles,
+  validatePatchLayoutEntries
+} = require('../electron/patch-installer')
 
 const execFileAsync = promisify(execFile)
 
@@ -46,6 +55,139 @@ test('ensureWithin rejects paths outside an installation target', () => {
 test('normalizeContentRoot rejects traversal', () => {
   assert.throws(() => normalizeContentRoot('../outside'), /contentRoot/)
   assert.equal(normalizeContentRoot('payload/files'), path.normalize('payload/files'))
+})
+
+test('protects FSR+ and ChasePlane core runtime files from patch packages', () => {
+  assert.throws(
+    () => validatePatchFiles('fsrealistic-plus-zh-cn', ['html_ui/InGamePanels/FSRealistic/FSRealistic.js']),
+    /核心文件/
+  )
+  assert.throws(
+    () => validatePatchFiles('fsrealistic-plus-zh-cn', ['html_ui/InGamePanels/FSRealistic/FSRealistic.html']),
+    /核心文件/
+  )
+  assert.throws(
+    () => validatePatchFiles('chaseplane-zh-cn', ['modules/ChasePlaneModule.wasm']),
+    /核心文件/
+  )
+  assert.throws(() => validatePatchFiles('chaseplane-zh-cn', [
+    'HTML_UI/InGamePanels/P42ChasePlane/P42ChasePlane.html',
+    'HTML_UI/InGamePanels/P42ChasePlane/ChasePlane.zh-CN.js',
+    'manifest.json',
+    'layout.json'
+  ]))
+})
+
+test('allows patch metadata manifest.json to be absent from layout content entries', async () => {
+  const root = await temporaryDirectory('gsx-installer-layout-metadata-')
+  const source = path.join(root, 'source')
+  await fs.mkdir(source, { recursive: true })
+  await fs.writeFile(path.join(source, 'manifest.json'), JSON.stringify({
+    package_version: '26.32.4',
+    total_package_size: '38358240'
+  }))
+  await fs.writeFile(path.join(source, 'panel.js'), 'localized')
+  await fs.writeFile(path.join(source, 'layout.json'), JSON.stringify({
+    content: [{ path: 'panel.js', size: 9, date: 1 }]
+  }))
+
+  const files = [
+    path.join(source, 'manifest.json'),
+    path.join(source, 'panel.js'),
+    path.join(source, 'layout.json')
+  ]
+  assert.doesNotThrow(() => validatePatchLayoutEntries(files, source))
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('rejects a patch layout whose file size does not match its payload', async () => {
+  const root = await temporaryDirectory('gsx-installer-layout-size-')
+  const source = path.join(root, 'source')
+  await fs.mkdir(source, { recursive: true })
+  await fs.writeFile(path.join(source, 'panel.html'), 'localized')
+  await fs.writeFile(path.join(source, 'layout.json'), JSON.stringify({
+    content: [{ path: 'panel.html', size: 999, date: 1 }]
+  }))
+
+  const files = [path.join(source, 'panel.html'), path.join(source, 'layout.json')]
+  assert.throws(() => validatePatchLayoutEntries(files, source), /文件大小不匹配/)
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('retries a timed-out GitHub package download through the domestic mirror', async () => {
+  const urls = []
+  await downloadWithMirrorFallback(
+    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
+    'C:/temporary/test.zip',
+    () => {},
+    async (url) => {
+      urls.push(url)
+      if (urls.length === 1) {
+        const error = new Error('timed out')
+        error.code = 'ETIMEDOUT'
+        throw error
+      }
+      return 'C:/temporary/test.zip'
+    }
+  )
+  assert.deepEqual(urls, [
+    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
+    'https://ghfast.top/https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip'
+  ])
+})
+
+test('synchronizes installed layout dates with copied patch files', async () => {
+  const root = await temporaryDirectory('gsx-installer-layout-date-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.mkdir(source, { recursive: true })
+  await fs.writeFile(path.join(source, 'panel.js'), 'localized')
+  await fs.writeFile(path.join(source, 'layout.json'), JSON.stringify({
+    content: [{ path: 'panel.js', size: 9, date: 1 }]
+  }, null, 2))
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (_url, destination) => fs.copyFile(archive, destination)
+  })
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  await installer.install(patch, target)
+
+  const layoutText = await fs.readFile(path.join(target, 'layout.json'), 'utf8')
+  const installedTime = await currentWindowsFileTime(path.join(target, 'panel.js'))
+  assert.match(layoutText, new RegExp(`\\"date\\": ${installedTime}`))
+  assert.equal((await installer.verifyInstallations())['test-patch'].state, 'intact')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('synchronizes layout.json own date after patch metadata is rewritten', async () => {
+  const root = await temporaryDirectory('gsx-installer-layout-self-date-')
+  const target = path.join(root, 'target')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'panel.js'), 'localized')
+  await fs.writeFile(path.join(target, 'layout.json'), JSON.stringify({
+    content: [
+      { path: 'panel.js', size: 9, date: 1 },
+      { path: 'layout.json', size: 0, date: 1 }
+    ]
+  }, null, 2))
+
+  const files = [
+    { relativePath: 'panel.js' },
+    { relativePath: 'layout.json' }
+  ]
+  const { synchronizeInstalledLayoutDates } = require('../electron/patch-installer')
+  await synchronizeInstalledLayoutDates(target, files)
+
+  const layoutText = await fs.readFile(path.join(target, 'layout.json'), 'utf8')
+  const layout = JSON.parse(layoutText)
+  const layoutEntry = layout.content.find((entry) => entry.path === 'layout.json')
+  assert.equal(String(layoutEntry.date), await currentWindowsFileTime(path.join(target, 'layout.json')))
+  await fs.rm(root, { recursive: true, force: true })
 })
 
 test('restore reinstates originals and removes unchanged introduced files', async () => {

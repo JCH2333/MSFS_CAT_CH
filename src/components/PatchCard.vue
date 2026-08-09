@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Download, FolderArchive, MapPin, ShieldAlert, ShieldCheck, RotateCcw } from '@lucide/vue'
+import { Download, Heart, MapPin, ShieldAlert, ShieldCheck, RotateCcw, UserRound } from '@lucide/vue'
 import { compareVersions } from '../lib/versioning'
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const props = defineProps({
   busy: { type: Boolean, default: false }
 })
 
-defineEmits(['install', 'import', 'restore'])
+defineEmits(['install', 'restore', 'author'])
 
 const published = computed(() => props.patch.status === 'published')
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
@@ -61,6 +61,7 @@ const packageSize = computed(() => {
       </div>
 
       <p class="patch-summary">{{ patch.summary || 'GSX 简体中文补丁' }}</p>
+      <div class="patch-free-note"><span>补丁完全免费</span><button type="button" @click="$emit('author')"><UserRound :size="13" />B站 一只剑齿虎呀</button></div>
 
       <div class="patch-meta">
         <span v-for="item in patch.compatibility" :key="item">{{ item }}</span>
@@ -90,10 +91,7 @@ const packageSize = computed(() => {
           <Download :size="17" />
           {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
         </button>
-        <button v-if="needsInstall" class="button button-secondary" type="button" :disabled="busy || !published" title="从本地 ZIP 导入并校验" @click="$emit('import', patch)">
-          <FolderArchive :size="17" />
-          导入离线包
-        </button>
+        <button class="text-action" type="button" @click="$emit('author')"><Heart :size="14" />完全免费制作，关注作者</button>
       </div>
     </div>
   </article>

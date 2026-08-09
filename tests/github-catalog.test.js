@@ -1,6 +1,9 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { validateCatalog } = require('../electron/github-catalog')
+const fs = require('node:fs/promises')
+const os = require('node:os')
+const path = require('node:path')
+const { GitHubCatalog, validateCatalog } = require('../electron/github-catalog')
 
 function catalogWith(patch) {
   return {
@@ -46,10 +49,34 @@ test('allows planned patches without a package', () => {
   assert.equal(result.patches[0].package, null)
 })
 
+test('shows only the supported GSX patch when a cached catalog contains retired patches', () => {
+  const gsx = {
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro',
+    version: '1.2.0',
+    addonVersion: '4.0.15',
+    status: 'planned'
+  }
+  const retired = {
+    id: 'fsrealistic-plus-zh-cn',
+    name: 'FSRealistic+',
+    version: '1.1.0',
+    addonVersion: '1.1.9',
+    status: 'withdrawn'
+  }
+  const result = validateCatalog({
+    schemaVersion: 1,
+    catalogVersion: '2026.08.09',
+    updatedAt: '2026-08-09T00:00:00Z',
+    patches: [gsx, retired]
+  })
+  assert.deepEqual(result.patches.map((patch) => patch.id), ['gsx-pro-zh-cn'])
+})
+
 test('keeps legacy cached catalogs readable when add-on version metadata is absent', () => {
   const result = validateCatalog(catalogWith({
-    id: 'legacy-patch',
-    name: 'Legacy Patch',
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro',
     version: '1.0.0',
     status: 'planned'
   }))
@@ -110,4 +137,27 @@ test('rejects unsafe patch fingerprint paths', () => {
     status: 'planned',
     fingerprint: [{ relativePath: '../outside.js', sha256: 'a'.repeat(64) }]
   })), /fingerprint/)
+})
+
+test('uses the domestic mirror only after a GitHub catalog timeout', async () => {
+  const calls = []
+  const catalog = catalogWith({ id: 'mirror-patch', name: 'Mirror Patch', version: '1.0.0', addonVersion: '1.0.0', status: 'planned' })
+  const fetchImpl = async (url) => {
+    calls.push(url)
+    if (calls.length === 1) {
+      const error = new Error('GitHub timed out')
+      error.code = 'ETIMEDOUT'
+      throw error
+    }
+    return { ok: true, json: async () => catalog }
+  }
+  const cacheDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'catalog-mirror-'))
+  const client = new GitHubCatalog({ cacheDirectory, fetchImpl })
+
+  const result = await client.refresh()
+
+  assert.equal(result.source, 'mirror')
+  assert.equal(calls.length, 2)
+  assert.match(calls[1], /^https:\/\/ghfast\.top\/https:\/\/raw\.githubusercontent\.com\//)
+  await fs.rm(cacheDirectory, { recursive: true, force: true })
 })

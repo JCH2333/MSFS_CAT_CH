@@ -9,6 +9,7 @@ function subscribe(channel, listener) {
 contextBridge.exposeInMainWorld('gsxTool', {
   app: {
     getInfo: () => ipcRenderer.invoke('app:get-info'),
+    quit: () => ipcRenderer.invoke('app:quit'),
     minimize: () => ipcRenderer.send('window:minimize'),
     toggleMaximize: () => ipcRenderer.send('window:toggle-maximize'),
     close: () => ipcRenderer.send('window:close')

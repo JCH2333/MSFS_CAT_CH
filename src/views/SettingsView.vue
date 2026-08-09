@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CheckCircle2, Download, ExternalLink, FolderSearch, GitBranch, MapPin, RefreshCw, RotateCw, Undo2 } from '@lucide/vue'
+import { CheckCircle2, Download, ExternalLink, FolderSearch, GitBranch, Heart, MapPin, RefreshCw, RotateCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
 
 const props = defineProps({
   appInfo: { type: Object, required: true },
@@ -11,7 +11,7 @@ const props = defineProps({
   installations: { type: Object, required: true }
 })
 
-defineEmits(['check-update', 'download-update', 'install-update', 'open-link', 'choose-target', 'clear-target'])
+defineEmits(['check-update', 'download-update', 'install-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements', 'support'])
 
 const updateLabel = computed(() => {
   const labels = {
@@ -119,9 +119,23 @@ function targetSource(patch) {
       </button>
     </div>
 
+    <section class="settings-legal">
+      <div class="settings-section-heading"><div><p class="eyebrow">AUTHOR & TERMS</p><h2>作者与使用协议</h2></div><span>软件与补丁完全免费</span></div>
+      <div class="author-panel">
+        <UserRound :size="20" />
+        <div><strong>B站 一只剑齿虎呀</strong><small>MSFS CAT CH 免费制作与维护</small></div>
+        <button class="icon-button" type="button" title="打开作者 B站主页" @click="$emit('open-link', 'https://space.bilibili.com/472309803?spm_id_from=333.1007.0.0')"><ExternalLink :size="16" /></button>
+      </div>
+      <div class="legal-actions">
+        <button class="button button-secondary" type="button" @click="$emit('show-agreements')"><ScrollText :size="16" />查看已同意的协议</button>
+        <button class="button button-secondary" type="button" @click="$emit('support')"><Heart :size="16" />赞助支持</button>
+      </div>
+      <p class="agreement-status"><CheckCircle2 :size="16" />协议状态：已同意。撤销同意请在协议窗口选择“不同意并退出”。</p>
+    </section>
+
     <div class="privacy-line">
       <CheckCircle2 :size="17" />
-      <span>不需要账号，不上传使用记录</span>
+      <span>完全免费使用，不需要账号，不上传使用记录</span>
     </div>
   </section>
 </template>

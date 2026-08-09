@@ -1,13 +1,18 @@
 <script setup>
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { Package, Settings } from '@lucide/vue'
+import { Network, Package, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
+import DistributionView from './views/DistributionView.vue'
 import SettingsView from './views/SettingsView.vue'
+import AgreementDialog from './components/AgreementDialog.vue'
+import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
+import SupportDialog from './components/SupportDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
+import { AUTHOR_URL } from './lib/agreements.mjs'
 
 const developmentBridge = {
-  app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }) },
+  app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }), quit: async () => {} },
   catalog: {
     refresh: async () => ({
       source: 'preview',
@@ -48,6 +53,11 @@ const detectedTargets = reactive({})
 const operations = reactive({})
 const updateStatus = reactive({ state: 'idle', info: null, progress: null, message: '' })
 const loadingCatalog = ref(false)
+const agreementAccepted = ref(localStorage.getItem('msfs-cat-ch-agreements') === 'accepted-v1')
+const showAgreement = ref(!agreementAccepted.value)
+const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
+const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
+const showSupport = ref(false)
 let unsubscribeProgress = () => {}
 let unsubscribeUpdates = () => {}
 
@@ -114,6 +124,28 @@ function clearTarget(patchId) {
   localStorage.setItem('patch-targets', JSON.stringify(targets))
 }
 
+function acceptAgreements() {
+  localStorage.setItem('msfs-cat-ch-agreements', 'accepted-v1')
+  agreementAccepted.value = true
+  showAgreement.value = false
+  showFreeNotice.value = true
+}
+
+function declineAgreements() {
+  localStorage.removeItem('msfs-cat-ch-agreements')
+  bridge.app.quit()
+}
+
+function acknowledgeFreeNotice() {
+  localStorage.setItem('msfs-cat-ch-free-notice', 'acknowledged-v1')
+  freeNoticeAccepted.value = true
+  showFreeNotice.value = false
+}
+
+function openAuthorPage() {
+  bridge.external.open(AUTHOR_URL)
+}
+
 async function installPatch(patch) {
   const targetPath = targets[patch.id]
     || installations[patch.id]?.targetPath
@@ -126,29 +158,6 @@ async function installPatch(patch) {
   operations[patch.id] = { busy: true, phase: 'prepare', percent: 0, message: '准备安装' }
   try {
     await bridge.patches.install(createInstallationRequest(patch), targetPath)
-    await loadInstallations()
-  } catch (error) {
-    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
-    return
-  }
-  setTimeout(() => { delete operations[patch.id] }, 1800)
-}
-
-async function importPatch(patch) {
-  const targetPath = targets[patch.id]
-    || installations[patch.id]?.targetPath
-    || detectedTargets[patch.id]?.targetPath
-  if (!targetPath) {
-    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: '请先在设置中选择安装目录' }
-    return
-  }
-
-  const sourceArchivePath = await bridge.patches.choosePackage()
-  if (!sourceArchivePath) return
-
-  operations[patch.id] = { busy: true, phase: 'import', percent: 0, message: '正在导入离线补丁包' }
-  try {
-    await bridge.patches.installFromFile(createInstallationRequest(patch), targetPath, sourceArchivePath)
     await loadInstallations()
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
@@ -225,6 +234,10 @@ onBeforeUnmount(() => {
             <Package :size="19" />
             <span>汉化补丁</span>
           </button>
+          <button type="button" :class="{ active: activeView === 'distribution' }" @click="activeView = 'distribution'">
+            <Network :size="19" />
+            <span>分流包</span>
+          </button>
           <button type="button" :class="{ active: activeView === 'settings' }" @click="activeView = 'settings'">
             <Settings :size="19" />
             <span>设置</span>
@@ -249,9 +262,13 @@ onBeforeUnmount(() => {
           :loading="loadingCatalog"
           @refresh="refreshCatalog"
           @install="installPatch"
-          @import="importPatch"
           @restore="restorePatch"
           @verify="verifyInstallations"
+          @author="bridge.external.open('https://space.bilibili.com/472309803?spm_id_from=333.1007.0.0')"
+        />
+        <DistributionView
+          v-else-if="activeView === 'distribution'"
+          @open-link="bridge.external.open"
         />
         <SettingsView
           v-else
@@ -267,8 +284,13 @@ onBeforeUnmount(() => {
           @download-update="downloadUpdate"
           @install-update="bridge.updates.install()"
           @open-link="bridge.external.open"
+          @show-agreements="showAgreement = true"
+          @support="showSupport = true"
         />
       </main>
     </div>
+    <AgreementDialog v-if="showAgreement" :required="!agreementAccepted" @accept="acceptAgreements" @decline="declineAgreements" @close="showAgreement = false" />
+    <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="showSupport = true" />
+    <SupportDialog v-if="showSupport" @close="showSupport = false" />
   </div>
 </template>

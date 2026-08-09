@@ -1,10 +1,12 @@
 const fs = require('node:fs/promises')
 const path = require('node:path')
 const { isSemanticVersion } = require('./versioning')
+const { CATALOG_RAW_URL, isTimeoutError, mirrorGitHubUrl } = require('./github-mirror')
 
-const CATALOG_URL = 'https://api.github.com/repos/JCH2333/MSFS_CAT_CH_PATCHES/contents/manifest.json'
+const CATALOG_URL = CATALOG_RAW_URL
 const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download'
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
+const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn'])
 
 function assertString(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
@@ -115,7 +117,7 @@ function validateCatalog(input) {
       fingerprint: validateFingerprint(patch.fingerprint, id),
       package: status === 'published' ? validatePackage(patch.package, id) : null
     }
-  })
+  }).filter((patch) => DISPLAYED_PATCH_IDS.has(patch.id))
 
   return {
     schemaVersion: 1,
@@ -148,22 +150,35 @@ class GitHubCatalog {
     await fs.rename(temporaryPath, this.cachePath)
   }
 
+  async fetchCatalog(url) {
+    const response = await this.fetchImpl(`${url}?t=${Date.now()}`, {
+      headers: {
+        Accept: 'application/vnd.github.raw+json',
+        'User-Agent': 'msfs-cat-ch'
+      },
+      signal: AbortSignal.timeout(15000)
+    })
+    if (!response.ok) {
+      throw new Error(`GitHub 返回 HTTP ${response.status}`)
+    }
+    return validateCatalog(await response.json())
+  }
+
   async refresh() {
     try {
-      const response = await this.fetchImpl(`${this.catalogUrl}?t=${Date.now()}`, {
-        headers: {
-          Accept: 'application/vnd.github.raw+json',
-          'User-Agent': 'msfs-cat-ch'
-        },
-        signal: AbortSignal.timeout(15000)
-      })
-      if (!response.ok) {
-        throw new Error(`GitHub 返回 HTTP ${response.status}`)
-      }
-      const catalog = validateCatalog(await response.json())
+      const catalog = await this.fetchCatalog(this.catalogUrl)
       await this.writeCache(catalog)
       return { catalog, source: 'github', stale: false, error: null }
     } catch (error) {
+      if (isTimeoutError(error)) {
+        try {
+          const catalog = await this.fetchCatalog(mirrorGitHubUrl(this.catalogUrl))
+          await this.writeCache(catalog)
+          return { catalog, source: 'mirror', stale: false, error: null }
+        } catch (mirrorError) {
+          error = new Error(`GitHub 超时，国内镜像也无法访问：${mirrorError.message}`)
+        }
+      }
       const cached = await this.readCache()
       if (cached) {
         return { catalog: cached, source: 'cache', stale: true, error: error.message }
@@ -175,6 +190,7 @@ class GitHubCatalog {
 
 module.exports = {
   CATALOG_URL,
+  DISPLAYED_PATCH_IDS,
   GitHubCatalog,
   validateCatalog
 }

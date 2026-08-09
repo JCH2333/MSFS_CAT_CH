@@ -69,6 +69,7 @@ function registerIpc() {
     platform: process.platform,
     packaged: app.isPackaged
   }))
+  ipcMain.handle('app:quit', () => { app.quit(); return true })
 
   ipcMain.on('window:minimize', () => mainWindow?.minimize())
   ipcMain.on('window:toggle-maximize', () => {
@@ -140,8 +141,15 @@ function registerIpc() {
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)
-    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !url.pathname.startsWith('/JCH2333/')) {
-      throw new Error('只允许打开项目的 GitHub 地址')
+    const isProjectGitHub = url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname.startsWith('/JCH2333/')
+    const isGsxBaiduMirror = url.protocol === 'https:'
+      && url.hostname === 'pan.baidu.com'
+      && url.pathname === '/s/1jrz3nSFc8gFhBDUFFjYaAg'
+    const isAuthorBilibili = url.protocol === 'https:'
+      && url.hostname === 'space.bilibili.com'
+      && url.pathname === '/472309803'
+    if (!isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili) {
+      throw new Error('只允许打开已配置的项目、分流或作者地址')
     }
     await shell.openExternal(url.toString())
     return true

@@ -63,3 +63,6 @@ storage/
 !**/.env.*.example
 **/MSFS_P_CH/src/main/resources/application.yml
 .local-backups/
+local-patches/
+/.agents/
+/分流包示例/
