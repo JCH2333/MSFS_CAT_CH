@@ -6,8 +6,9 @@ const path = require('node:path')
 const test = require('node:test')
 
 const project = path.resolve(__dirname, '..')
-const python = 'E:\\python\\3.12\\python.exe'
+const python = process.env.PYTHON || 'python'
 const tool = path.join(project, 'tools', 'gsx-image-localizer', 'gsx_image_localizer.py')
+const hasPillow = spawnSync(python, ['-c', 'import PIL']).status === 0
 
 function run(args, expected = 0) {
   const result = spawnSync(python, [tool, ...args], { encoding: 'utf8' })
@@ -23,7 +24,7 @@ function png(destination) {
   ].join(';'), destination])
 }
 
-test('GSX image tool backs up, detects source drift, builds and validates output', () => {
+test('GSX image tool backs up, detects source drift, builds and validates output', { skip: !hasPillow }, () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'gsx-image-localizer-'))
   const runtime = path.join(temp, 'res')
   const backups = path.join(temp, 'backups')

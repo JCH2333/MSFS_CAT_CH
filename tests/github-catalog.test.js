@@ -185,6 +185,7 @@ test('uses a two-second timeout before switching the catalog request to the dome
 })
 
 test('switches to the domestic mirror when the catalog request AbortSignal expires', async () => {
+  const keepAlive = setInterval(() => {}, 1000)
   const calls = []
   const catalog = catalogWith({ id: 'gsx-pro-zh-cn', name: 'GSX Pro', version: '1.0.0', addonVersion: '4.0.15', status: 'planned' })
   const fetchImpl = (url, { signal }) => {
@@ -197,9 +198,12 @@ test('switches to the domestic mirror when the catalog request AbortSignal expir
   const cacheDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'catalog-abort-mirror-'))
   const client = new GitHubCatalog({ cacheDirectory, fetchImpl, timeoutMs: 5 })
 
-  const result = await client.refresh()
-
-  assert.equal(result.source, 'mirror')
-  assert.equal(calls.length, 3)
-  await fs.rm(cacheDirectory, { recursive: true, force: true })
+  try {
+    const result = await client.refresh()
+    assert.equal(result.source, 'mirror')
+    assert.equal(calls.length, 3)
+  } finally {
+    clearInterval(keepAlive)
+    await fs.rm(cacheDirectory, { recursive: true, force: true })
+  }
 })
