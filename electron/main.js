@@ -17,13 +17,17 @@ function send(channel, payload) {
 }
 
 function createWindow() {
+  const windowIcon = process.env.VITE_DEV_SERVER_URL
+    ? path.join(__dirname, '../public/logo.png')
+    : path.join(__dirname, '../dist/logo.png')
+
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 760,
     minWidth: 900,
     minHeight: 620,
     title: 'MSFS_CAT_CH',
-    icon: path.join(__dirname, '../public/logo.png'),
+    icon: windowIcon,
     autoHideMenuBar: true,
     frame: false,
     show: false,
