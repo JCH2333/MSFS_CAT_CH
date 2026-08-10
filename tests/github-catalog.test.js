@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs/promises')
 const os = require('node:os')
 const path = require('node:path')
-const { GitHubCatalog, validateCatalog } = require('../electron/github-catalog')
+const { CATALOG_TIMEOUT_MS, GitHubCatalog, validateCatalog } = require('../electron/github-catalog')
 
 function catalogWith(patch) {
   return {
@@ -14,7 +14,7 @@ function catalogWith(patch) {
   }
 }
 
-test('validates and derives a GitHub release asset URL', () => {
+test('validates and derives Gitee-primary and GitHub-secondary release asset URLs', () => {
   const result = validateCatalog(catalogWith({
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro 简体中文',
@@ -33,6 +33,8 @@ test('validates and derives a GitHub release asset URL', () => {
   }))
 
   assert.equal(result.patches[0].package.downloadUrl,
+    'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES/releases/download/gsx-pro-v1.0.0/gsx-pro-zh-cn.zip')
+  assert.equal(result.patches[0].package.githubDownloadUrl,
     'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/gsx-pro-v1.0.0/gsx-pro-zh-cn.zip')
   assert.equal(result.patches[0].addonVersion, '4.0.14')
   assert.deepEqual(result.patches[0].fingerprint, [{ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }])
@@ -151,13 +153,13 @@ test('rejects unsafe patch fingerprint paths', () => {
   })), /fingerprint/)
 })
 
-test('uses the domestic mirror only after a GitHub catalog timeout', async () => {
+test('uses GitHub after Gitee fails, then the domestic mirror after a GitHub timeout', async () => {
   const calls = []
   const catalog = catalogWith({ id: 'mirror-patch', name: 'Mirror Patch', version: '1.0.0', addonVersion: '1.0.0', status: 'planned' })
   const fetchImpl = async (url) => {
     calls.push(url)
-    if (calls.length === 1) {
-      const error = new Error('GitHub timed out')
+    if (calls.length < 3) {
+      const error = new Error('source timed out')
       error.code = 'ETIMEDOUT'
       throw error
     }
@@ -169,7 +171,35 @@ test('uses the domestic mirror only after a GitHub catalog timeout', async () =>
   const result = await client.refresh()
 
   assert.equal(result.source, 'mirror')
-  assert.equal(calls.length, 2)
-  assert.match(calls[1], /^https:\/\/ghfast\.top\/https:\/\/raw\.githubusercontent\.com\//)
+  assert.equal(calls.length, 3)
+  assert.match(calls[0], /^https:\/\/gitee\.com\/ljd123456\//)
+  assert.match(calls[1], /^https:\/\/raw\.githubusercontent\.com\//)
+  assert.match(calls[2], /^https:\/\/ghfast\.top\/https:\/\/raw\.githubusercontent\.com\//)
+  await fs.rm(cacheDirectory, { recursive: true, force: true })
+})
+
+test('uses a two-second timeout before switching the catalog request to the domestic mirror', () => {
+  assert.equal(CATALOG_TIMEOUT_MS, 2000)
+  const client = new GitHubCatalog({ cacheDirectory: path.join(os.tmpdir(), 'catalog-timeout-test') })
+  assert.equal(client.timeoutMs, 2000)
+})
+
+test('switches to the domestic mirror when the catalog request AbortSignal expires', async () => {
+  const calls = []
+  const catalog = catalogWith({ id: 'gsx-pro-zh-cn', name: 'GSX Pro', version: '1.0.0', addonVersion: '4.0.15', status: 'planned' })
+  const fetchImpl = (url, { signal }) => {
+    calls.push(url)
+    if (calls.length > 2) return Promise.resolve({ ok: true, json: async () => catalog })
+    return new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+    })
+  }
+  const cacheDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'catalog-abort-mirror-'))
+  const client = new GitHubCatalog({ cacheDirectory, fetchImpl, timeoutMs: 5 })
+
+  const result = await client.refresh()
+
+  assert.equal(result.source, 'mirror')
+  assert.equal(calls.length, 3)
   await fs.rm(cacheDirectory, { recursive: true, force: true })
 })

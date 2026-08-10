@@ -1,13 +1,15 @@
 const fs = require('node:fs/promises')
 const path = require('node:path')
 const { isSemanticVersion } = require('./versioning')
-const { CATALOG_RAW_URL, isTimeoutError, mirrorGitHubUrl } = require('./github-mirror')
+const { CATALOG_RAW_URL, GITEE_CATALOG_RAW_URL, GITEE_PATCH_RELEASE_BASE, isTimeoutError, mirrorGitHubUrl } = require('./github-mirror')
 
-const CATALOG_URL = CATALOG_RAW_URL
+const CATALOG_URL = GITEE_CATALOG_RAW_URL
+const GITHUB_CATALOG_URL = CATALOG_RAW_URL
 const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download'
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
 const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn', 'gsx-pro-zh-cn-voice'])
 const TARGET_KINDS = new Set(['addon', 'gsx-audio'])
+const CATALOG_TIMEOUT_MS = 2000
 
 function assertString(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
@@ -34,7 +36,8 @@ function validatePackage(packageInfo, patchId) {
     sha256,
     size: Number.isFinite(packageInfo.size) && packageInfo.size >= 0 ? packageInfo.size : 0,
     contentRoot: typeof packageInfo.contentRoot === 'string' ? packageInfo.contentRoot.trim() : '',
-    downloadUrl: `${PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`
+    downloadUrl: `${GITEE_PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
+    githubDownloadUrl: `${PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`
   }
 }
 
@@ -130,11 +133,12 @@ function validateCatalog(input) {
 }
 
 class GitHubCatalog {
-  constructor({ cacheDirectory, fetchImpl = globalThis.fetch, catalogUrl = CATALOG_URL }) {
+  constructor({ cacheDirectory, fetchImpl = globalThis.fetch, catalogUrl = CATALOG_URL, timeoutMs = CATALOG_TIMEOUT_MS }) {
     this.cacheDirectory = cacheDirectory
     this.cachePath = path.join(cacheDirectory, 'patch-catalog.json')
     this.fetchImpl = fetchImpl
     this.catalogUrl = catalogUrl
+    this.timeoutMs = timeoutMs
   }
 
   async readCache() {
@@ -158,10 +162,10 @@ class GitHubCatalog {
         Accept: 'application/vnd.github.raw+json',
         'User-Agent': 'msfs-cat-ch'
       },
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(this.timeoutMs)
     })
     if (!response.ok) {
-      throw new Error(`GitHub 返回 HTTP ${response.status}`)
+      throw new Error(`下载源返回 HTTP ${response.status}`)
     }
     return validateCatalog(await response.json())
   }
@@ -170,15 +174,23 @@ class GitHubCatalog {
     try {
       const catalog = await this.fetchCatalog(this.catalogUrl)
       await this.writeCache(catalog)
-      return { catalog, source: 'github', stale: false, error: null }
-    } catch (error) {
-      if (isTimeoutError(error)) {
-        try {
-          const catalog = await this.fetchCatalog(mirrorGitHubUrl(this.catalogUrl))
-          await this.writeCache(catalog)
-          return { catalog, source: 'mirror', stale: false, error: null }
-        } catch (mirrorError) {
-          error = new Error(`GitHub 超时，国内镜像也无法访问：${mirrorError.message}`)
+      return { catalog, source: 'gitee', stale: false, error: null }
+    } catch (giteeError) {
+      let error = giteeError
+      try {
+        const catalog = await this.fetchCatalog(GITHUB_CATALOG_URL)
+        await this.writeCache(catalog)
+        return { catalog, source: 'github', stale: false, error: null }
+      } catch (githubError) {
+        error = githubError
+        if (isTimeoutError(githubError)) {
+          try {
+            const catalog = await this.fetchCatalog(mirrorGitHubUrl(GITHUB_CATALOG_URL))
+            await this.writeCache(catalog)
+            return { catalog, source: 'mirror', stale: false, error: null }
+          } catch (mirrorError) {
+            error = new Error(`Gitee 不可用，GitHub 超时，国内镜像也无法访问：${mirrorError.message}`)
+          }
         }
       }
       const cached = await this.readCache()
@@ -192,6 +204,8 @@ class GitHubCatalog {
 
 module.exports = {
   CATALOG_URL,
+  GITHUB_CATALOG_URL,
+  CATALOG_TIMEOUT_MS,
   DISPLAYED_PATCH_IDS,
   GitHubCatalog,
   validateCatalog

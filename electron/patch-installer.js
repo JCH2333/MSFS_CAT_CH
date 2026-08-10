@@ -5,9 +5,10 @@ const https = require('node:https')
 const os = require('node:os')
 const path = require('node:path')
 const extractZip = require('extract-zip')
-const { isOfficialPatchReleaseUrl, isTimeoutError, isTrustedMirrorUrl, mirrorGitHubUrl } = require('./github-mirror')
+const { githubFallbackForGiteePatchUrl, isOfficialGiteePatchReleaseUrl, isOfficialPatchReleaseUrl, isTimeoutError, isTrustedMirrorUrl, mirrorGitHubUrl } = require('./github-mirror')
 
 const ALLOWED_DOWNLOAD_HOSTS = new Set([
+  'gitee.com',
   'github.com',
   'objects.githubusercontent.com',
   'release-assets.githubusercontent.com'
@@ -309,6 +310,13 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
 }
 
 async function downloadWithMirrorFallback(url, destination, onProgress, download = downloadToFile) {
+  if (isOfficialGiteePatchReleaseUrl(url)) {
+    try {
+      return await download(url, destination, (progress) => onProgress?.({ ...progress, source: 'gitee' }))
+    } catch {
+      return downloadWithMirrorFallback(githubFallbackForGiteePatchUrl(url), destination, onProgress, download)
+    }
+  }
   try {
     return await download(url, destination, (progress) => onProgress?.({ ...progress, source: 'github' }))
   } catch (error) {
@@ -519,7 +527,7 @@ class PatchInstaller {
             percent,
             received,
             total,
-            message: source === 'mirror' ? 'GitHub 超时，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
+            message: source === 'gitee' ? '正在从 Gitee 下载补丁' : source === 'mirror' ? 'GitHub 超时，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
           })
         })
       }

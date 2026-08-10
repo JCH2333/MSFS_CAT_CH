@@ -1,5 +1,8 @@
 const PATCH_RELEASE_PREFIX = '/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/'
 const CATALOG_RAW_URL = 'https://raw.githubusercontent.com/JCH2333/MSFS_CAT_CH_PATCHES/main/manifest.json'
+const GITEE_PATCH_RELEASE_PREFIX = '/ljd123456/MSFS_CAT_CH_PATCHES/releases/download/'
+const GITEE_CATALOG_RAW_URL = 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES/raw/main/manifest.json'
+const GITEE_PATCH_RELEASE_BASE = 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES/releases/download'
 const MIRROR_ORIGIN = 'https://ghfast.top/'
 
 function isOfficialPatchReleaseUrl(input) {
@@ -9,6 +12,21 @@ function isOfficialPatchReleaseUrl(input) {
   } catch {
     return false
   }
+}
+
+function isOfficialGiteePatchReleaseUrl(input) {
+  try {
+    const url = new URL(input)
+    return url.protocol === 'https:' && url.hostname === 'gitee.com' && url.pathname.startsWith(GITEE_PATCH_RELEASE_PREFIX)
+  } catch {
+    return false
+  }
+}
+
+function githubFallbackForGiteePatchUrl(input) {
+  const url = new URL(input)
+  if (!isOfficialGiteePatchReleaseUrl(url)) throw new Error('只能为官方 Gitee 补丁地址生成 GitHub 备用地址')
+  return `https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/${url.pathname.slice(GITEE_PATCH_RELEASE_PREFIX.length)}`
 }
 
 function mirrorGitHubUrl(input) {
@@ -35,7 +53,11 @@ function isTimeoutError(error) {
 
 module.exports = {
   CATALOG_RAW_URL,
+  GITEE_CATALOG_RAW_URL,
+  GITEE_PATCH_RELEASE_BASE,
   MIRROR_ORIGIN,
+  githubFallbackForGiteePatchUrl,
+  isOfficialGiteePatchReleaseUrl,
   isOfficialPatchReleaseUrl,
   isTimeoutError,
   isTrustedMirrorUrl,

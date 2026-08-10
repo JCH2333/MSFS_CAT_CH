@@ -34,6 +34,6 @@ The local operation that reinstates original files from an Installation Record a
 
 - Vue renders the local desktop interface.
 - Electron owns filesystem, download, verification, backup, install, restore, and software-update operations.
-- GitHub is the only network dependency.
-- The application remains usable with cached Patch Catalog data when GitHub is temporarily unavailable.
+- Public Gitee is the primary Patch Catalog and Patch Package source; public GitHub is the secondary source and `ghfast.top` is a GitHub timeout fallback.
+- The application remains usable with cached Patch Catalog data when distribution hosts are temporarily unavailable.
 - There is no login, activation, telemetry, feedback upload, queue, watermark, database, Redis, WebSocket, or custom server.
