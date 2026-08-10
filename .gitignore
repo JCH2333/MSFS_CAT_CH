@@ -64,5 +64,8 @@ storage/
 **/MSFS_P_CH/src/main/resources/application.yml
 .local-backups/
 local-patches/
+/语音包/
 /.agents/
+tools/gsx-image-localizer/output/
+tools/gsx-image-localizer/cache/
 /分流包示例/

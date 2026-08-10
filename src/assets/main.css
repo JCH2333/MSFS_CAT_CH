@@ -284,6 +284,10 @@ button { color: inherit; }
 .distribution-source-card strong { font-size: 12px; }
 .distribution-source-card small { color: var(--text-muted); font-size: 10px; }
 .distribution-source-card > span { padding: 3px 6px; border: 1px solid #484940; color: var(--text-muted); font-size: 10px; }
+.qq-group-card { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 15px; padding: 16px; border: 1px solid rgba(98, 214, 163, 0.34); background: linear-gradient(110deg, rgba(98, 214, 163, 0.11), var(--surface) 52%); }
+.qq-group-card > img { width: 58px; height: 58px; border: 1px solid rgba(98, 214, 163, 0.42); border-radius: 15px; background: #fff; object-fit: cover; }
+.qq-group-copy { min-width: 0; }.qq-group-copy .eyebrow { margin-bottom: 3px; color: var(--signal); }.qq-group-copy strong { display: block; font-size: 14px; }.qq-group-copy small { display: block; margin-top: 3px; color: var(--text-primary); font: 600 11px/1.4 "Bahnschrift", "Microsoft YaHei UI", sans-serif; letter-spacing: .04em; }.qq-group-copy > p:last-child { margin: 7px 0 0; color: var(--text-muted); font-size: 10px; line-height: 1.55; }.qq-group-join { min-width: 124px; }
+.qq-group-dialog { position: relative; display: flex; width: min(430px, 100%); flex-direction: column; align-items: center; padding: 24px; border: 1px solid rgba(98, 214, 163, 0.5); border-radius: 7px; background: #1d1e1b; box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5); text-align: center; }.qq-group-dialog-heading { display: flex; align-items: center; width: 100%; gap: 10px; text-align: left; }.qq-group-dialog-heading > svg { color: var(--signal); }.qq-group-dialog-heading .eyebrow { margin-bottom: 3px; }.qq-group-dialog h2 { margin: 0; font-size: 19px; }.qq-group-dialog > img { width: min(280px, 100%); margin: 18px 0 13px; border: 1px solid var(--border-strong); border-radius: 4px; }.qq-group-dialog > p { margin: 0 0 15px; color: var(--text-secondary); font-size: 11px; }
 .distribution-steps ol { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); }
 .distribution-steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 11px; padding: 13px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
 .distribution-steps li:last-child { border-bottom: 0; }
@@ -315,5 +319,6 @@ button { color: inherit; }
   .settings-band { align-items: flex-start; flex-direction: column; }
   .target-settings-grid { grid-template-columns: 1fr; }
   .distribution-source-grid { grid-template-columns: 1fr; }
+  .qq-group-card { grid-template-columns: 52px minmax(0, 1fr); }.qq-group-card > img { width: 52px; height: 52px; }.qq-group-join { grid-column: 1 / -1; width: 100%; }
   .modal-backdrop { padding: 12px; }.agreement-dialog { padding: 18px; }.agreement-text { height: 270px; }
 }

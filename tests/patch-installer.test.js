@@ -356,6 +356,45 @@ test('backs up fingerprinted files before patch download begins', async () => {
   await fs.rm(root, { recursive: true, force: true })
 })
 
+test('backs up GSX original voice files before download and restores them after installation', async () => {
+  const root = await temporaryDirectory('gsx-audio-backup-')
+  const target = path.join(root, 'GSX')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'voice.zip')
+  const events = []
+  await fs.mkdir(path.join(target, 'sounds'), { recursive: true })
+  await fs.writeFile(path.join(target, 'sounds', 'boarding.wav'), 'original voice')
+  await fs.mkdir(path.join(source, 'sounds'), { recursive: true })
+  await fs.writeFile(path.join(source, 'sounds', 'boarding.wav'), 'localized voice')
+  await createZip(source, archive)
+
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  patch.id = 'gsx-pro-zh-cn-voice'
+  patch.targetKind = 'gsx-audio'
+  patch.fingerprint = [{ relativePath: 'sounds/boarding.wav', sha256: await sha256(path.join(source, 'sounds', 'boarding.wav')) }]
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    onProgress: (event) => events.push(event),
+    download: async (_url, destination) => {
+      const versions = await fs.readdir(path.join(userData, 'backups', patch.id))
+      const backup = await fs.readFile(path.join(userData, 'backups', patch.id, versions[0], 'sounds', 'boarding.wav'), 'utf8')
+      assert.equal(backup, 'original voice')
+      await fs.copyFile(archive, destination)
+    }
+  })
+
+  await installer.install(patch, target)
+  assert.equal(events[0].phase, 'backup')
+  assert.equal(await fs.readFile(path.join(target, 'sounds', 'boarding.wav'), 'utf8'), 'localized voice')
+
+  const restored = await installer.restore(patch.id)
+  assert.equal(restored.restored, true)
+  assert.equal(await fs.readFile(path.join(target, 'sounds', 'boarding.wav'), 'utf8'), 'original voice')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
 test('installs a checksum-verified local offline package without downloading', async () => {
   const root = await temporaryDirectory('gsx-installer-offline-')
   const target = path.join(root, 'target')

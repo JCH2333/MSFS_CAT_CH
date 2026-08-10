@@ -1,9 +1,17 @@
 <script setup>
-import { CheckCircle2, Download, ExternalLink, FileArchive, Network, ShieldCheck } from '@lucide/vue'
+import { ref } from 'vue'
+import { CheckCircle2, Download, ExternalLink, FileArchive, MessageCircleMore, Network, QrCode, ShieldCheck, X } from '@lucide/vue'
 
-defineEmits(['open-link'])
+const emit = defineEmits(['open-link'])
 
 const baiduShareUrl = 'https://pan.baidu.com/s/1jrz3nSFc8gFhBDUFFjYaAg?pwd=qibx'
+const qqGroupUrl = 'https://qun.qq.com/join.html?gc=1101733374'
+const showGroupQr = ref(false)
+
+function joinQqGroup() {
+  showGroupQr.value = true
+  emit('open-link', qqGroupUrl)
+}
 </script>
 
 <template>
@@ -55,17 +63,23 @@ const baiduShareUrl = 'https://pan.baidu.com/s/1jrz3nSFc8gFhBDUFFjYaAg?pwd=qibx'
     <section class="distribution-section">
       <div class="settings-section-heading">
         <div>
-          <p class="eyebrow">MORE SOURCES</p>
-          <h2>后续分发</h2>
+          <p class="eyebrow">QQ COMMUNITY</p>
+          <h2>QQ群分流</h2>
         </div>
       </div>
-      <div class="distribution-source-grid">
-        <article class="distribution-source-card">
-          <Network :size="19" />
-          <div><strong>QQ群分流</strong><small>暂未开放，后续将在官方群提供。</small></div>
-          <span>筹备中</span>
-        </article>
-      </div>
+      <article class="qq-group-card">
+        <img src="/qq-group-avatar.png" alt="MSFS CAT CH内测群头像" />
+        <div class="qq-group-copy">
+          <p class="eyebrow">BETA COMMUNITY</p>
+          <strong>MSFS CAT CH内测群</strong>
+          <small>群号：1101733374</small>
+          <p>获取分流资源、内测信息与使用交流。点击后将打开 QQ 入群页面，并展示扫码二维码。</p>
+        </div>
+        <button class="button button-primary qq-group-join" type="button" @click="joinQqGroup">
+          <MessageCircleMore :size="17" />
+          加入内测群
+        </button>
+      </article>
     </section>
 
     <section class="distribution-section distribution-steps">
@@ -82,5 +96,15 @@ const baiduShareUrl = 'https://pan.baidu.com/s/1jrz3nSFc8gFhBDUFFjYaAg?pwd=qibx'
       </ol>
       <div class="distribution-note"><CheckCircle2 :size="17" /> 只使用本页列出的来源，避免运行来源不明的可执行文件。</div>
     </section>
+
+    <div v-if="showGroupQr" class="modal-backdrop" role="presentation" @click.self="showGroupQr = false">
+      <section class="qq-group-dialog" role="dialog" aria-modal="true" aria-labelledby="qq-group-dialog-title">
+        <button class="dialog-icon-close" type="button" title="关闭" @click="showGroupQr = false"><X :size="18" /></button>
+        <div class="qq-group-dialog-heading"><QrCode :size="24" /><div><p class="eyebrow">QQ GROUP INVITATION</p><h2 id="qq-group-dialog-title">MSFS CAT CH内测群</h2></div></div>
+        <img src="/qq-group-1101733374.jpg" alt="MSFS CAT CH内测群二维码，群号1101733374" />
+        <p>使用 QQ 扫码加入，或点击下方按钮打开入群页面。</p>
+        <button class="button button-primary" type="button" @click="emit('open-link', qqGroupUrl)"><ExternalLink :size="16" />打开 QQ 入群页面</button>
+      </section>
+    </div>
   </section>
 </template>

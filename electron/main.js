@@ -4,7 +4,7 @@ const path = require('node:path')
 const { GitHubCatalog } = require('./github-catalog')
 const { detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
-const { UpdateCheckTimeoutError, checkForUpdatesWithFallback, downloadUpdate } = require('./software-updater')
+const { UpdateCheckTimeoutError, checkForUpdatesWithFallback, downloadUpdate, resolveGiteeSoftwareFeed } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
@@ -63,6 +63,15 @@ function configureUpdater() {
   })
 }
 
+function checkForSoftwareUpdates() {
+  return checkForUpdatesWithFallback({
+    updater: autoUpdater,
+    resolveGiteeFeed: () => resolveGiteeSoftwareFeed(),
+    onGiteeFallback: () => send('updates:status', { state: 'checking' }),
+    onDirectFallback: () => send('updates:status', { state: 'checking-direct' })
+  })
+}
+
 function registerIpc() {
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),
@@ -82,9 +91,12 @@ function registerIpc() {
   ipcMain.handle('patch:list-installations', () => installer.listInstallations())
   ipcMain.handle('patch:verify-installations', () => installer.verifyInstallations())
   ipcMain.handle('patch:reconcile-installations', (_event, { patches, targetPaths }) => installer.reconcileInstallations(patches, targetPaths))
-  ipcMain.handle('patch:detect-targets', (_event, patches) => detectPatchTargets(patches, {
+  ipcMain.handle('patch:detect-targets', async (_event, patches) => detectPatchTargets(patches, {
     appData: app.getPath('appData'),
-    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')
+    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local'),
+    knownAudioTargets: Object.values(await installer.listInstallations())
+      .filter((installation) => typeof installation?.targetPath === 'string' && installation.targetPath)
+      .map((installation) => ({ targetPath: installation.targetPath, source: '已记录的 GSX 语音目录' }))
   }))
   ipcMain.handle('patch:choose-target', async (_event, options = {}) => {
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -111,10 +123,7 @@ function registerIpc() {
       return { state: 'development', version: app.getVersion() }
     }
     try {
-      return await checkForUpdatesWithFallback({
-        updater: autoUpdater,
-        onDirectFallback: () => send('updates:status', { state: 'checking-direct' })
-      })
+      return await checkForSoftwareUpdates()
     } catch (error) {
       if (error instanceof UpdateCheckTimeoutError) {
         return {
@@ -148,7 +157,11 @@ function registerIpc() {
     const isAuthorBilibili = url.protocol === 'https:'
       && url.hostname === 'space.bilibili.com'
       && url.pathname === '/472309803'
-    if (!isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili) {
+    const isQqGroupJoin = url.protocol === 'https:'
+      && url.hostname === 'qun.qq.com'
+      && url.pathname === '/join.html'
+      && url.searchParams.get('gc') === '1101733374'
+    if (!isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili && !isQqGroupJoin) {
       throw new Error('只允许打开已配置的项目、分流或作者地址')
     }
     await shell.openExternal(url.toString())
@@ -167,7 +180,7 @@ app.whenReady().then(() => {
   registerIpc()
   createWindow()
   if (app.isPackaged) {
-    setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 1500)
+    setTimeout(() => checkForSoftwareUpdates().catch(() => {}), 1500)
   }
 
   app.on('activate', () => {

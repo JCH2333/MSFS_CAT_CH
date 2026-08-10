@@ -54,3 +54,35 @@ test('does not mistake a package root named community for the Community folder',
   assert.equal(targets['fsrealistic-plus-zh-cn'].targetPath, path.join(packageRoot, 'Community', 'rkapps-fsrealistic'))
   await fs.rm(root, { recursive: true, force: true })
 })
+
+test('detects the GSX audio target from an Addon Manager installation root', async () => {
+  const root = await temporaryDirectory('gsx-audio-targets-')
+  const addonManagerRoot = path.join(root, 'Addon Manager')
+  const gsxRoot = path.join(addonManagerRoot, 'couatl', 'GSX')
+  await fs.mkdir(path.join(gsxRoot, 'sounds'), { recursive: true })
+
+  const targets = await detectPatchTargets([
+    { id: 'gsx-pro-zh-cn-voice', targetKind: 'gsx-audio' }
+  ], {
+    audioRoots: [{ rootPath: addonManagerRoot, source: 'FSDreamTeam Addon Manager' }]
+  })
+
+  assert.equal(targets['gsx-pro-zh-cn-voice'].source, 'FSDreamTeam Addon Manager')
+  assert.equal(targets['gsx-pro-zh-cn-voice'].targetPath, gsxRoot)
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('does not detect an Addon Manager folder without the GSX sounds directory', async () => {
+  const root = await temporaryDirectory('gsx-audio-missing-sounds-')
+  const addonManagerRoot = path.join(root, 'Addon Manager')
+  await fs.mkdir(path.join(addonManagerRoot, 'couatl', 'GSX'), { recursive: true })
+
+  const targets = await detectPatchTargets([
+    { id: 'gsx-pro-zh-cn-voice', targetKind: 'gsx-audio' }
+  ], {
+    audioRoots: [{ rootPath: addonManagerRoot, source: 'FSDreamTeam Addon Manager' }]
+  })
+
+  assert.equal(targets['gsx-pro-zh-cn-voice'], undefined)
+  await fs.rm(root, { recursive: true, force: true })
+})

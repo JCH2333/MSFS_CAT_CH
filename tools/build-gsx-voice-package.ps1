@@ -20,6 +20,72 @@ function Get-RelativePath([string]$Root, [string]$FilePath) {
   return $fullPath.Substring($rootPath.Length + 1)
 }
 
+function Write-WavChunk([IO.BinaryWriter]$Writer, [string]$ChunkId, [byte[]]$Data) {
+  $idBytes = [Text.Encoding]::ASCII.GetBytes($ChunkId)
+  if ($idBytes.Length -ne 4) { throw "WAV chunk ID must contain exactly four ASCII characters: $ChunkId" }
+  $Writer.Write($idBytes)
+  $Writer.Write([uint32]$Data.Length)
+  $Writer.Write($Data)
+  if (($Data.Length % 2) -eq 1) { $Writer.Write([byte]0) }
+}
+
+function Normalize-WavFile([string]$SourcePath, [string]$DestinationPath) {
+  $bytes = [IO.File]::ReadAllBytes($SourcePath)
+  if ($bytes.Length -lt 12 -or
+      [Text.Encoding]::ASCII.GetString($bytes, 0, 4) -ne 'RIFF' -or
+      [Text.Encoding]::ASCII.GetString($bytes, 8, 4) -ne 'WAVE') {
+    throw "Invalid RIFF/WAVE file: $SourcePath"
+  }
+
+  $position = 12
+  $fmt = $null
+  $data = $null
+  while ($position + 8 -le $bytes.Length) {
+    $chunkId = [Text.Encoding]::ASCII.GetString($bytes, $position, 4)
+    $chunkSize = [BitConverter]::ToUInt32($bytes, $position + 4)
+    $chunkStart = $position + 8
+    $chunkEnd = [int64]$chunkStart + $chunkSize
+    if ($chunkEnd -gt $bytes.Length) {
+      throw "WAV chunk exceeds file length: $SourcePath"
+    }
+    $chunkData = [byte[]]$bytes[$chunkStart..($chunkEnd - 1)]
+    if ($chunkId -eq 'fmt ' -and $null -eq $fmt) { $fmt = $chunkData }
+    if ($chunkId -eq 'data' -and $null -eq $data) { $data = $chunkData }
+    $position = $chunkEnd
+    if (($chunkSize % 2) -eq 1) { $position++ }
+  }
+
+  if ($null -eq $fmt -or $null -eq $data) {
+    throw "WAV file is missing fmt or data chunk: $SourcePath"
+  }
+
+  $payload = New-Object IO.MemoryStream
+  $writer = New-Object IO.BinaryWriter($payload, [Text.Encoding]::ASCII, $true)
+  try {
+    $writer.Write([Text.Encoding]::ASCII.GetBytes('WAVE'))
+    Write-WavChunk $writer 'fmt ' $fmt
+    Write-WavChunk $writer 'data' $data
+    $writer.Flush()
+    $riffSize = [uint32]$payload.Length
+    $output = New-Object IO.MemoryStream
+    $outputWriter = New-Object IO.BinaryWriter($output, [Text.Encoding]::ASCII, $true)
+    try {
+      $outputWriter.Write([Text.Encoding]::ASCII.GetBytes('RIFF'))
+      $outputWriter.Write($riffSize)
+      $payload.Position = 0
+      $payload.CopyTo($output)
+      $outputWriter.Flush()
+      [IO.File]::WriteAllBytes($DestinationPath, $output.ToArray())
+    } finally {
+      $outputWriter.Dispose()
+      $output.Dispose()
+    }
+  } finally {
+    $writer.Dispose()
+    $payload.Dispose()
+  }
+}
+
 $source = (Resolve-Path -LiteralPath $SourceRoot).Path
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 $work = Join-Path ([IO.Path]::GetTempPath()) ('msfs-cat-ch-gsx-voice-' + [guid]::NewGuid().ToString('N'))
@@ -42,7 +108,7 @@ try {
     $relative = Get-RelativePath $source $file.FullName
     $destination = Join-Path $soundsRoot $relative
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
-    Copy-Item -LiteralPath $file.FullName -Destination $destination
+    Normalize-WavFile $file.FullName $destination
   }
 
   if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force }

@@ -16,6 +16,7 @@ const props = defineProps({
 defineEmits(['install', 'import', 'restore', 'author'])
 
 const published = computed(() => props.patch.status === 'published')
+const isNetworkAuthored = computed(() => props.patch.id === 'gsx-pro-zh-cn-voice')
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
 const needsInstall = computed(() => !props.installation || versionComparison.value > 0 || props.installationCheck?.state !== 'intact')
 const status = computed(() => {
@@ -61,7 +62,11 @@ const packageSize = computed(() => {
       </div>
 
       <p class="patch-summary">{{ patch.summary || 'GSX 简体中文补丁' }}</p>
-      <div class="patch-free-note"><span>补丁完全免费</span><button type="button" @click="$emit('author')"><UserRound :size="13" />B站 一只剑齿虎呀</button></div>
+      <div class="patch-free-note">
+        <span>补丁完全免费</span>
+        <span v-if="isNetworkAuthored"><UserRound :size="13" />语音作者：网络作者</span>
+        <button v-else type="button" @click="$emit('author')"><UserRound :size="13" />B站 一只剑齿虎呀</button>
+      </div>
 
       <div class="patch-meta">
         <span v-for="item in patch.compatibility" :key="item">{{ item }}</span>
@@ -85,7 +90,7 @@ const packageSize = computed(() => {
       <div class="action-buttons">
         <button v-if="installation && installation.source !== 'detected'" class="button button-secondary" type="button" :disabled="busy" @click="$emit('restore', patch)">
           <RotateCcw :size="17" />
-          还原
+          {{ patch.targetKind === 'gsx-audio' ? '还原原始语音' : '还原' }}
         </button>
         <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />
@@ -95,7 +100,7 @@ const packageSize = computed(() => {
           <FolderUp :size="17" />
           导入离线包
         </button>
-        <button class="text-action" type="button" @click="$emit('author')"><Heart :size="14" />完全免费制作，关注作者</button>
+        <button v-if="!isNetworkAuthored" class="text-action" type="button" @click="$emit('author')"><Heart :size="14" />完全免费制作，关注作者</button>
       </div>
     </div>
   </article>

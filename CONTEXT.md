@@ -8,7 +8,7 @@ MSFS_CAT_CH is a Windows desktop application that installs, updates, verifies, a
 
 ### Software Release
 
-An installable desktop application version published in `JCH2333/MSFS_CAT_CH` GitHub Releases. Avoid: OTA record, app package stored by our server.
+An installable desktop application version published to the matching Gitee and GitHub Releases. The client checks the Gitee release first and falls back to GitHub. Avoid: OTA record, app package stored by our server.
 
 ### Patch Catalog
 
@@ -35,5 +35,6 @@ The local operation that reinstates original files from an Installation Record a
 - Vue renders the local desktop interface.
 - Electron owns filesystem, download, verification, backup, install, restore, and software-update operations.
 - Public Gitee is the primary Patch Catalog and Patch Package source; public GitHub is the secondary source and `ghfast.top` is a GitHub timeout fallback.
+- Software updates resolve the newest public Gitee Release into an `electron-updater` generic feed, then fall back to the GitHub Release provider if Gitee is unavailable. Each Gitee Software Release must include `latest.yml`, the installer, and its `.blockmap` asset.
 - The application remains usable with cached Patch Catalog data when distribution hosts are temporarily unavailable.
 - There is no login, activation, telemetry, feedback upload, queue, watermark, database, Redis, WebSocket, or custom server.

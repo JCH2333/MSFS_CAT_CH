@@ -502,16 +502,28 @@ class PatchInstaller {
 
     try {
       const fingerprints = fingerprintFiles(patch)
+      if (patch.targetKind === 'gsx-audio' && fingerprints.length === 0) {
+        throw new Error('GSX 中文语音包缺少文件清单，无法在下载前安全备份原始语音')
+      }
       if (fingerprints.length > 0) {
         await fsp.mkdir(backupDirectory, { recursive: true })
-        for (const file of fingerprints) {
+        if (patch.targetKind === 'gsx-audio') {
+          this.emit(patchId, { phase: 'backup', percent: 0, message: `正在备份原始语音 0/${fingerprints.length}` })
+        }
+        for (let index = 0; index < fingerprints.length; index += 1) {
+          const file = fingerprints[index]
           const destination = ensureWithin(target, path.join(target, file.relativePath))
           const existingStats = await fsp.stat(destination).catch(() => null)
-          if (!existingStats?.isFile()) continue
-          const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, file.relativePath))
-          await fsp.mkdir(path.dirname(backupPath), { recursive: true })
-          await fsp.copyFile(destination, backupPath)
-          preparedBackups.add(file.relativePath)
+          if (existingStats?.isFile()) {
+            const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, file.relativePath))
+            await fsp.mkdir(path.dirname(backupPath), { recursive: true })
+            await fsp.copyFile(destination, backupPath)
+            preparedBackups.add(file.relativePath)
+          }
+          if (patch.targetKind === 'gsx-audio' && (index === fingerprints.length - 1 || index % 40 === 0)) {
+            const percent = Math.round(((index + 1) / fingerprints.length) * 12)
+            this.emit(patchId, { phase: 'backup', percent, message: `正在备份原始语音 ${index + 1}/${fingerprints.length}` })
+          }
         }
       }
       if (localArchivePath) {
@@ -519,9 +531,11 @@ class PatchInstaller {
         await fsp.copyFile(localArchivePath, archivePath)
         this.emit(patchId, { phase: 'import', percent: 55, message: '离线补丁包已导入' })
       } else {
-        this.emit(patchId, { phase: 'download', percent: 0, message: '正在下载补丁' })
+        this.emit(patchId, { phase: 'download', percent: patch.targetKind === 'gsx-audio' ? 12 : 0, message: '正在下载补丁' })
         await this.download(patch.package.downloadUrl, archivePath, ({ received, total, source }) => {
-          const percent = total > 0 ? Math.min(55, Math.round((received / total) * 55)) : 0
+          const percent = total > 0
+            ? Math.min(55, (patch.targetKind === 'gsx-audio' ? 12 : 0) + Math.round((received / total) * (patch.targetKind === 'gsx-audio' ? 43 : 55)))
+            : patch.targetKind === 'gsx-audio' ? 12 : 0
           this.emit(patchId, {
             phase: 'download',
             percent,

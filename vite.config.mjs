@@ -1,18 +1,8 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { rm } from 'node:fs/promises'
-import path from 'node:path'
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    {
-      name: 'exclude-legacy-local-support-qr',
-      async closeBundle() {
-        await rm(path.resolve('dist/wechat-support.png'), { force: true })
-      }
-    }
-  ],
+  plugins: [vue()],
   base: './',
   server: {
     host: '127.0.0.1',

@@ -27,7 +27,7 @@ defineEmits(['refresh', 'install', 'import', 'restore', 'verify', 'author'])
         <div class="source-status" :data-offline="catalogState.source !== 'github'">
           <Wifi v-if="catalogState.source === 'github'" :size="15" />
           <WifiOff v-else :size="15" />
-          <span>{{ catalogState.source === 'github' ? 'GitHub 已同步' : catalogState.source === 'cache' ? '使用本地缓存' : '等待同步' }}</span>
+          <span>{{ catalogState.source === 'github' ? 'GitHub 已同步' : catalogState.source === 'mirror' ? '国内镜像已同步' : catalogState.source === 'cache' ? '使用本地缓存' : '等待同步' }}</span>
         </div>
         <button class="icon-button" type="button" title="刷新补丁目录" aria-label="刷新补丁目录" :disabled="loading" @click="$emit('refresh')">
           <RefreshCw :size="18" :class="{ spinning: loading }" />

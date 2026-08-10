@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { AlertTriangle, CheckCircle2, ScrollText } from '@lucide/vue'
-import { agreements, AUTHOR_NAME } from '../lib/agreements.mjs'
+import { AGREEMENT_REVISION, agreements, AUTHOR_NAME } from '../lib/agreements.mjs'
 
 defineProps({ required: { type: Boolean, default: false } })
 defineEmits(['accept', 'decline', 'close'])
@@ -22,7 +22,7 @@ function markRead(event) {
         <div><p class="eyebrow">FREE SOFTWARE NOTICE</p><h2 id="agreement-title">使用前请阅读</h2></div>
         <AlertTriangle :size="22" />
       </div>
-      <p class="agreement-lead">本软件完全免费。作者：{{ AUTHOR_NAME }}。请完整阅读并确认以下协议后继续。</p>
+      <p class="agreement-lead">本软件完全免费。作者：{{ AUTHOR_NAME }}。协议修订号：{{ AGREEMENT_REVISION }}。请完整阅读并确认两份文件后继续。</p>
       <div class="agreement-tabs" role="tablist">
         <button v-for="agreement in agreements" :key="agreement.id" type="button" :class="{ active: active === agreement.id }" @click="active = agreement.id">
           <CheckCircle2 v-if="read[agreement.id]" :size="14" />{{ agreement.title }}
@@ -31,7 +31,7 @@ function markRead(event) {
       <div v-for="agreement in agreements" v-show="active === agreement.id" :key="agreement.id" class="agreement-text" @scroll="markRead">
         <ScrollText :size="17" /><pre>{{ agreement.body }}</pre>
       </div>
-      <p class="agreement-read-state">{{ allRead ? '已完整阅读两份协议。' : '请滚动阅读当前协议至末尾，并阅读另一份协议。' }}</p>
+      <p class="agreement-read-state">{{ allRead ? '已完整阅读两份协议。' : '请滚动阅读当前文件至末尾，并阅读另一份文件。' }}</p>
       <div class="dialog-actions">
         <button class="button button-secondary" type="button" @click="$emit('decline')">不同意并退出</button>
         <button class="button button-primary" type="button" :disabled="!allRead" @click="$emit('accept')">同意并继续使用</button>

@@ -9,7 +9,7 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import SupportDialog from './components/SupportDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
-import { AUTHOR_URL } from './lib/agreements.mjs'
+import { AGREEMENT_ACCEPTANCE_VALUE, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
 
 const developmentBridge = {
   app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }), quit: async () => {} },
@@ -53,7 +53,7 @@ const detectedTargets = reactive({})
 const operations = reactive({})
 const updateStatus = reactive({ state: 'idle', info: null, progress: null, message: '' })
 const loadingCatalog = ref(false)
-const agreementAccepted = ref(localStorage.getItem('msfs-cat-ch-agreements') === 'accepted-v1')
+const agreementAccepted = ref(hasAcceptedAgreements(localStorage.getItem('msfs-cat-ch-agreements')))
 const showAgreement = ref(!agreementAccepted.value)
 const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
 const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
@@ -78,6 +78,7 @@ async function verifyInstallations() {
 async function detectTargets(patches = catalogState.catalog?.patches || []) {
   const descriptors = patches.map((patch) => ({
     id: patch.id,
+    targetKind: patch.targetKind,
     targetFolders: Array.isArray(patch.targetFolders) ? [...patch.targetFolders] : []
   }))
   replaceReactive(detectedTargets, await bridge.patches.detectTargets(descriptors))
@@ -125,7 +126,7 @@ function clearTarget(patchId) {
 }
 
 function acceptAgreements() {
-  localStorage.setItem('msfs-cat-ch-agreements', 'accepted-v1')
+  localStorage.setItem('msfs-cat-ch-agreements', AGREEMENT_ACCEPTANCE_VALUE)
   agreementAccepted.value = true
   showAgreement.value = false
   showFreeNotice.value = true

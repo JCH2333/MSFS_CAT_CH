@@ -1,0 +1,30 @@
+{
+  "translations": {
+    "Adjust Wingspan": "调整翼展",
+    "Auto Waypoints": "自动航路点",
+    "Cancel": "取消",
+    "Clear Route": "清除路线",
+    "Close": "关闭",
+    "Copy Arrangement": "复制布局",
+    "Followme": "引导车",
+    "Follow User": "跟随用户",
+    "Key": "按键",
+    "Navigraph Connect": "连接 Navigraph",
+    "Navigraph Disconnect": "断开 Navigraph",
+    "Paste Arrangement": "粘贴布局",
+    "Progressive Taxi": "渐进式滑行",
+    "Save Changes": "保存更改",
+    "Save Location": "保存位置",
+    "Save Route": "保存路线",
+    "Select": "选择",
+    "Switch To Radius": "切换到半径",
+    "Switch To Rect": "切换到矩形",
+    "Towing": "牵引",
+    "Warp": "传送",
+    "Zoom Fit": "适配缩放",
+    "Zoom In": "放大",
+    "Zoom Out": "缩小",
+    "Zoom Route": "缩放至路线",
+    "Zoom User": "缩放至用户"
+  }
+}
