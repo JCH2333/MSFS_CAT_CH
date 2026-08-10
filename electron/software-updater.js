@@ -2,6 +2,11 @@ const UPDATE_CHECK_TIMEOUT_MS = 15000
 const GITEE_RELEASE_LOOKUP_TIMEOUT_MS = 5000
 const GITEE_SOFTWARE_RELEASE_API = 'https://gitee.com/api/v5/repos/ljd123456/MSFS_CAT_CH/releases/latest'
 const GITEE_SOFTWARE_RELEASE_BASE = 'https://gitee.com/ljd123456/MSFS_CAT_CH/releases/download'
+const GITHUB_SOFTWARE_RELEASE_LATEST = 'https://github.com/JCH2333/MSFS_CAT_CH/releases/latest/download'
+const GITHUB_SOFTWARE_MIRROR_FEED = Object.freeze({
+  provider: 'generic',
+  url: `https://ghfast.top/${GITHUB_SOFTWARE_RELEASE_LATEST}`
+})
 const GITHUB_SOFTWARE_FEED = Object.freeze({
   provider: 'github',
   owner: 'JCH2333',
@@ -84,7 +89,9 @@ async function checkForUpdatesWithFallback({
   resolveGiteeFeed = null,
   githubFeed = GITHUB_SOFTWARE_FEED,
   onGiteeFallback = () => {},
-  onDirectFallback = () => {}
+  onDirectFallback = () => {},
+  mirrorFeed = GITHUB_SOFTWARE_MIRROR_FEED,
+  onMirrorFallback = () => {}
 }) {
   if (resolveGiteeFeed) {
     try {
@@ -115,6 +122,16 @@ async function checkForUpdatesWithFallback({
     return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
   } catch (error) {
     if (error instanceof UpdateCheckTimeoutError) await resetTimedOutCheck(updater)
+    if (!(error instanceof UpdateCheckTimeoutError)) throw error
+  }
+
+  onMirrorFallback()
+  updater.setFeedURL?.(mirrorFeed)
+  await updater.netSession.setProxy({ mode: 'direct' })
+  try {
+    return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
+  } catch (error) {
+    if (error instanceof UpdateCheckTimeoutError) await resetTimedOutCheck(updater)
     throw error
   }
 }
@@ -123,6 +140,8 @@ module.exports = {
   GITEE_RELEASE_LOOKUP_TIMEOUT_MS,
   GITEE_SOFTWARE_RELEASE_API,
   GITEE_SOFTWARE_RELEASE_BASE,
+  GITHUB_SOFTWARE_MIRROR_FEED,
+  GITHUB_SOFTWARE_RELEASE_LATEST,
   GITHUB_SOFTWARE_FEED,
   UPDATE_CHECK_TIMEOUT_MS,
   UpdateCheckTimeoutError,

@@ -253,7 +253,7 @@ function isAllowedDownloadUrl(input) {
 
 async function downloadToFile(url, destination, onProgress, redirectsRemaining = 6) {
   if (!isAllowedDownloadUrl(url)) {
-    throw new Error('补丁下载地址不是受信任的 GitHub 地址')
+    throw new Error('补丁下载地址不是受信任的 Gitee、GitHub 或镜像地址')
   }
 
   await fsp.mkdir(path.dirname(destination), { recursive: true })

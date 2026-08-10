@@ -2,6 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const {
   GITEE_SOFTWARE_RELEASE_API,
+  GITHUB_SOFTWARE_MIRROR_FEED,
   GITHUB_SOFTWARE_FEED,
   UpdateCheckTimeoutError,
   checkForUpdatesWithFallback,
@@ -104,14 +105,37 @@ test('switches from the system proxy to a direct GitHub connection after a timeo
   assert.deepEqual(status, { state: 'current', info: { version: '1.2.0' } })
 })
 
-test('reports a timeout when both proxy and direct checks fail to finish', async () => {
+test('switches to the domestic mirror after both GitHub attempts time out', async () => {
+  let attempts = 0
+  const updater = createUpdater(() => {
+    attempts += 1
+    return attempts < 3
+      ? new Promise(() => {})
+      : Promise.resolve({ isUpdateAvailable: true, updateInfo: { version: '1.2.12' } })
+  })
+  let usedMirrorFallback = false
+
+  const status = await checkForUpdatesWithFallback({
+    updater,
+    timeoutMs: 5,
+    onMirrorFallback: () => { usedMirrorFallback = true }
+  })
+
+  assert.equal(usedMirrorFallback, true)
+  assert.deepEqual(updater.calls.feeds, [GITHUB_SOFTWARE_FEED, GITHUB_SOFTWARE_MIRROR_FEED])
+  assert.deepEqual(updater.calls.proxies, [{ mode: 'system' }, { mode: 'direct' }, { mode: 'direct' }])
+  assert.equal(updater.calls.closeAllConnections, 2)
+  assert.deepEqual(status, { state: 'available', info: { version: '1.2.12' } })
+})
+
+test('reports a timeout when GitHub and the domestic mirror do not respond', async () => {
   const updater = createUpdater(() => new Promise(() => {}))
 
   await assert.rejects(
     checkForUpdatesWithFallback({ updater, timeoutMs: 5 }),
     UpdateCheckTimeoutError
   )
-  assert.equal(updater.calls.closeAllConnections, 2)
+  assert.equal(updater.calls.closeAllConnections, 3)
 })
 
 test('maps a no-update result to current', () => {

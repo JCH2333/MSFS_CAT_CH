@@ -76,7 +76,7 @@ defineEmits(['refresh', 'install', 'import', 'restore', 'verify', 'author'])
 
     <div v-else class="catalog-loading">
       <RefreshCw :size="24" class="spinning" />
-      <span>正在读取 GitHub 补丁目录</span>
+      <span>正在读取 Gitee 补丁目录</span>
     </div>
   </section>
 </template>

@@ -72,7 +72,8 @@ function checkForSoftwareUpdates() {
     updater: autoUpdater,
     resolveGiteeFeed: () => resolveGiteeSoftwareFeed(),
     onGiteeFallback: () => send('updates:status', { state: 'checking' }),
-    onDirectFallback: () => send('updates:status', { state: 'checking-direct' })
+    onDirectFallback: () => send('updates:status', { state: 'checking-direct' }),
+    onMirrorFallback: () => send('updates:status', { state: 'checking-mirror' })
   })
 }
 
@@ -132,7 +133,7 @@ function registerIpc() {
       if (error instanceof UpdateCheckTimeoutError) {
         return {
           state: 'error',
-          message: '检查更新超时。已依次尝试系统代理和 GitHub 直连，请检查网络或代理设置后重试。'
+          message: '检查更新超时。已依次尝试 Gitee、GitHub 和国内镜像，请检查网络或代理设置后重试。'
         }
       }
       return { state: 'error', message: '暂时无法检查软件更新，请稍后再试' }
@@ -154,6 +155,7 @@ function registerIpc() {
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)
+    const isProjectGitee = url.protocol === 'https:' && url.hostname === 'gitee.com' && url.pathname.startsWith('/ljd123456/')
     const isProjectGitHub = url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname.startsWith('/JCH2333/')
     const isGsxBaiduMirror = url.protocol === 'https:'
       && url.hostname === 'pan.baidu.com'
@@ -165,7 +167,7 @@ function registerIpc() {
       && url.hostname === 'qun.qq.com'
       && url.pathname === '/join.html'
       && url.searchParams.get('gc') === '1101733374'
-    if (!isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili && !isQqGroupJoin) {
+    if (!isProjectGitee && !isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili && !isQqGroupJoin) {
       throw new Error('只允许打开已配置的项目、分流或作者地址')
     }
     await shell.openExternal(url.toString())

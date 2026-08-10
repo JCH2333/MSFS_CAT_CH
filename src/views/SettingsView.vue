@@ -17,7 +17,8 @@ const updateLabel = computed(() => {
   const labels = {
     idle: '尚未检查',
     checking: '正在检查',
-    'checking-direct': '系统代理响应较慢，正在直连 GitHub',
+    'checking-direct': 'Gitee 不可用，正在检查 GitHub 备用源',
+    'checking-mirror': 'GitHub 不可用，正在检查国内镜像',
     current: '当前已是最新版本',
     available: `发现 v${props.updateStatus.info?.version || ''}`,
     downloading: `下载中 ${Math.round(props.updateStatus.progress?.percent || 0)}%`,
@@ -64,8 +65,8 @@ function targetSource(patch) {
           <RotateCw :size="17" />
           重启安装
         </button>
-        <button v-else class="button button-secondary" type="button" :disabled="['checking', 'checking-direct', 'downloading'].includes(updateStatus.state)" @click="$emit('check-update')">
-          <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-direct'].includes(updateStatus.state) }" />
+        <button v-else class="button button-secondary" type="button" :disabled="['checking', 'checking-direct', 'checking-mirror', 'downloading'].includes(updateStatus.state)" @click="$emit('check-update')">
+          <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-direct', 'checking-mirror'].includes(updateStatus.state) }" />
           检查更新
         </button>
       </div>
@@ -107,14 +108,24 @@ function targetSource(patch) {
     </section>
 
     <div class="settings-list">
+      <button class="repository-row" type="button" @click="$emit('open-link', 'https://gitee.com/ljd123456/MSFS_CAT_CH')">
+        <GitBranch :size="20" />
+        <span><strong>软件仓库（Gitee 主源）</strong><small>ljd123456/MSFS_CAT_CH</small></span>
+        <ExternalLink :size="17" />
+      </button>
+      <button class="repository-row" type="button" @click="$emit('open-link', 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES')">
+        <GitBranch :size="20" />
+        <span><strong>补丁仓库（Gitee 主源）</strong><small>ljd123456/MSFS_CAT_CH_PATCHES</small></span>
+        <ExternalLink :size="17" />
+      </button>
       <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH')">
         <GitBranch :size="20" />
-        <span><strong>软件仓库</strong><small>JCH2333/MSFS_CAT_CH</small></span>
+        <span><strong>软件仓库（GitHub 备用）</strong><small>JCH2333/MSFS_CAT_CH</small></span>
         <ExternalLink :size="17" />
       </button>
       <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES')">
         <GitBranch :size="20" />
-        <span><strong>补丁仓库</strong><small>JCH2333/MSFS_CAT_CH_PATCHES</small></span>
+        <span><strong>补丁仓库（GitHub 备用）</strong><small>JCH2333/MSFS_CAT_CH_PATCHES</small></span>
         <ExternalLink :size="17" />
       </button>
     </div>
