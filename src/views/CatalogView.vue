@@ -1,6 +1,7 @@
 <script setup>
 import { PackageOpen, RefreshCw, ShieldCheck, ShieldAlert, Wifi, WifiOff } from '@lucide/vue'
 import PatchCard from '../components/PatchCard.vue'
+import { catalogSourcePresentation } from '../lib/catalog-source.mjs'
 
 const props = defineProps({
   catalogState: { type: Object, required: true },
@@ -24,10 +25,10 @@ defineEmits(['refresh', 'install', 'import', 'restore', 'verify', 'author'])
         <h1>汉化补丁</h1>
       </div>
       <div class="header-actions">
-        <div class="source-status" :data-offline="catalogState.source !== 'github'">
-          <Wifi v-if="catalogState.source === 'github'" :size="15" />
+        <div class="source-status" :data-offline="!catalogSourcePresentation(catalogState.source).online">
+          <Wifi v-if="catalogSourcePresentation(catalogState.source).online" :size="15" />
           <WifiOff v-else :size="15" />
-          <span>{{ catalogState.source === 'github' ? 'GitHub 已同步' : catalogState.source === 'mirror' ? '国内镜像已同步' : catalogState.source === 'cache' ? '使用本地缓存' : '等待同步' }}</span>
+          <span>{{ catalogSourcePresentation(catalogState.source).label }}</span>
         </div>
         <button class="icon-button" type="button" title="刷新补丁目录" aria-label="刷新补丁目录" :disabled="loading" @click="$emit('refresh')">
           <RefreshCw :size="18" :class="{ spinning: loading }" />
