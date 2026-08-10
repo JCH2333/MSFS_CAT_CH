@@ -38,6 +38,15 @@ function normalizeContentRoot(value) {
   return normalized
 }
 
+async function validateInstallationTarget(patch, target) {
+  if (patch?.targetKind !== 'gsx-audio') return
+  const soundsDirectory = ensureWithin(target, path.join(target, 'sounds'))
+  const soundsStats = await fsp.stat(soundsDirectory).catch(() => null)
+  if (!soundsStats?.isDirectory()) {
+    throw new Error('GSX 中文语音包必须安装到 Addon Manager\\couatl\\GSX 目录，其中应包含 sounds 文件夹')
+  }
+}
+
 function fingerprintFiles(patch) {
   return Array.isArray(patch?.fingerprint)
     ? patch.fingerprint.filter((file) => (
@@ -462,6 +471,7 @@ class PatchInstaller {
     if (!targetStats?.isDirectory()) {
       throw new Error('安装目录不存在或不可访问')
     }
+    await validateInstallationTarget(patch, target)
 
     const state = await this.readState()
     if (state.installations[patchId]) {
@@ -669,6 +679,7 @@ module.exports = {
   synchronizeInstalledLayoutDates,
   isAllowedDownloadUrl,
   normalizeContentRoot,
+  validateInstallationTarget,
   validatePatchFiles,
   validatePatchLayoutEntries,
   sha256,

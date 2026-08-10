@@ -12,6 +12,7 @@ const {
   ensureWithin,
   normalizeContentRoot,
   sha256,
+  validateInstallationTarget,
   validatePatchFiles,
   validatePatchLayoutEntries
 } = require('../electron/patch-installer')
@@ -55,6 +56,17 @@ test('ensureWithin rejects paths outside an installation target', () => {
 test('normalizeContentRoot rejects traversal', () => {
   assert.throws(() => normalizeContentRoot('../outside'), /contentRoot/)
   assert.equal(normalizeContentRoot('payload/files'), path.normalize('payload/files'))
+})
+
+test('requires the GSX audio installation target to contain sounds', async () => {
+  const root = await temporaryDirectory('gsx-audio-target-')
+  await assert.rejects(
+    validateInstallationTarget({ targetKind: 'gsx-audio' }, root),
+    /sounds/
+  )
+  await fs.mkdir(path.join(root, 'sounds'))
+  await assert.doesNotReject(validateInstallationTarget({ targetKind: 'gsx-audio' }, root))
+  await fs.rm(root, { recursive: true, force: true })
 })
 
 test('protects FSR+ and ChasePlane core runtime files from patch packages', () => {

@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Download, Heart, MapPin, ShieldAlert, ShieldCheck, RotateCcw, UserRound } from '@lucide/vue'
+import { Download, FolderUp, Heart, MapPin, ShieldAlert, ShieldCheck, RotateCcw, UserRound } from '@lucide/vue'
 import { compareVersions } from '../lib/versioning'
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const props = defineProps({
   busy: { type: Boolean, default: false }
 })
 
-defineEmits(['install', 'restore', 'author'])
+defineEmits(['install', 'import', 'restore', 'author'])
 
 const published = computed(() => props.patch.status === 'published')
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
@@ -90,6 +90,10 @@ const packageSize = computed(() => {
         <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />
           {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
+        </button>
+        <button v-if="patch.targetKind === 'gsx-audio' && needsInstall" class="button button-secondary" type="button" :disabled="busy || !published" @click="$emit('import', patch)">
+          <FolderUp :size="17" />
+          导入离线包
         </button>
         <button class="text-action" type="button" @click="$emit('author')"><Heart :size="14" />完全免费制作，关注作者</button>
       </div>

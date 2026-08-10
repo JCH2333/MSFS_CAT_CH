@@ -166,6 +166,29 @@ async function installPatch(patch) {
   setTimeout(() => { delete operations[patch.id] }, 1800)
 }
 
+async function importPatch(patch) {
+  const targetPath = targets[patch.id]
+    || installations[patch.id]?.targetPath
+    || detectedTargets[patch.id]?.targetPath
+  if (!targetPath) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: '请先在设置中选择安装目录' }
+    return
+  }
+
+  const sourceArchivePath = await bridge.patches.choosePackage()
+  if (!sourceArchivePath) return
+
+  operations[patch.id] = { busy: true, phase: 'import', percent: 0, message: '正在导入离线补丁包' }
+  try {
+    await bridge.patches.installFromFile(createInstallationRequest(patch), targetPath, sourceArchivePath)
+    await loadInstallations()
+  } catch (error) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
+    return
+  }
+  setTimeout(() => { delete operations[patch.id] }, 1800)
+}
+
 async function restorePatch(patch) {
   operations[patch.id] = { busy: true, phase: 'restore', percent: 35, message: '正在还原原文件' }
   try {
@@ -262,6 +285,7 @@ onBeforeUnmount(() => {
           :loading="loadingCatalog"
           @refresh="refreshCatalog"
           @install="installPatch"
+          @import="importPatch"
           @restore="restorePatch"
           @verify="verifyInstallations"
           @author="bridge.external.open('https://space.bilibili.com/472309803?spm_id_from=333.1007.0.0')"

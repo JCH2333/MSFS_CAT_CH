@@ -17,6 +17,7 @@ test('creates cloneable patch recognition descriptors from reactive-like catalog
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro',
     version: '1.0.0',
+    targetKind: 'addon',
     fingerprint: [{ relativePath: 'html_ui/panel.js', sha256: 'a'.repeat(64) }]
   }])
   assert.deepEqual(structuredClone(descriptors), descriptors)

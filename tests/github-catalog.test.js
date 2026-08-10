@@ -49,6 +49,18 @@ test('allows planned patches without a package', () => {
   assert.equal(result.patches[0].package, null)
 })
 
+test('keeps the GSX voice package target kind for safe audio installation', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn-voice',
+    name: 'GSX 中文语音包',
+    version: '1.0.0',
+    addonVersion: '4.0.15',
+    status: 'planned',
+    targetKind: 'gsx-audio'
+  }))
+  assert.equal(result.patches[0].targetKind, 'gsx-audio')
+})
+
 test('shows only the supported GSX patch when a cached catalog contains retired patches', () => {
   const gsx = {
     id: 'gsx-pro-zh-cn',

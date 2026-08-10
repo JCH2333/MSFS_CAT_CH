@@ -6,7 +6,8 @@ const { CATALOG_RAW_URL, isTimeoutError, mirrorGitHubUrl } = require('./github-m
 const CATALOG_URL = CATALOG_RAW_URL
 const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download'
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
-const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn'])
+const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn', 'gsx-pro-zh-cn-voice'])
+const TARGET_KINDS = new Set(['addon', 'gsx-audio'])
 
 function assertString(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
@@ -111,6 +112,7 @@ function validateCatalog(input) {
       targetFolders: Array.isArray(patch.targetFolders)
         ? [...new Set(patch.targetFolders.filter((folder) => typeof folder === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(folder.trim())).map((folder) => folder.trim()))]
         : [],
+      targetKind: TARGET_KINDS.has(patch.targetKind) ? patch.targetKind : 'addon',
       releaseNotes: Array.isArray(patch.releaseNotes)
         ? patch.releaseNotes.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
         : [],

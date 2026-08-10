@@ -5,6 +5,7 @@ export function createRecognitionDescriptors(patches) {
     id: typeof patch?.id === 'string' ? patch.id : '',
     name: typeof patch?.name === 'string' ? patch.name : '',
     version: typeof patch?.version === 'string' ? patch.version : '',
+    targetKind: typeof patch?.targetKind === 'string' ? patch.targetKind : 'addon',
     fingerprint: Array.isArray(patch?.fingerprint)
       ? patch.fingerprint.map((file) => ({
         relativePath: typeof file?.relativePath === 'string' ? file.relativePath : '',
@@ -18,6 +19,7 @@ export function createInstallationRequest(patch) {
   return {
     ...createRecognitionDescriptors([patch])[0],
     status: typeof patch?.status === 'string' ? patch.status : '',
+    targetKind: typeof patch?.targetKind === 'string' ? patch.targetKind : 'addon',
     package: {
       downloadUrl: typeof patch?.package?.downloadUrl === 'string' ? patch.package.downloadUrl : '',
       sha256: typeof patch?.package?.sha256 === 'string' ? patch.package.sha256 : '',
