@@ -1,15 +1,14 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Heart, LoaderCircle, TriangleAlert, X } from '@lucide/vue'
+import { SUPPORT_QR_SOURCES } from '../lib/support-qr.mjs'
 
 defineEmits(['close'])
 
-const githubQrUrl = 'https://raw.githubusercontent.com/JCH2333/MSFS_CAT_CH/main/remote-assets/wechat-support.jpg'
-const mirrorQrUrl = `https://ghfast.top/${githubQrUrl}`
 const qrUrl = ref('')
 const qrStatus = ref('loading')
 let fallbackTimer = null
-let hasFallenBack = false
+let sourceIndex = 0
 
 function clearFallbackTimer() {
   if (fallbackTimer) {
@@ -18,35 +17,39 @@ function clearFallbackTimer() {
   }
 }
 
-function loadQr(url, source) {
-  const image = new Image()
-  image.onload = () => {
-    clearFallbackTimer()
-    qrUrl.value = url
-    qrStatus.value = source
-  }
-  image.onerror = () => {
-    if (source === 'github') {
-      useMirror()
-      return
-    }
+function loadQr(index) {
+  const entry = SUPPORT_QR_SOURCES[index]
+  if (!entry) {
     clearFallbackTimer()
     qrStatus.value = 'error'
+    return
   }
-  image.src = url
+
+  sourceIndex = index
+  qrStatus.value = index === 0 ? 'gitee-loading' : 'fallback-loading'
+  const image = new Image()
+  image.onload = () => {
+    if (sourceIndex !== index) return
+    clearFallbackTimer()
+    qrUrl.value = entry.url
+    qrStatus.value = entry.source
+  }
+  image.onerror = () => {
+    if (sourceIndex === index) useFallback()
+  }
+  image.src = entry.url
 }
 
-function useMirror() {
-  if (hasFallenBack) return
-  hasFallenBack = true
+function useFallback() {
   clearFallbackTimer()
-  qrStatus.value = 'mirror-loading'
-  loadQr(mirrorQrUrl, 'mirror')
+  loadQr(sourceIndex + 1)
 }
 
 onMounted(() => {
-  loadQr(githubQrUrl, 'github')
-  fallbackTimer = setTimeout(useMirror, 2000)
+  loadQr(0)
+  fallbackTimer = setTimeout(() => {
+    if (!qrUrl.value && sourceIndex === 0) useFallback()
+  }, 2000)
 })
 
 onBeforeUnmount(clearFallbackTimer)
@@ -63,7 +66,7 @@ onBeforeUnmount(clearFallbackTimer)
       <img v-if="qrUrl" :src="qrUrl" alt="微信赞助收款码" />
       <div v-else-if="qrStatus !== 'error'" class="support-qr-state" aria-live="polite">
         <LoaderCircle :size="22" class="support-qr-spinner" />
-        <span>{{ qrStatus === 'mirror-loading' ? 'GitHub 连接超时，正在切换国内镜像…' : '正在从 GitHub 加载赞助码…' }}</span>
+        <span>{{ qrStatus === 'fallback-loading' ? 'Gitee 加载较慢，正在切换备用源…' : '正在从 Gitee 加载赞助码…' }}</span>
       </div>
       <div v-else class="support-qr-state support-qr-error" role="alert">
         <TriangleAlert :size="22" />
