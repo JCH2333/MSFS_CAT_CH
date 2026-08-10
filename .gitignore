@@ -68,4 +68,5 @@ local-patches/
 /.agents/
 tools/gsx-image-localizer/output/
 tools/gsx-image-localizer/cache/
+tools/gsx-image-localizer/__pycache__/
 /分流包示例/
