@@ -148,6 +148,28 @@ test('retries a timed-out GitHub package download through the domestic mirror', 
   ])
 })
 
+test('retries a reset GitHub package download through the domestic mirror', async () => {
+  const urls = []
+  await downloadWithMirrorFallback(
+    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
+    'C:/temporary/test.zip',
+    () => {},
+    async (url) => {
+      urls.push(url)
+      if (urls.length === 1) {
+        const error = new Error('read ECONNRESET')
+        error.code = 'ECONNRESET'
+        throw error
+      }
+      return 'C:/temporary/test.zip'
+    }
+  )
+  assert.deepEqual(urls, [
+    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
+    'https://ghfast.top/https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip'
+  ])
+})
+
 test('synchronizes installed layout dates with copied patch files', async () => {
   const root = await temporaryDirectory('gsx-installer-layout-date-')
   const target = path.join(root, 'target')

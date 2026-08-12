@@ -82,13 +82,21 @@ For interface changes, also inspect desktop and narrow layouts and check the bro
 Do not create a Release merely because source code has changed. Only perform the following after the user explicitly authorizes a Software Release or Patch Package release.
 
 1. Run the required tests, build, and Windows package checks from **Verification**.
-2. Commit and push the approved source changes to GitHub `main`; wait until both Gitee pull mirrors contain the same commit before presenting the release as ready.
-3. Create the GitHub tag and GitHub Release. The software workflow publishes `latest.yml`, the Windows installer, and its `.blockmap` asset; Patch Package releases publish the verified ZIP asset.
-4. Create the corresponding Gitee Release with the same tag and upload byte-identical release assets. Gitee mirroring copies commits, branches, and tags, but it does **not** copy Release attachments.
-5. For a Software Release, upload `latest.yml`, `MSFS_CAT_CH-Setup-<version>.exe`, and its `.blockmap` to the Gitee Release. Verify Gitee can serve `latest.yml` from the tag download directory so the client can use Gitee as its primary updater feed.
-6. For a Patch Package release, upload the verified ZIP to the Gitee Release first, then verify its SHA-256 remains identical to the Patch Catalog value. Only then publish the associated Patch Catalog entry.
-7. Confirm the client fallback order with real public URLs: Gitee first, GitHub second, and `ghfast.top` only after a GitHub timeout where supported.
-8. Report the exact version, tag, commit, asset names, checksums, and both public release locations. Never include credentials, tokens, local user paths, backups, or installation records.
+2. Commit and push the approved source changes to GitHub `main`; wait until the matching Gitee mirror branch reaches the same commit before creating a release tag or presenting the release as ready.
+3. Build the final asset once, then record its exact filename, byte size, and SHA-256. Do not rebuild, rename, or overwrite that asset after either host has received it.
+4. Treat repository mirroring and Release distribution as separate systems: GitHub-to-Gitee mirroring may copy commits, branches, and tags, but it does **not** copy Release records or Release attachments. Never assume that publishing a GitHub Release has published a Gitee Release.
+5. For a **Patch Package**, use this mandatory order:
+   1. Create the same release tag on the synchronized source.
+   2. Create the Gitee Release first and upload the verified ZIP.
+   3. Download the public Gitee asset and verify its SHA-256 and size match the prepared asset.
+   4. Create the GitHub Release and upload the byte-identical ZIP.
+   5. Verify the public GitHub asset name, size, and SHA-256.
+   6. Only after both assets exist and match, update the Patch Catalog version, tag, filename, size, fingerprints, and SHA-256; commit and push that Catalog change, then wait for Gitee to mirror it.
+6. For a **Software Release**, publish the GitHub workflow output and create the matching Gitee Release with byte-identical `latest.yml`, `MSFS_CAT_CH-Setup-<version>.exe`, and `.blockmap` assets. Verify Gitee can serve `latest.yml` from the tag download directory before treating the Gitee-first updater feed as ready.
+7. If a Patch Catalog entry is pushed before its matching Release asset is publicly available, immediately restore that Catalog entry to the last verified package version. Do not leave clients pointing to a missing or unverified asset.
+8. Confirm the client fallback order with real public URLs: Gitee first, GitHub second, and `ghfast.top` only after a GitHub timeout where supported.
+9. Release automation may use a Gitee access token only through protected CI secrets. Never commit, print, export, or place the token in a workflow file, repository configuration, Release notes, or user-facing logs.
+10. Report the exact version, tag, commit, asset names, checksums, and both public release locations. Never include credentials, tokens, local user paths, backups, or installation records.
 
 ## Agent Skills
 

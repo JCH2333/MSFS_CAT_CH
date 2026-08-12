@@ -33,6 +33,7 @@ coverage/
 dist/
 dist-ssr/
 release/
+/test-release-*/
 cypress/videos/
 cypress/screenshots/
 __screenshots__/

@@ -185,9 +185,6 @@ app.whenReady().then(() => {
   configureUpdater()
   registerIpc()
   createWindow()
-  if (app.isPackaged) {
-    setTimeout(() => checkForSoftwareUpdates().catch(() => {}), 1500)
-  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

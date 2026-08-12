@@ -541,7 +541,7 @@ class PatchInstaller {
             percent,
             received,
             total,
-            message: source === 'gitee' ? '正在从 Gitee 下载补丁' : source === 'mirror' ? 'GitHub 超时，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
+            message: source === 'gitee' ? '正在从 Gitee 下载补丁' : source === 'mirror' ? 'GitHub 连接异常，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
           })
         })
       }

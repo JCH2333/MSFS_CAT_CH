@@ -4,6 +4,15 @@ const GITEE_PATCH_RELEASE_PREFIX = '/ljd123456/MSFS_CAT_CH_PATCHES/releases/down
 const GITEE_CATALOG_RAW_URL = 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES/raw/main/manifest.json'
 const GITEE_PATCH_RELEASE_BASE = 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES/releases/download'
 const MIRROR_ORIGIN = 'https://ghfast.top/'
+const RETRYABLE_NETWORK_ERROR_CODES = new Set([
+  'ETIMEDOUT',
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ECONNABORTED',
+  'EPIPE',
+  'ENETUNREACH',
+  'EHOSTUNREACH'
+])
 
 function isOfficialPatchReleaseUrl(input) {
   try {
@@ -48,7 +57,9 @@ function isTrustedMirrorUrl(input) {
 }
 
 function isTimeoutError(error) {
-  return error?.code === 'ETIMEDOUT' || error?.name === 'TimeoutError' || /timed out|超时/i.test(error?.message || '')
+  return RETRYABLE_NETWORK_ERROR_CODES.has(error?.code)
+    || error?.name === 'TimeoutError'
+    || /timed out|超时/i.test(error?.message || '')
 }
 
 module.exports = {
