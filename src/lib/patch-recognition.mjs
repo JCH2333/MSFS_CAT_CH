@@ -22,8 +22,17 @@ export function createInstallationRequest(patch) {
     targetKind: typeof patch?.targetKind === 'string' ? patch.targetKind : 'addon',
     package: {
       downloadUrl: typeof patch?.package?.downloadUrl === 'string' ? patch.package.downloadUrl : '',
+      githubDownloadUrl: typeof patch?.package?.githubDownloadUrl === 'string' ? patch.package.githubDownloadUrl : '',
       sha256: typeof patch?.package?.sha256 === 'string' ? patch.package.sha256 : '',
-      contentRoot: typeof patch?.package?.contentRoot === 'string' ? patch.package.contentRoot : ''
+      contentRoot: typeof patch?.package?.contentRoot === 'string' ? patch.package.contentRoot : '',
+      giteeParts: Array.isArray(patch?.package?.giteeParts)
+        ? patch.package.giteeParts.map((part) => ({
+            assetName: typeof part?.assetName === 'string' ? part.assetName : '',
+            downloadUrl: typeof part?.downloadUrl === 'string' ? part.downloadUrl : '',
+            sha256: typeof part?.sha256 === 'string' ? part.sha256 : '',
+            size: Number.isSafeInteger(part?.size) ? part.size : 0
+          }))
+        : []
     }
   }
 }

@@ -30,14 +30,51 @@ function validatePackage(packageInfo, patchId) {
     throw new Error(`补丁 ${patchId} 的 SHA-256 格式无效`)
   }
 
+  const giteeParts = packageInfo.giteeParts === undefined
+    ? []
+    : (() => {
+        if (!Array.isArray(packageInfo.giteeParts) || packageInfo.giteeParts.length === 0) {
+          throw new Error(`补丁 ${patchId} package.giteeParts 必须是非空数组`)
+        }
+        const names = new Set()
+        return packageInfo.giteeParts.map((part, index) => {
+          const assetName = assertString(part?.assetName, `补丁 ${patchId} package.giteeParts[${index}].assetName`)
+          const partSha256 = assertString(part?.sha256, `补丁 ${patchId} package.giteeParts[${index}].sha256`).toLowerCase()
+          const size = Number(part?.size)
+          if (!/^[a-f0-9]{64}$/.test(partSha256) || !Number.isSafeInteger(size) || size <= 0) {
+            throw new Error(`补丁 ${patchId} package.giteeParts[${index}] 无效`)
+          }
+          if (assetName.includes('/') || assetName.includes('\\') || names.has(assetName)) {
+            throw new Error(`补丁 ${patchId} package.giteeParts[${index}].assetName 无效`)
+          }
+          names.add(assetName)
+          return {
+            assetName,
+            sha256: partSha256,
+            size,
+            downloadUrl: `${GITEE_PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`
+          }
+        })
+      })()
+
+  const packageSize = Number.isFinite(packageInfo.size) && packageInfo.size >= 0 ? packageInfo.size : 0
+  if (giteeParts.length > 0 && (
+    !Number.isSafeInteger(packageSize)
+    || packageSize <= 0
+    || giteeParts.reduce((total, part) => total + part.size, 0) !== packageSize
+  )) {
+    throw new Error(`补丁 ${patchId} package.giteeParts 总大小必须等于完整补丁包大小`)
+  }
+
   return {
     releaseTag,
     assetName,
     sha256,
-    size: Number.isFinite(packageInfo.size) && packageInfo.size >= 0 ? packageInfo.size : 0,
+    size: packageSize,
     contentRoot: typeof packageInfo.contentRoot === 'string' ? packageInfo.contentRoot.trim() : '',
     downloadUrl: `${GITEE_PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
-    githubDownloadUrl: `${PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`
+    githubDownloadUrl: `${PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
+    giteeParts
   }
 }
 

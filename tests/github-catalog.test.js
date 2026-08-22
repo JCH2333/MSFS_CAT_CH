@@ -40,6 +40,55 @@ test('validates and derives Gitee-primary and GitHub-secondary release asset URL
   assert.deepEqual(result.patches[0].fingerprint, [{ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }])
 })
 
+test('validates Gitee split assets for a large patch package', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn-voice',
+    name: 'GSX 中文语音包',
+    version: '1.0.0',
+    addonVersion: '4.0.15',
+    status: 'published',
+    targetKind: 'gsx-audio',
+    package: {
+      releaseTag: 'gsx-pro-zh-cn-voice-v1.0.0',
+      assetName: 'voice.zip',
+      sha256: 'a'.repeat(64),
+      size: 300,
+      giteeParts: [
+        { assetName: 'voice.zip.001', sha256: 'b'.repeat(64), size: 100 },
+        { assetName: 'voice.zip.002', sha256: 'c'.repeat(64), size: 100 },
+        { assetName: 'voice.zip.003', sha256: 'd'.repeat(64), size: 100 }
+      ]
+    }
+  }))
+
+  assert.equal(result.patches[0].package.giteeParts.length, 3)
+  assert.equal(
+    result.patches[0].package.giteeParts[0].downloadUrl,
+    'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES/releases/download/gsx-pro-zh-cn-voice-v1.0.0/voice.zip.001'
+  )
+})
+
+test('rejects Gitee split assets whose total size differs from the complete package', () => {
+  assert.throws(() => validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn-voice',
+    name: 'GSX 中文语音包',
+    version: '1.0.0',
+    addonVersion: '4.0.15',
+    status: 'published',
+    targetKind: 'gsx-audio',
+    package: {
+      releaseTag: 'gsx-pro-zh-cn-voice-v1.0.0',
+      assetName: 'voice.zip',
+      sha256: 'a'.repeat(64),
+      size: 300,
+      giteeParts: [
+        { assetName: 'voice.zip.001', sha256: 'b'.repeat(64), size: 100 },
+        { assetName: 'voice.zip.002', sha256: 'c'.repeat(64), size: 100 }
+      ]
+    }
+  })), /总大小必须等于完整补丁包大小/)
+})
+
 test('allows planned patches without a package', () => {
   const result = validateCatalog(catalogWith({
     id: 'gsx-pro-zh-cn',

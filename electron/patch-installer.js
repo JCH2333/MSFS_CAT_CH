@@ -4,6 +4,7 @@ const fsp = require('node:fs/promises')
 const https = require('node:https')
 const os = require('node:os')
 const path = require('node:path')
+const { pipeline } = require('node:stream/promises')
 const extractZip = require('extract-zip')
 const { githubFallbackForGiteePatchUrl, isOfficialGiteePatchReleaseUrl, isOfficialPatchReleaseUrl, isTimeoutError, isTrustedMirrorUrl, mirrorGitHubUrl } = require('./github-mirror')
 
@@ -326,6 +327,37 @@ async function downloadWithMirrorFallback(url, destination, onProgress, download
   }
 }
 
+async function downloadGiteeParts(parts, destination, onProgress, download = downloadWithMirrorFallback) {
+  const expectedTotal = parts.reduce((total, part) => total + part.size, 0)
+  const partPaths = parts.map((_, index) => `${destination}.gitee-part-${index + 1}`)
+  let receivedBase = 0
+
+  try {
+    for (let index = 0; index < parts.length; index += 1) {
+      const part = parts[index]
+      const partPath = partPaths[index]
+      await download(part.downloadUrl, partPath, ({ received = 0 }) => {
+        onProgress?.({ phase: 'download', received: receivedBase + received, total: expectedTotal, source: 'gitee' })
+      })
+      const stats = await fsp.stat(partPath)
+      if (stats.size !== part.size || await sha256(partPath) !== part.sha256) {
+        throw new Error(`Gitee 分片校验失败：${part.assetName}`)
+      }
+      receivedBase += part.size
+    }
+
+    for (let index = 0; index < partPaths.length; index += 1) {
+      await pipeline(
+        fs.createReadStream(partPaths[index]),
+        fs.createWriteStream(destination, { flags: index === 0 ? 'w' : 'a' })
+      )
+    }
+    return destination
+  } finally {
+    await Promise.all(partPaths.map((partPath) => fsp.rm(partPath, { force: true }).catch(() => {})))
+  }
+}
+
 class PatchInstaller {
   constructor({ userDataDirectory, onProgress = () => {}, download = downloadWithMirrorFallback }) {
     this.userDataDirectory = userDataDirectory
@@ -355,6 +387,31 @@ class PatchInstaller {
 
   async listInstallations() {
     return (await this.readState()).installations
+  }
+  async inspectInstallation(installation) {
+    const missingFiles = []
+    const modifiedFiles = []
+    const files = Array.isArray(installation?.files) ? installation.files : []
+
+    for (const file of files) {
+      try {
+        const destination = ensureWithin(installation.targetPath, path.join(installation.targetPath, file.relativePath))
+        const stats = await fsp.stat(destination).catch(() => null)
+        if (!stats?.isFile()) missingFiles.push(file.relativePath)
+        else if (await sha256(destination) !== file.installedHash) modifiedFiles.push(file.relativePath)
+      } catch {
+        missingFiles.push(file.relativePath)
+      }
+    }
+
+    const changed = missingFiles.length > 0 || modifiedFiles.length > 0
+    return {
+      state: !changed ? 'intact' : installation?.source === 'detected' ? 'reinstallable' : missingFiles.length > 0 ? 'missing' : 'modified',
+      checkedAt: new Date().toISOString(),
+      checkedFiles: files.length,
+      missingFiles,
+      modifiedFiles
+    }
   }
 
   async reconcileInstallations(patches, targetPaths) {
@@ -419,31 +476,7 @@ class PatchInstaller {
     const result = {}
 
     for (const [patchId, installation] of Object.entries(installations)) {
-      const missingFiles = []
-      const modifiedFiles = []
-      const files = Array.isArray(installation.files) ? installation.files : []
-
-      for (const file of files) {
-        try {
-          const destination = ensureWithin(installation.targetPath, path.join(installation.targetPath, file.relativePath))
-          const stats = await fsp.stat(destination).catch(() => null)
-          if (!stats?.isFile()) {
-            missingFiles.push(file.relativePath)
-          } else if (await sha256(destination) !== file.installedHash) {
-            modifiedFiles.push(file.relativePath)
-          }
-        } catch {
-          missingFiles.push(file.relativePath)
-        }
-      }
-
-      result[patchId] = {
-        state: missingFiles.length > 0 ? 'missing' : modifiedFiles.length > 0 ? 'modified' : 'intact',
-        checkedAt: new Date().toISOString(),
-        checkedFiles: files.length,
-        missingFiles,
-        modifiedFiles
-      }
+      result[patchId] = await this.inspectInstallation(installation)
     }
 
     return result
@@ -482,14 +515,14 @@ class PatchInstaller {
     await validateInstallationTarget(patch, target)
 
     const state = await this.readState()
-    if (state.installations[patchId]) {
-      if (state.installations[patchId].source === 'detected') {
-        if (state.installations[patchId].version === patch.version) return state.installations[patchId]
-        throw new Error('检测到历史手动安装，但没有原始文件备份，无法安全自动更新。请先恢复插件原版文件后再安装新补丁。')
-      }
-      const restoreResult = await this.restore(patchId)
-      if (!restoreResult.restored) {
-        throw new Error(`旧版本存在无法自动还原的文件：${restoreResult.conflicts.join('、')}`)
+    const existingInstallation = state.installations[patchId]
+    if (existingInstallation) {
+      const currentCheck = await this.inspectInstallation(existingInstallation)
+      // Restore an unchanged managed install before applying a newer package.
+      // If the target changed, keep the current files as the new baseline.
+      if (existingInstallation.source !== 'detected' && currentCheck.state === 'intact') {
+        const restoreResult = await this.restore(patchId)
+        if (!restoreResult.restored) throw new Error('旧版本文件无法安全还原')
       }
     }
 
@@ -532,7 +565,7 @@ class PatchInstaller {
         this.emit(patchId, { phase: 'import', percent: 55, message: '离线补丁包已导入' })
       } else {
         this.emit(patchId, { phase: 'download', percent: patch.targetKind === 'gsx-audio' ? 12 : 0, message: '正在下载补丁' })
-        await this.download(patch.package.downloadUrl, archivePath, ({ received, total, source }) => {
+        const emitDownloadProgress = ({ received, total, source }) => {
           const percent = total > 0
             ? Math.min(55, (patch.targetKind === 'gsx-audio' ? 12 : 0) + Math.round((received / total) * (patch.targetKind === 'gsx-audio' ? 43 : 55)))
             : patch.targetKind === 'gsx-audio' ? 12 : 0
@@ -543,7 +576,21 @@ class PatchInstaller {
             total,
             message: source === 'gitee' ? '正在从 Gitee 下载补丁' : source === 'mirror' ? 'GitHub 连接异常，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
           })
-        })
+        }
+        const giteeParts = Array.isArray(patch.package.giteeParts) ? patch.package.giteeParts : []
+        if (giteeParts.length > 0) {
+          try {
+            await downloadGiteeParts(giteeParts, archivePath, emitDownloadProgress, this.download)
+          } catch {
+            await this.download(
+              patch.package.githubDownloadUrl || githubFallbackForGiteePatchUrl(patch.package.downloadUrl),
+              archivePath,
+              emitDownloadProgress
+            )
+          }
+        } else {
+          await this.download(patch.package.downloadUrl, archivePath, emitDownloadProgress)
+        }
       }
 
       this.emit(patchId, { phase: 'verify', percent: 58, message: '正在校验补丁' })
@@ -663,7 +710,8 @@ class PatchInstaller {
       const destination = ensureWithin(installation.targetPath, path.join(installation.targetPath, file.relativePath))
       if (file.hadOriginal) {
         const backupStats = await fsp.stat(file.backupPath).catch(() => null)
-        if (!backupStats?.isFile()) {
+        const currentStats = await fsp.stat(destination).catch(() => null)
+        if (!backupStats?.isFile() || !currentStats?.isFile() || await sha256(destination) !== file.installedHash) {
           conflicts.push(file.relativePath)
           continue
         }
@@ -697,6 +745,7 @@ module.exports = {
   PatchInstaller,
   currentWindowsFileTime,
   downloadWithMirrorFallback,
+  downloadGiteeParts,
   ensureWithin,
   synchronizeInstalledLayoutDates,
   isAllowedDownloadUrl,

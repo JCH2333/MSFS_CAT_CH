@@ -1,5 +1,6 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const crypto = require('node:crypto')
 const fs = require('node:fs/promises')
 const { execFile } = require('node:child_process')
 const os = require('node:os')
@@ -8,6 +9,7 @@ const { promisify } = require('node:util')
 const {
   PatchInstaller,
   currentWindowsFileTime,
+  downloadGiteeParts,
   downloadWithMirrorFallback,
   ensureWithin,
   normalizeContentRoot,
@@ -170,6 +172,87 @@ test('retries a reset GitHub package download through the domestic mirror', asyn
   ])
 })
 
+test('downloads, validates, and concatenates Gitee patch parts', async () => {
+  const root = await temporaryDirectory('gsx-installer-gitee-parts-')
+  const destination = path.join(root, 'voice.zip')
+  const contents = [Buffer.from('first part'), Buffer.from('second part')]
+  const calls = []
+  const parts = await Promise.all(contents.map(async (content, index) => ({
+    assetName: `voice.zip.00${index + 1}`,
+    downloadUrl: `https://gitee.com/example/voice.zip.00${index + 1}`,
+    sha256: crypto.createHash('sha256').update(content).digest('hex'),
+    size: content.length
+  })))
+
+  await downloadGiteeParts(parts, destination, () => {}, async (url, output, onProgress) => {
+    const index = calls.push(url) - 1
+    await fs.writeFile(output, contents[index])
+    onProgress({ received: contents[index].length, total: contents[index].length })
+  })
+
+  assert.deepEqual(calls, parts.map((part) => part.downloadUrl))
+  assert.deepEqual(await fs.readFile(destination), Buffer.concat(contents))
+  await assert.rejects(fs.stat(`${destination}.gitee-part-1`), { code: 'ENOENT' })
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('removes every temporary Gitee part when a download fails', async () => {
+  const root = await temporaryDirectory('gsx-installer-gitee-parts-cleanup-')
+  const destination = path.join(root, 'voice.zip')
+  const parts = [{
+    assetName: 'voice.zip.001',
+    downloadUrl: 'https://gitee.com/example/voice.zip.001',
+    sha256: 'a'.repeat(64),
+    size: 1
+  }]
+
+  await assert.rejects(
+    downloadGiteeParts(parts, destination, () => {}, async (_url, output) => {
+      await fs.writeFile(output, 'x')
+      throw new Error('connection lost')
+    }),
+    /connection lost/
+  )
+  await assert.rejects(fs.stat(`${destination}.gitee-part-1`), { code: 'ENOENT' })
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('falls back to the complete GitHub package when a Gitee part fails', async () => {
+  const root = await temporaryDirectory('gsx-installer-gitee-parts-fallback-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'voice.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.mkdir(source)
+  await fs.writeFile(path.join(target, 'panel.txt'), 'original')
+  await fs.writeFile(path.join(source, 'panel.txt'), 'localized')
+  await createZip(source, archive)
+
+  const calls = []
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  patch.package.githubDownloadUrl = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip'
+  patch.package.giteeParts = [{
+    assetName: 'test.zip.001',
+    downloadUrl: 'https://gitee.com/example/test.zip.001',
+    sha256: 'a'.repeat(64),
+    size: 1
+  }]
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (url, destination) => {
+      calls.push(url)
+      if (url.includes('.001')) throw new Error('Gitee part missing')
+      await fs.copyFile(archive, destination)
+    }
+  })
+
+  await installer.install(patch, target)
+  assert.deepEqual(calls, [patch.package.giteeParts[0].downloadUrl, patch.package.githubDownloadUrl])
+  assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'localized')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
 test('synchronizes installed layout dates with copied patch files', async () => {
   const root = await temporaryDirectory('gsx-installer-layout-date-')
   const target = path.join(root, 'target')
@@ -290,6 +373,55 @@ test('restore preserves an introduced file modified after installation', async (
   assert.equal(result.restored, false)
   assert.deepEqual(result.conflicts, ['new.txt'])
   assert.equal(await fs.readFile(introduced, 'utf8'), 'user change')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('restore refuses to overwrite an existing file changed after installation', async () => {
+  const root = await temporaryDirectory('gsx-installer-restore-changed-original-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const backup = path.join(userData, 'backups', 'patch', '1')
+  await fs.mkdir(path.join(target, 'sounds'), { recursive: true })
+  await fs.mkdir(path.join(backup, 'sounds'), { recursive: true })
+  const destination = path.join(target, 'sounds', 'boarding.wav')
+  const backupFile = path.join(backup, 'sounds', 'boarding.wav')
+  await fs.writeFile(destination, 'new addon original')
+  await fs.writeFile(backupFile, 'old addon original')
+  const installedFile = path.join(root, 'installed.wav')
+  await fs.writeFile(installedFile, 'localized')
+  const installer = new PatchInstaller({ userDataDirectory: userData })
+  await installer.writeState({ schemaVersion: 1, installations: { patch: { patchId: 'patch', targetPath: target, backupDirectory: path.join(userData, 'backups', 'patch', '1'), files: [{ relativePath: 'sounds/boarding.wav', hadOriginal: true, backupPath: backupFile, installedHash: await sha256(installedFile) }] } } })
+  const result = await installer.restore('patch')
+  assert.equal(result.restored, false)
+  assert.deepEqual(result.conflicts, ['sounds/boarding.wav'])
+  assert.equal(await fs.readFile(destination, 'utf8'), 'new addon original')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('reinstalls a detected same-version patch and backs up the current files', async () => {
+  const root = await temporaryDirectory('gsx-installer-detected-reinstall-')
+  const target = path.join(root, 'GSX')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'voice.zip')
+  await fs.mkdir(path.join(target, 'sounds'), { recursive: true })
+  await fs.mkdir(path.join(source, 'sounds'), { recursive: true })
+  const destination = path.join(target, 'sounds', 'boarding.wav')
+  await fs.writeFile(destination, 'current addon original')
+  await fs.writeFile(path.join(source, 'sounds', 'boarding.wav'), 'localized voice')
+  await createZip(source, archive)
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  patch.id = 'gsx-pro-zh-cn-voice'
+  patch.targetKind = 'gsx-audio'
+  patch.fingerprint = [{ relativePath: 'sounds/boarding.wav', sha256: await sha256(path.join(source, 'sounds', 'boarding.wav')) }]
+  const installer = new PatchInstaller({ userDataDirectory: userData, download: async (_url, destinationPath) => fs.copyFile(archive, destinationPath) })
+  await installer.writeState({ schemaVersion: 1, installations: { [patch.id]: { patchId: patch.id, name: patch.name, version: patch.version, targetPath: target, installedAt: new Date().toISOString(), source: 'detected', backupDirectory: null, files: [{ relativePath: 'sounds/boarding.wav', hadOriginal: false, backupPath: null, installedHash: '0'.repeat(64) }] } } })
+  assert.equal((await installer.verifyInstallations())[patch.id].state, 'reinstallable')
+  const installation = await installer.install(patch, target)
+  assert.equal(installation.source, 'managed')
+  assert.equal(await fs.readFile(destination, 'utf8'), 'localized voice')
+  const backups = await fs.readdir(path.join(userData, 'backups', patch.id))
+  assert.equal(await fs.readFile(path.join(userData, 'backups', patch.id, backups[0], 'sounds', 'boarding.wav'), 'utf8'), 'current addon original')
   await fs.rm(root, { recursive: true, force: true })
 })
 

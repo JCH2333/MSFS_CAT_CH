@@ -21,6 +21,7 @@ const versionComparison = computed(() => props.installation ? compareVersions(pr
 const needsInstall = computed(() => !props.installation || versionComparison.value > 0 || props.installationCheck?.state !== 'intact')
 const status = computed(() => {
   if (!published.value) return { label: '等待发布', tone: 'muted' }
+  if (props.installationCheck?.state === 'reinstallable') return { label: '插件已更新/重装', tone: 'warning' }
   if (props.installationCheck && props.installationCheck.state !== 'intact') return { label: '需要修复', tone: 'danger' }
   if (versionComparison.value > 0) return { label: '可更新', tone: 'warning' }
   if (versionComparison.value < 0) return { label: '本地版本较新', tone: 'muted' }
@@ -35,6 +36,7 @@ const verificationLabel = computed(() => {
   if (props.installationCheck.state === 'intact') return `已验证 ${props.installationCheck.checkedFiles} 个文件`
   const changed = props.installationCheck.modifiedFiles?.length || 0
   const missing = props.installationCheck.missingFiles?.length || 0
+  if (props.installationCheck.state === 'reinstallable') return `插件更新/重装后需要重新安装：${changed} 个文件变化，${missing} 个缺失`
   return `需处理：${changed} 个已修改，${missing} 个缺失`
 })
 

@@ -33,8 +33,15 @@ test('creates a cloneable installation request from a reactive-like catalog obje
     fingerprint: [new Proxy({ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }, {})],
     package: new Proxy({
       downloadUrl: 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/fsr/fsr.zip',
+      githubDownloadUrl: 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/fsr/fsr.zip',
       sha256: 'c'.repeat(64),
-      contentRoot: 'payload'
+      contentRoot: 'payload',
+      giteeParts: [{
+        assetName: 'fsr.zip.001',
+        downloadUrl: 'https://gitee.com/example/fsr.zip.001',
+        sha256: 'd'.repeat(64),
+        size: 100
+      }]
     }, {})
   }, {})
 
@@ -42,5 +49,12 @@ test('creates a cloneable installation request from a reactive-like catalog obje
 
   assert.deepEqual(structuredClone(request), request)
   assert.equal(request.package.downloadUrl, 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/fsr/fsr.zip')
+  assert.equal(request.package.githubDownloadUrl, request.package.downloadUrl)
+  assert.deepEqual(request.package.giteeParts, [{
+    assetName: 'fsr.zip.001',
+    downloadUrl: 'https://gitee.com/example/fsr.zip.001',
+    sha256: 'd'.repeat(64),
+    size: 100
+  }])
   assert.equal(request.fingerprint[0].relativePath, 'html_ui/panel.js')
 })
