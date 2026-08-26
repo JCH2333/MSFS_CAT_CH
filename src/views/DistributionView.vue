@@ -31,7 +31,7 @@ function joinQqGroup() {
       <div class="distribution-band-icon"><ShieldCheck :size="22" /></div>
       <div>
         <strong>分流包仅提供 GSX 官方安装程序</strong>
-        <p>用于网络无法稳定访问官方更新时更新 GSX Pro 4.0.15。本页不包含汉化补丁、个人配置、日志或缓存。</p>
+        <p>用于网络无法稳定访问官方更新时更新 GSX Pro 4.0.19。本页不包含汉化补丁、个人配置、日志或缓存。</p>
       </div>
     </section>
 
@@ -39,17 +39,17 @@ function joinQqGroup() {
       <div class="settings-section-heading">
         <div>
           <p class="eyebrow">GSX INSTALLER</p>
-          <h2>GSX 4.0.15 分流</h2>
+          <h2>GSX 4.0.19 分流</h2>
         </div>
         <span>官方安装程序</span>
       </div>
       <article class="distribution-installer-card">
         <FileArchive :size="21" />
         <div>
-          <strong>Addon_Manager_v4.0.15.exe</strong>
+          <strong>Addon_Manager_v4.0.19.exe</strong>
           <small>GSX Pro 本体更新包 · 百度网盘</small>
         </div>
-        <button class="icon-button" type="button" title="打开百度网盘下载页" aria-label="打开 GSX 4.0.15 百度网盘下载页" @click="$emit('open-link', baiduShareUrl)">
+        <button class="icon-button" type="button" title="打开百度网盘下载页" aria-label="打开 GSX 4.0.19 百度网盘下载页" @click="$emit('open-link', baiduShareUrl)">
           <ExternalLink :size="16" />
         </button>
       </article>
@@ -90,7 +90,7 @@ function joinQqGroup() {
         </div>
       </div>
       <ol>
-        <li><span>1</span><div><strong>下载 GSX 分流包</strong><small>从百度网盘下载 <code>Addon_Manager_v4.0.15.exe</code>。</small></div></li>
+        <li><span>1</span><div><strong>下载 GSX 分流包</strong><small>从百度网盘下载 <code>Addon_Manager_v4.0.19.exe</code>。</small></div></li>
         <li><span>2</span><div><strong>双击 EXE 安装</strong><small>关闭 Microsoft Flight Simulator 后，双击安装程序并按官方安装向导完成更新。</small></div></li>
         <li><span>3</span><div><strong>重新检查汉化补丁</strong><small>更新 GSX 后回到“汉化补丁”，确认 GSX Pro 简体中文状态；需要时重新安装对应汉化补丁。</small></div></li>
       </ol>

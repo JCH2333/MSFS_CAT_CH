@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs/promises')
 const os = require('node:os')
 const path = require('node:path')
-const { detectPatchTargets, normalizeTargetFolders, parseInstalledPackagesPath } = require('../electron/installation-targets')
+const { detectGsxRuntimeResTarget, detectPatchTargets, normalizeTargetFolders, parseInstalledPackagesPath } = require('../electron/installation-targets')
 
 async function temporaryDirectory(prefix) {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix))
@@ -84,5 +84,21 @@ test('does not detect an Addon Manager folder without the GSX sounds directory',
   })
 
   assert.equal(targets['gsx-pro-zh-cn-voice'], undefined)
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('detects the GSX runtime image directory from an Addon Manager installation root', async () => {
+  const root = await temporaryDirectory('gsx-runtime-res-targets-')
+  const addonManagerRoot = path.join(root, 'Addon Manager')
+  const resRoot = path.join(addonManagerRoot, 'couatl', 'GSX', 'res')
+  await fs.mkdir(path.join(resRoot, 'fonts'), { recursive: true })
+  await fs.writeFile(path.join(resRoot, 'btn_select.png'), 'button')
+
+  const target = await detectGsxRuntimeResTarget({
+    runtimeRoots: [{ rootPath: addonManagerRoot, source: 'FSDreamTeam Addon Manager' }]
+  })
+
+  assert.equal(target.source, 'FSDreamTeam Addon Manager')
+  assert.equal(target.targetPath, resRoot)
   await fs.rm(root, { recursive: true, force: true })
 })

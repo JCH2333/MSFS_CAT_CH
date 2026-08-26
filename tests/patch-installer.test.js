@@ -549,6 +549,72 @@ test('backs up GSX original voice files before download and restores them after 
   await fs.rm(root, { recursive: true, force: true })
 })
 
+test('installs and restores a GSX combined text and image patch across both targets', async () => {
+  const root = await temporaryDirectory('gsx-installer-combined-')
+  const communityTarget = path.join(root, 'Community', 'fsdreamteam-gsx-pro')
+  const runtimeResTarget = path.join(root, 'Addon Manager', 'couatl', 'GSX', 'res')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'combined.zip')
+  const userData = path.join(root, 'user-data')
+  const panelRelative = path.join('html_ui', 'InGamePanels', 'FSDT_GSX_Panel', 'FSDT_GSX_Panel.js')
+  const localizedPanel = 'localized panel'
+  const localizedImage = 'localized select image'
+
+  await fs.mkdir(path.join(communityTarget, path.dirname(panelRelative)), { recursive: true })
+  await fs.mkdir(runtimeResTarget, { recursive: true })
+  await fs.writeFile(path.join(communityTarget, panelRelative), 'original panel')
+  await fs.writeFile(path.join(communityTarget, 'layout.json'), JSON.stringify({
+    content: [{ path: panelRelative.replace(/\\/g, '/'), size: 14, date: 1 }]
+  }))
+  await fs.writeFile(path.join(runtimeResTarget, 'btn_select.png'), 'original select image')
+
+  const communitySource = path.join(source, 'community')
+  const runtimeSource = path.join(source, 'runtime-res')
+  await fs.mkdir(path.join(communitySource, path.dirname(panelRelative)), { recursive: true })
+  await fs.mkdir(runtimeSource, { recursive: true })
+  await fs.writeFile(path.join(communitySource, panelRelative), localizedPanel)
+  await fs.writeFile(path.join(communitySource, 'layout.json'), JSON.stringify({
+    content: [{ path: panelRelative.replace(/\\/g, '/'), size: Buffer.byteLength(localizedPanel), date: 1 }]
+  }))
+  await fs.writeFile(path.join(runtimeSource, 'btn_select.png'), localizedImage)
+  await createZip(source, archive)
+
+  const patch = packageFor('1.2.7', archive, await sha256(archive))
+  patch.id = 'gsx-pro-zh-cn'
+  patch.targetKind = 'gsx-combined'
+  patch.fingerprint = [
+    { target: 'primary', relativePath: 'layout.json', sha256: await sha256(path.join(communitySource, 'layout.json')) },
+    { target: 'primary', relativePath: panelRelative.replace(/\\/g, '/'), sha256: await sha256(path.join(communitySource, panelRelative)) },
+    { target: 'gsx-runtime-res', relativePath: 'btn_select.png', sha256: await sha256(path.join(runtimeSource, 'btn_select.png')) }
+  ]
+  patch.package.installPlan = [
+    { target: 'primary', contentRoot: 'community' },
+    { target: 'gsx-runtime-res', contentRoot: 'runtime-res' }
+  ]
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    resolveAdditionalTarget: async (target) => {
+      assert.equal(target, 'gsx-runtime-res')
+      return runtimeResTarget
+    }
+  })
+  const installation = await installer.installFromFile(patch, communityTarget, archive)
+
+  assert.equal(await fs.readFile(path.join(communityTarget, panelRelative), 'utf8'), localizedPanel)
+  assert.equal(await fs.readFile(path.join(runtimeResTarget, 'btn_select.png'), 'utf8'), localizedImage)
+  assert.equal(installation.files.filter((file) => file.target === 'gsx-runtime-res').length, 1)
+  const imageRecord = installation.files.find((file) => file.target === 'gsx-runtime-res')
+  assert.equal(await fs.readFile(imageRecord.backupPath, 'utf8'), 'original select image')
+  assert.equal((await installer.verifyInstallations())[patch.id].state, 'intact')
+
+  const restored = await installer.restore(patch.id)
+  assert.equal(restored.restored, true)
+  assert.equal(await fs.readFile(path.join(communityTarget, panelRelative), 'utf8'), 'original panel')
+  assert.equal(await fs.readFile(path.join(runtimeResTarget, 'btn_select.png'), 'utf8'), 'original select image')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
 test('installs a checksum-verified local offline package without downloading', async () => {
   const root = await temporaryDirectory('gsx-installer-offline-')
   const target = path.join(root, 'target')

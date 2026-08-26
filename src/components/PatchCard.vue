@@ -17,6 +17,8 @@ defineEmits(['install', 'import', 'restore', 'author'])
 
 const published = computed(() => props.patch.status === 'published')
 const isNetworkAuthored = computed(() => props.patch.id === 'gsx-pro-zh-cn-voice')
+const isGsxCombined = computed(() => props.patch.targetKind === 'gsx-combined')
+const showAddonVersion = computed(() => Boolean(props.patch.addonVersion) && !isNetworkAuthored.value)
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
 const needsInstall = computed(() => !props.installation || versionComparison.value > 0 || props.installationCheck?.state !== 'intact')
 const status = computed(() => {
@@ -58,7 +60,7 @@ const packageSize = computed(() => {
           <span class="status-badge" :data-tone="status.tone">{{ status.label }}</span>
         </div>
         <div class="version-block">
-          <span>{{ patch.addonVersion ? `插件 v${patch.addonVersion}` : '插件版本未声明' }}</span>
+          <span v-if="showAddonVersion">{{ `插件 v${patch.addonVersion}` }}</span>
           <strong>补丁 v{{ patch.version }}</strong>
         </div>
       </div>
@@ -92,7 +94,7 @@ const packageSize = computed(() => {
       <div class="action-buttons">
         <button v-if="installation && installation.source !== 'detected'" class="button button-secondary" type="button" :disabled="busy" @click="$emit('restore', patch)">
           <RotateCcw :size="17" />
-          {{ patch.targetKind === 'gsx-audio' ? '还原原始语音' : '还原' }}
+          {{ patch.targetKind === 'gsx-audio' ? '还原原始语音' : isGsxCombined ? '还原文字与图片' : '还原' }}
         </button>
         <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
           <Download :size="17" />

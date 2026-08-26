@@ -35,6 +35,7 @@ const developmentBridge = {
     onProgress: () => () => {}
   },
   updates: {
+    status: async () => ({ state: 'development' }),
     check: async () => ({ state: 'development' }),
     download: async () => ({ state: 'development' }),
     install: async () => ({ state: 'development' }),
@@ -222,21 +223,13 @@ async function checkUpdate() {
   }
 }
 
-async function downloadUpdate() {
-  try {
-    Object.assign(updateStatus, await bridge.updates.download())
-  } catch (error) {
-    Object.assign(updateStatus, { state: 'error', message: error.message })
-  }
-}
-
 onMounted(async () => {
   Object.assign(appInfo, await bridge.app.getInfo())
   unsubscribeProgress = bridge.patches.onProgress((progress) => {
     operations[progress.patchId] = { ...progress, busy: !['complete', 'error'].includes(progress.phase) }
   })
   unsubscribeUpdates = bridge.updates.onStatus((status) => Object.assign(updateStatus, status))
-  void checkUpdate()
+  Object.assign(updateStatus, await bridge.updates.status())
   await refreshCatalog()
 })
 
@@ -309,8 +302,6 @@ onBeforeUnmount(() => {
           @choose-target="chooseTarget"
           @clear-target="clearTarget"
           @check-update="checkUpdate"
-          @download-update="downloadUpdate"
-          @install-update="bridge.updates.install()"
           @open-link="bridge.external.open"
           @show-agreements="showAgreement = true"
           @support="showSupport = true"
@@ -320,6 +311,6 @@ onBeforeUnmount(() => {
     <AgreementDialog v-if="showAgreement" :required="!agreementAccepted" @accept="acceptAgreements" @decline="declineAgreements" @close="showAgreement = false" />
     <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="showSupport = true" />
     <SupportDialog v-if="showSupport" @close="showSupport = false" />
-    <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" @download="downloadUpdate" @install="bridge.updates.install()" />
+    <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" />
   </div>
 </template>

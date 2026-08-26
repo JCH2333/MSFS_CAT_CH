@@ -77,6 +77,16 @@ async function downloadUpdate(updater) {
   return { state: 'downloaded' }
 }
 
+async function startRequiredUpdate({
+  updater,
+  ...options
+}) {
+  const status = await checkForUpdatesWithFallback({ updater, ...options })
+  if (status.state !== 'available') return status
+  await downloadUpdate(updater)
+  return { state: 'downloading', info: status.info }
+}
+
 async function resetTimedOutCheck(updater) {
   await updater.netSession.closeAllConnections?.()
   // electron-updater caches an in-flight check. The request has been closed, so allow one direct retry.
@@ -147,6 +157,7 @@ module.exports = {
   UpdateCheckTimeoutError,
   checkForUpdatesWithFallback,
   downloadUpdate,
+  startRequiredUpdate,
   resolveGiteeSoftwareFeed,
   updateStatusFromResult
 }

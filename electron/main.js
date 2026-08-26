@@ -2,18 +2,24 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
 const { GitHubCatalog } = require('./github-catalog')
-const { detectPatchTargets } = require('./installation-targets')
+const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
-const { UpdateCheckTimeoutError, checkForUpdatesWithFallback, downloadUpdate, resolveGiteeSoftwareFeed } = require('./software-updater')
+const { UpdateCheckTimeoutError, downloadUpdate, resolveGiteeSoftwareFeed, startRequiredUpdate } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
 let installer = null
+let latestUpdateStatus = { state: 'idle' }
 
 function send(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, payload)
   }
+}
+
+function setUpdateStatus(payload) {
+  latestUpdateStatus = payload
+  send('updates:status', payload)
 }
 
 function createWindow() {
@@ -46,35 +52,59 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
-  mainWindow.once('ready-to-show', () => mainWindow.show())
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+    void startRequiredSoftwareUpdate()
+  })
   mainWindow.on('closed', () => { mainWindow = null })
 }
 
 function configureUpdater() {
   autoUpdater.autoDownload = false
-  autoUpdater.autoInstallOnAppQuit = true
-  autoUpdater.on('checking-for-update', () => send('updates:status', { state: 'checking' }))
-  autoUpdater.on('update-available', (info) => send('updates:status', { state: 'available', info }))
-  autoUpdater.on('update-not-available', (info) => send('updates:status', { state: 'current', info }))
-  autoUpdater.on('download-progress', (progress) => send('updates:status', { state: 'downloading', progress }))
-  autoUpdater.on('update-downloaded', (info) => send('updates:status', { state: 'downloaded', info }))
+  autoUpdater.autoInstallOnAppQuit = false
+  autoUpdater.on('checking-for-update', () => setUpdateStatus({ state: 'checking' }))
+  autoUpdater.on('update-available', (info) => setUpdateStatus({ state: 'available', info }))
+  autoUpdater.on('update-not-available', (info) => setUpdateStatus({ state: 'current', info }))
+  autoUpdater.on('download-progress', (progress) => setUpdateStatus({ state: 'downloading', progress }))
+  autoUpdater.on('update-downloaded', (info) => {
+    setUpdateStatus({ state: 'downloaded', info })
+    setImmediate(() => {
+      setUpdateStatus({ state: 'installing', info })
+      autoUpdater.quitAndInstall(false, true)
+    })
+  })
   autoUpdater.on('error', (error) => {
     if (/no published versions on github/i.test(error.message)) {
-      send('updates:status', { state: 'unpublished' })
+      setUpdateStatus({ state: 'unpublished' })
       return
     }
-    send('updates:status', { state: 'error', message: '暂时无法检查软件更新，请稍后再试' })
+    setUpdateStatus({ state: 'error', message: '暂时无法检查软件更新，请稍后再试' })
   })
 }
 
-function checkForSoftwareUpdates() {
-  return checkForUpdatesWithFallback({
-    updater: autoUpdater,
-    resolveGiteeFeed: () => resolveGiteeSoftwareFeed(),
-    onGiteeFallback: () => send('updates:status', { state: 'checking' }),
-    onDirectFallback: () => send('updates:status', { state: 'checking-direct' }),
-    onMirrorFallback: () => send('updates:status', { state: 'checking-mirror' })
-  })
+async function startRequiredSoftwareUpdate() {
+  if (!app.isPackaged) {
+    const status = { state: 'development', version: app.getVersion() }
+    setUpdateStatus(status)
+    return status
+  }
+  try {
+    const status = await startRequiredUpdate({
+      updater: autoUpdater,
+      resolveGiteeFeed: () => resolveGiteeSoftwareFeed(),
+      onGiteeFallback: () => setUpdateStatus({ state: 'checking' }),
+      onDirectFallback: () => setUpdateStatus({ state: 'checking-direct' }),
+      onMirrorFallback: () => setUpdateStatus({ state: 'checking-mirror' })
+    })
+    if (status.state === 'current') setUpdateStatus(status)
+    return status
+  } catch (error) {
+    const status = error instanceof UpdateCheckTimeoutError
+      ? { state: 'error', message: '检查更新超时。已依次尝试 Gitee、GitHub 和国内镜像，请检查网络或代理设置后重试。' }
+      : { state: 'error', message: '暂时无法检查软件更新，请稍后再试。' }
+    setUpdateStatus(status)
+    return status
+  }
 }
 
 function registerIpc() {
@@ -123,22 +153,8 @@ function registerIpc() {
   ipcMain.handle('patch:install-from-file', (_event, { patch, targetPath, sourceArchivePath }) => installer.installFromFile(patch, targetPath, sourceArchivePath))
   ipcMain.handle('patch:restore', (_event, patchId) => installer.restore(patchId))
 
-  ipcMain.handle('updates:check', async () => {
-    if (!app.isPackaged) {
-      return { state: 'development', version: app.getVersion() }
-    }
-    try {
-      return await checkForSoftwareUpdates()
-    } catch (error) {
-      if (error instanceof UpdateCheckTimeoutError) {
-        return {
-          state: 'error',
-          message: '检查更新超时。已依次尝试 Gitee、GitHub 和国内镜像，请检查网络或代理设置后重试。'
-        }
-      }
-      return { state: 'error', message: '暂时无法检查软件更新，请稍后再试' }
-    }
-  })
+  ipcMain.handle('updates:check', () => startRequiredSoftwareUpdate())
+  ipcMain.handle('updates:status', () => latestUpdateStatus)
   ipcMain.handle('updates:download', async () => {
     if (!app.isPackaged) return { state: 'development' }
     try {
@@ -180,7 +196,13 @@ app.whenReady().then(() => {
   catalog = new GitHubCatalog({ cacheDirectory: path.join(userDataDirectory, 'cache') })
   installer = new PatchInstaller({
     userDataDirectory,
-    onProgress: (payload) => send('patch:progress', payload)
+    onProgress: (payload) => send('patch:progress', payload),
+    resolveAdditionalTarget: async (target) => {
+      if (target !== 'gsx-runtime-res') throw new Error(`不支持的补丁安装目标：${target}`)
+      const detected = await detectGsxRuntimeResTarget()
+      if (!detected?.targetPath) throw new Error('未检测到 FSDreamTeam Addon Manager 的 GSX 图片资源目录')
+      return detected.targetPath
+    }
   })
   configureUpdater()
   registerIpc()

@@ -4,8 +4,6 @@ import { Download, LoaderCircle, RotateCw } from '@lucide/vue'
 defineProps({
   updateStatus: { type: Object, required: true }
 })
-
-defineEmits(['download', 'install'])
 </script>
 
 <template>
@@ -20,23 +18,11 @@ defineEmits(['download', 'install'])
         <LoaderCircle :size="19" class="support-qr-spinner" />
         <span>正在下载更新 {{ Math.round(updateStatus.progress?.percent || 0) }}%</span>
       </div>
-
-      <button
-        v-else-if="updateStatus.state === 'available'"
-        class="button button-primary required-update-action"
-        type="button"
-        @click="$emit('download')"
-      >
-        <Download :size="17" />立即下载更新
-      </button>
-      <button
-        v-else-if="updateStatus.state === 'downloaded'"
-        class="button button-primary required-update-action"
-        type="button"
-        @click="$emit('install')"
-      >
-        <RotateCw :size="17" />立即重启并安装
-      </button>
+      <div v-else class="required-update-progress" aria-live="polite">
+        <RotateCw v-if="updateStatus.state === 'installing'" :size="19" class="support-qr-spinner" />
+        <Download v-else :size="19" />
+        <span>{{ updateStatus.state === 'installing' ? '更新已下载，正在重启并安装' : '已发现新版本，正在自动开始更新' }}</span>
+      </div>
     </section>
   </div>
 </template>

@@ -8,6 +8,7 @@ export function createRecognitionDescriptors(patches) {
     targetKind: typeof patch?.targetKind === 'string' ? patch.targetKind : 'addon',
     fingerprint: Array.isArray(patch?.fingerprint)
       ? patch.fingerprint.map((file) => ({
+        target: typeof file?.target === 'string' ? file.target : 'primary',
         relativePath: typeof file?.relativePath === 'string' ? file.relativePath : '',
         sha256: typeof file?.sha256 === 'string' ? file.sha256 : ''
       }))
@@ -25,6 +26,12 @@ export function createInstallationRequest(patch) {
       githubDownloadUrl: typeof patch?.package?.githubDownloadUrl === 'string' ? patch.package.githubDownloadUrl : '',
       sha256: typeof patch?.package?.sha256 === 'string' ? patch.package.sha256 : '',
       contentRoot: typeof patch?.package?.contentRoot === 'string' ? patch.package.contentRoot : '',
+      installPlan: Array.isArray(patch?.package?.installPlan)
+        ? patch.package.installPlan.map((entry) => ({
+            target: typeof entry?.target === 'string' ? entry.target : '',
+            contentRoot: typeof entry?.contentRoot === 'string' ? entry.contentRoot : ''
+          }))
+        : [],
       giteeParts: Array.isArray(patch?.package?.giteeParts)
         ? patch.package.giteeParts.map((part) => ({
             assetName: typeof part?.assetName === 'string' ? part.assetName : '',

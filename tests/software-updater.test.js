@@ -8,6 +8,7 @@ const {
   checkForUpdatesWithFallback,
   downloadUpdate,
   resolveGiteeSoftwareFeed,
+  startRequiredUpdate,
   updateStatusFromResult
 } = require('../electron/software-updater')
 
@@ -149,4 +150,18 @@ test('reports downloaded only after the updater has completed the download', asy
   const updater = { downloadUpdate: async () => ['C:\\updates\\MSFS_CAT_CH-Setup-1.2.2.exe'] }
 
   assert.deepEqual(await downloadUpdate(updater), { state: 'downloaded' })
+})
+
+test('downloads an available update immediately in the required update flow', async () => {
+  let downloads = 0
+  const updater = createUpdater(async () => ({
+    isUpdateAvailable: true,
+    updateInfo: { version: '1.3.3' }
+  }))
+  updater.downloadUpdate = async () => { downloads += 1 }
+
+  const status = await startRequiredUpdate({ updater, timeoutMs: 20 })
+
+  assert.equal(downloads, 1)
+  assert.deepEqual(status, { state: 'downloading', info: { version: '1.3.3' } })
 })

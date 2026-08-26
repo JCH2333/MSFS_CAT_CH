@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CheckCircle2, Download, ExternalLink, FolderSearch, GitBranch, Heart, MapPin, RefreshCw, RotateCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
+import { CheckCircle2, ExternalLink, FolderSearch, GitBranch, Heart, MapPin, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
 
 const props = defineProps({
   appInfo: { type: Object, required: true },
@@ -11,7 +11,7 @@ const props = defineProps({
   installations: { type: Object, required: true }
 })
 
-defineEmits(['check-update', 'download-update', 'install-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements', 'support'])
+defineEmits(['check-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements', 'support'])
 
 const updateLabel = computed(() => {
   const labels = {
@@ -23,6 +23,7 @@ const updateLabel = computed(() => {
     available: `发现 v${props.updateStatus.info?.version || ''}`,
     downloading: `下载中 ${Math.round(props.updateStatus.progress?.percent || 0)}%`,
     downloaded: '更新已下载',
+    installing: '正在重启并安装更新',
     unpublished: '当前版本尚未发布',
     development: '开发模式',
     error: props.updateStatus.message || '暂时无法检查软件更新，请稍后再试'
@@ -32,6 +33,11 @@ const updateLabel = computed(() => {
 
 function targetPath(patch) {
   return props.targets[patch.id] || props.installations[patch.id]?.targetPath || props.detectedTargets[patch.id]?.targetPath || ''
+}
+
+function patchVersionLabel(patch) {
+  if (patch.id === 'gsx-pro-zh-cn-voice') return `补丁 v${patch.version}`
+  return `${patch.addonVersion ? `插件 v${patch.addonVersion}` : '插件版本未声明'} · 补丁 v${patch.version}`
 }
 
 function targetSource(patch) {
@@ -57,17 +63,9 @@ function targetSource(patch) {
         <span class="settings-detail">{{ updateLabel }}</span>
       </div>
       <div class="settings-actions">
-        <button v-if="updateStatus.state === 'available'" class="button button-primary" type="button" @click="$emit('download-update')">
-          <Download :size="17" />
-          下载更新
-        </button>
-        <button v-else-if="updateStatus.state === 'downloaded'" class="button button-primary" type="button" @click="$emit('install-update')">
-          <RotateCw :size="17" />
-          重启安装
-        </button>
-        <button v-else class="button button-secondary" type="button" :disabled="['checking', 'checking-direct', 'checking-mirror', 'downloading'].includes(updateStatus.state)" @click="$emit('check-update')">
+        <button class="button button-secondary" type="button" :disabled="['checking', 'checking-direct', 'checking-mirror', 'downloading', 'installing'].includes(updateStatus.state)" @click="$emit('check-update')">
           <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-direct', 'checking-mirror'].includes(updateStatus.state) }" />
-          检查更新
+          重新检查
         </button>
       </div>
     </div>
@@ -85,7 +83,7 @@ function targetSource(patch) {
           <div class="target-settings-title">
             <div>
               <strong>{{ patch.name }}</strong>
-              <small>{{ patch.addonVersion ? `插件 v${patch.addonVersion}` : '插件版本未声明' }} · 补丁 v{{ patch.version }}</small>
+              <small>{{ patchVersionLabel(patch) }}</small>
             </div>
             <MapPin :size="17" />
           </div>

@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('gsxTool', {
     onProgress: (listener) => subscribe('patch:progress', listener)
   },
   updates: {
+    status: () => ipcRenderer.invoke('updates:status'),
     check: () => ipcRenderer.invoke('updates:check'),
     download: () => ipcRenderer.invoke('updates:download'),
     install: () => ipcRenderer.invoke('updates:install'),

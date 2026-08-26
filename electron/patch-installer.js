@@ -14,6 +14,7 @@ const ALLOWED_DOWNLOAD_HOSTS = new Set([
   'objects.githubusercontent.com',
   'release-assets.githubusercontent.com'
 ])
+const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
 
 function ensureSafeId(value) {
   if (typeof value !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(value)) {
@@ -49,6 +50,35 @@ async function validateInstallationTarget(patch, target) {
   }
 }
 
+function normalizeInstallPlan(patch) {
+  const configured = patch?.package?.installPlan
+  if (!Array.isArray(configured) || configured.length === 0) {
+    return [{ target: 'primary', contentRoot: normalizeContentRoot(patch?.package?.contentRoot) }]
+  }
+  if (patch?.targetKind !== 'gsx-combined') {
+    throw new Error('只有 GSX 总补丁可以使用多目标安装计划')
+  }
+
+  const targets = new Set()
+  const plan = configured.map((entry, index) => {
+    const target = typeof entry?.target === 'string' ? entry.target.trim() : ''
+    const contentRoot = normalizeContentRoot(entry?.contentRoot)
+    if (!INSTALL_PLAN_TARGETS.has(target) || targets.has(target) || !contentRoot) {
+      throw new Error(`补丁安装计划无效：第 ${index + 1} 项`)
+    }
+    targets.add(target)
+    return { target, contentRoot }
+  })
+  if (plan.length !== 2 || !targets.has('primary') || !targets.has('gsx-runtime-res')) {
+    throw new Error('GSX 总补丁必须包含 Community 与 GSX 图片两个安装目标')
+  }
+  return plan
+}
+
+function backupRelativePath(target, relativePath) {
+  return target === 'primary' ? relativePath : path.join('targets', target, relativePath)
+}
+
 function fingerprintFiles(patch) {
   return Array.isArray(patch?.fingerprint)
     ? patch.fingerprint.filter((file) => (
@@ -56,7 +86,11 @@ function fingerprintFiles(patch) {
       && typeof file.relativePath === 'string'
       && typeof file.sha256 === 'string'
       && /^[a-f0-9]{64}$/.test(file.sha256)
-    ))
+    )).map((file) => ({
+      target: typeof file.target === 'string' ? file.target : 'primary',
+      relativePath: file.relativePath,
+      sha256: file.sha256
+    })).filter((file) => INSTALL_PLAN_TARGETS.has(file.target))
     : []
 }
 
@@ -359,12 +393,13 @@ async function downloadGiteeParts(parts, destination, onProgress, download = dow
 }
 
 class PatchInstaller {
-  constructor({ userDataDirectory, onProgress = () => {}, download = downloadWithMirrorFallback }) {
+  constructor({ userDataDirectory, onProgress = () => {}, download = downloadWithMirrorFallback, resolveAdditionalTarget = null }) {
     this.userDataDirectory = userDataDirectory
     this.statePath = path.join(userDataDirectory, 'installations.json')
     this.backupRoot = path.join(userDataDirectory, 'backups')
     this.onProgress = onProgress
     this.download = download
+    this.resolveAdditionalTarget = resolveAdditionalTarget
   }
 
   async readState() {
@@ -395,7 +430,8 @@ class PatchInstaller {
 
     for (const file of files) {
       try {
-        const destination = ensureWithin(installation.targetPath, path.join(installation.targetPath, file.relativePath))
+        const targetPath = file.targetPath || installation.targetPath
+        const destination = ensureWithin(targetPath, path.join(targetPath, file.relativePath))
         const stats = await fsp.stat(destination).catch(() => null)
         if (!stats?.isFile()) missingFiles.push(file.relativePath)
         else if (await sha256(destination) !== file.installedHash) modifiedFiles.push(file.relativePath)
@@ -414,6 +450,37 @@ class PatchInstaller {
     }
   }
 
+  async resolvePlanTargets(patch, primaryTarget) {
+    const plan = normalizeInstallPlan(patch)
+    const targets = new Map()
+    for (const entry of plan) {
+      let targetPath = primaryTarget
+      if (entry.target !== 'primary') {
+        if (typeof this.resolveAdditionalTarget !== 'function') {
+          throw new Error('无法自动定位 GSX 图片资源目录')
+        }
+        targetPath = await this.resolveAdditionalTarget(entry.target)
+      }
+      if (typeof targetPath !== 'string' || !targetPath.trim()) {
+        throw new Error(`无法定位补丁安装目标：${entry.target}`)
+      }
+      const resolved = path.resolve(targetPath)
+      const stats = await fsp.stat(resolved).catch(() => null)
+      if (!stats?.isDirectory()) {
+        throw new Error(`补丁安装目标不存在或不可访问：${entry.target}`)
+      }
+      if (entry.target === 'gsx-runtime-res') {
+        const selectButton = ensureWithin(resolved, path.join(resolved, 'btn_select.png'))
+        const selectStats = await fsp.stat(selectButton).catch(() => null)
+        if (path.basename(resolved).toLowerCase() !== 'res' || !selectStats?.isFile()) {
+          throw new Error('检测到的 GSX 图片资源目录无效')
+        }
+      }
+      targets.set(entry.target, { ...entry, targetPath: resolved })
+    }
+    return targets
+  }
+
   async reconcileInstallations(patches, targetPaths) {
     const state = await this.readState()
     const result = {}
@@ -429,11 +496,18 @@ class PatchInstaller {
       const target = path.resolve(targetPath)
       const targetStats = await fsp.stat(target).catch(() => null)
       if (!targetStats?.isDirectory()) continue
+      const installTargets = await this.resolvePlanTargets(patch, target).catch(() => null)
+      if (!installTargets) continue
 
       let matches = true
       for (const file of fingerprints) {
         try {
-          const destination = ensureWithin(target, path.join(target, file.relativePath))
+          const fileTarget = installTargets.get(file.target || 'primary')
+          if (!fileTarget) {
+            matches = false
+            break
+          }
+          const destination = ensureWithin(fileTarget.targetPath, path.join(fileTarget.targetPath, file.relativePath))
           const stats = await fsp.stat(destination).catch(() => null)
           if (!stats?.isFile() || await sha256(destination) !== file.sha256) {
             matches = false
@@ -457,6 +531,8 @@ class PatchInstaller {
         source: 'detected',
         backupDirectory: null,
         files: fingerprints.map((file) => ({
+          target: file.target || 'primary',
+          targetPath: installTargets.get(file.target || 'primary').targetPath,
           relativePath: file.relativePath,
           hadOriginal: false,
           backupPath: null,
@@ -513,6 +589,7 @@ class PatchInstaller {
       throw new Error('安装目录不存在或不可访问')
     }
     await validateInstallationTarget(patch, target)
+    const installTargets = await this.resolvePlanTargets(patch, target)
 
     const state = await this.readState()
     const existingInstallation = state.installations[patchId]
@@ -545,13 +622,15 @@ class PatchInstaller {
         }
         for (let index = 0; index < fingerprints.length; index += 1) {
           const file = fingerprints[index]
-          const destination = ensureWithin(target, path.join(target, file.relativePath))
+          const installTarget = installTargets.get(file.target)
+          if (!installTarget) throw new Error(`补丁文件目标无效：${file.target}`)
+          const destination = ensureWithin(installTarget.targetPath, path.join(installTarget.targetPath, file.relativePath))
           const existingStats = await fsp.stat(destination).catch(() => null)
           if (existingStats?.isFile()) {
-            const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, file.relativePath))
+            const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, backupRelativePath(file.target, file.relativePath)))
             await fsp.mkdir(path.dirname(backupPath), { recursive: true })
             await fsp.copyFile(destination, backupPath)
-            preparedBackups.add(file.relativePath)
+            preparedBackups.add(`${file.target}:${file.relativePath}`)
           }
           if (patch.targetKind === 'gsx-audio' && (index === fingerprints.length - 1 || index % 40 === 0)) {
             const percent = Math.round(((index + 1) / fingerprints.length) * 12)
@@ -602,54 +681,68 @@ class PatchInstaller {
       await fsp.mkdir(extractDirectory, { recursive: true })
       this.emit(patchId, { phase: 'extract', percent: 64, message: '正在解压补丁' })
       await extractZip(archivePath, { dir: extractDirectory })
-      const contentRoot = ensureWithin(extractDirectory, path.join(extractDirectory, normalizeContentRoot(patch.package.contentRoot)))
-      const contentStats = await fsp.stat(contentRoot).catch(() => null)
-      if (!contentStats?.isDirectory()) {
-        throw new Error('补丁包 contentRoot 不存在')
+      const planFiles = []
+      for (const installTarget of installTargets.values()) {
+        const contentRoot = ensureWithin(extractDirectory, path.join(extractDirectory, installTarget.contentRoot))
+        const contentStats = await fsp.stat(contentRoot).catch(() => null)
+        if (!contentStats?.isDirectory()) {
+          throw new Error(`补丁包缺少安装内容：${installTarget.target}`)
+        }
+        const sourceFiles = await walkFiles(contentRoot)
+        if (sourceFiles.length === 0) {
+          throw new Error(`补丁包安装内容为空：${installTarget.target}`)
+        }
+        validatePatchFiles(patchId, sourceFiles.map((sourceFile) => path.relative(contentRoot, sourceFile)))
+        if (installTarget.target === 'primary') validatePatchLayoutEntries(sourceFiles, contentRoot)
+        planFiles.push({ ...installTarget, contentRoot, sourceFiles })
       }
-
-      const sourceFiles = await walkFiles(contentRoot)
-      if (sourceFiles.length === 0) {
-        throw new Error('补丁包中没有可安装文件')
-      }
-
-      validatePatchFiles(patchId, sourceFiles.map((sourceFile) => path.relative(contentRoot, sourceFile)))
-      validatePatchLayoutEntries(sourceFiles, contentRoot)
 
       await fsp.mkdir(backupDirectory, { recursive: true })
       const recordFiles = []
-      for (let index = 0; index < sourceFiles.length; index += 1) {
-        const sourceFile = sourceFiles[index]
-        const relativePath = path.relative(contentRoot, sourceFile)
-        if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-          throw new Error(`补丁文件路径无效：${relativePath}`)
-        }
-        const destination = ensureWithin(target, path.join(target, relativePath))
-        const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, relativePath))
-        const existingStats = await fsp.stat(destination).catch(() => null)
-        if (existingStats?.isDirectory()) {
-          throw new Error(`目标位置是目录，无法写入文件：${relativePath}`)
-        }
+      const totalSourceFiles = planFiles.reduce((total, entry) => total + entry.sourceFiles.length, 0)
+      let installedCount = 0
+      for (const planEntry of planFiles) {
+        for (const sourceFile of planEntry.sourceFiles) {
+          const relativePath = path.relative(planEntry.contentRoot, sourceFile)
+          if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+            throw new Error(`补丁文件路径无效：${relativePath}`)
+          }
+          const destination = ensureWithin(planEntry.targetPath, path.join(planEntry.targetPath, relativePath))
+          const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, backupRelativePath(planEntry.target, relativePath)))
+          const existingStats = await fsp.stat(destination).catch(() => null)
+          if (existingStats?.isDirectory()) {
+            throw new Error(`目标位置是目录，无法写入文件：${relativePath}`)
+          }
 
-        const hadOriginal = Boolean(existingStats?.isFile())
-        if (hadOriginal && !preparedBackups.has(relativePath)) {
-          await fsp.mkdir(path.dirname(backupPath), { recursive: true })
-          await fsp.copyFile(destination, backupPath)
+          const hadOriginal = Boolean(existingStats?.isFile())
+          if (hadOriginal && !preparedBackups.has(`${planEntry.target}:${relativePath}`)) {
+            await fsp.mkdir(path.dirname(backupPath), { recursive: true })
+            await fsp.copyFile(destination, backupPath)
+          }
+
+          await fsp.mkdir(path.dirname(destination), { recursive: true })
+          await fsp.copyFile(sourceFile, destination)
+          const installedHash = await sha256(destination)
+          const fileRecord = {
+            target: planEntry.target,
+            targetPath: planEntry.targetPath,
+            relativePath,
+            hadOriginal,
+            backupPath: hadOriginal ? backupPath : null,
+            installedHash
+          }
+          recordFiles.push(fileRecord)
+          appliedFiles.push({ destination, ...fileRecord })
+
+          installedCount += 1
+          const percent = 68 + Math.round((installedCount / totalSourceFiles) * 30)
+          this.emit(patchId, { phase: 'install', percent, message: `正在安装 ${installedCount}/${totalSourceFiles}` })
         }
-
-        await fsp.mkdir(path.dirname(destination), { recursive: true })
-        await fsp.copyFile(sourceFile, destination)
-        const installedHash = await sha256(destination)
-        const fileRecord = { relativePath, hadOriginal, backupPath: hadOriginal ? backupPath : null, installedHash }
-        recordFiles.push(fileRecord)
-        appliedFiles.push({ destination, ...fileRecord })
-
-        const percent = 68 + Math.round(((index + 1) / sourceFiles.length) * 30)
-        this.emit(patchId, { phase: 'install', percent, message: `正在安装 ${index + 1}/${sourceFiles.length}` })
       }
 
-      if (await synchronizeInstalledLayoutDates(target, recordFiles)) {
-        const layoutRecord = recordFiles.find((file) => file.relativePath.toLowerCase() === 'layout.json')
+      const primaryFiles = recordFiles.filter((file) => file.target === 'primary')
+      if (await synchronizeInstalledLayoutDates(target, primaryFiles)) {
+        const layoutRecord = primaryFiles.find((file) => file.relativePath.toLowerCase() === 'layout.json')
         if (layoutRecord) layoutRecord.installedHash = await sha256(path.join(target, layoutRecord.relativePath))
       }
 
@@ -707,7 +800,8 @@ class PatchInstaller {
     const conflicts = []
     let filesRestored = 0
     for (const file of [...installation.files].reverse()) {
-      const destination = ensureWithin(installation.targetPath, path.join(installation.targetPath, file.relativePath))
+      const targetPath = file.targetPath || installation.targetPath
+      const destination = ensureWithin(targetPath, path.join(targetPath, file.relativePath))
       if (file.hadOriginal) {
         const backupStats = await fsp.stat(file.backupPath).catch(() => null)
         const currentStats = await fsp.stat(destination).catch(() => null)

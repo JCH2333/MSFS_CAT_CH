@@ -8,7 +8,8 @@ const GITHUB_CATALOG_URL = CATALOG_RAW_URL
 const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download'
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
 const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn', 'gsx-pro-zh-cn-voice'])
-const TARGET_KINDS = new Set(['addon', 'gsx-audio'])
+const TARGET_KINDS = new Set(['addon', 'gsx-audio', 'gsx-combined'])
+const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
 const CATALOG_TIMEOUT_MS = 2000
 
 function assertString(value, label) {
@@ -16,6 +17,25 @@ function assertString(value, label) {
     throw new Error(`${label} 必须是非空字符串`)
   }
   return value.trim()
+}
+
+function validateInstallPlan(packageInfo, patchId) {
+  if (packageInfo.installPlan === undefined) return []
+  if (!Array.isArray(packageInfo.installPlan) || packageInfo.installPlan.length === 0) {
+    throw new Error(`补丁 ${patchId} package.installPlan 必须是非空数组`)
+  }
+
+  const targets = new Set()
+  return packageInfo.installPlan.map((entry, index) => {
+    const target = assertString(entry?.target, `补丁 ${patchId} package.installPlan[${index}].target`)
+    const contentRoot = assertString(entry?.contentRoot, `补丁 ${patchId} package.installPlan[${index}].contentRoot`)
+    const normalized = path.posix.normalize(contentRoot.replace(/\\/g, '/'))
+    if (!INSTALL_PLAN_TARGETS.has(target) || targets.has(target) || normalized === '.' || normalized === '..' || normalized.startsWith('../') || normalized.startsWith('/')) {
+      throw new Error(`补丁 ${patchId} package.installPlan[${index}] 无效`)
+    }
+    targets.add(target)
+    return { target, contentRoot: normalized }
+  })
 }
 
 function validatePackage(packageInfo, patchId) {
@@ -74,7 +94,8 @@ function validatePackage(packageInfo, patchId) {
     contentRoot: typeof packageInfo.contentRoot === 'string' ? packageInfo.contentRoot.trim() : '',
     downloadUrl: `${GITEE_PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
     githubDownloadUrl: `${PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
-    giteeParts
+    giteeParts,
+    installPlan: validateInstallPlan(packageInfo, patchId)
   }
 }
 
@@ -94,7 +115,10 @@ function validateFingerprint(input, patchId) {
 
     const sha256 = assertString(file?.sha256, `补丁 ${patchId} fingerprint[${index}].sha256`).toLowerCase()
     if (!/^[a-f0-9]{64}$/.test(sha256)) throw new Error(`补丁 ${patchId} fingerprint SHA-256 无效`)
-    return { relativePath, sha256 }
+    if (file.target === undefined) return { relativePath, sha256 }
+    const target = assertString(file.target, `补丁 ${patchId} fingerprint[${index}].target`)
+    if (!INSTALL_PLAN_TARGETS.has(target)) throw new Error(`补丁 ${patchId} fingerprint[${index}].target 无效`)
+    return { target, relativePath, sha256 }
   })
 }
 

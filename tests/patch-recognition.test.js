@@ -18,7 +18,7 @@ test('creates cloneable patch recognition descriptors from reactive-like catalog
     name: 'GSX Pro',
     version: '1.0.0',
     targetKind: 'addon',
-    fingerprint: [{ relativePath: 'html_ui/panel.js', sha256: 'a'.repeat(64) }]
+    fingerprint: [{ target: 'primary', relativePath: 'html_ui/panel.js', sha256: 'a'.repeat(64) }]
   }])
   assert.deepEqual(structuredClone(descriptors), descriptors)
 })
@@ -36,6 +36,13 @@ test('creates a cloneable installation request from a reactive-like catalog obje
       githubDownloadUrl: 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/fsr/fsr.zip',
       sha256: 'c'.repeat(64),
       contentRoot: 'payload',
+      installPlan: [{
+        target: 'primary',
+        contentRoot: 'community'
+      }, {
+        target: 'gsx-runtime-res',
+        contentRoot: 'runtime-res'
+      }],
       giteeParts: [{
         assetName: 'fsr.zip.001',
         downloadUrl: 'https://gitee.com/example/fsr.zip.001',
@@ -56,5 +63,13 @@ test('creates a cloneable installation request from a reactive-like catalog obje
     sha256: 'd'.repeat(64),
     size: 100
   }])
+  assert.deepEqual(request.package.installPlan, [{
+    target: 'primary',
+    contentRoot: 'community'
+  }, {
+    target: 'gsx-runtime-res',
+    contentRoot: 'runtime-res'
+  }])
+  assert.equal(request.fingerprint[0].target, 'primary')
   assert.equal(request.fingerprint[0].relativePath, 'html_ui/panel.js')
 })

@@ -138,6 +138,36 @@ function gsxAudioCandidates(audioRoots) {
   return candidates
 }
 
+function gsxRuntimeResCandidates(runtimeRoots) {
+  const candidates = []
+  for (const root of runtimeRoots) {
+    candidates.push(
+      { targetPath: path.join(root.rootPath, 'couatl', 'GSX', 'res'), source: root.source },
+      { targetPath: path.join(root.rootPath, 'couatl64', 'GSX', 'res'), source: root.source }
+    )
+  }
+  return candidates
+}
+
+async function detectGsxRuntimeResTarget(options = {}) {
+  const configuredRoots = normalizeAudioRoots(options.runtimeRoots)
+  const registryRoots = configuredRoots.length ? [] : await registeredAddonManagerRoots()
+  const candidates = []
+  const seen = new Set()
+
+  for (const candidate of gsxRuntimeResCandidates([...configuredRoots, ...registryRoots])) {
+    const normalized = path.resolve(candidate.targetPath)
+    const key = normalized.toLowerCase()
+    if (seen.has(key) || !await isDirectory(normalized)) continue
+    if (!await isDirectory(path.join(normalized, 'fonts'))) continue
+    if (!await fs.stat(path.join(normalized, 'btn_select.png')).then((stats) => stats.isFile()).catch(() => false)) continue
+    seen.add(key)
+    candidates.push({ targetPath: normalized, source: candidate.source })
+  }
+
+  return candidates.length ? { ...candidates[0], candidates } : null
+}
+
 async function detectPatchTargets(patches, options = {}) {
   const configured = await configuredRoots(options)
   const knownRoots = Array.isArray(options.packageRoots) ? options.packageRoots : []
@@ -190,6 +220,7 @@ async function detectPatchTargets(patches, options = {}) {
 }
 
 module.exports = {
+  detectGsxRuntimeResTarget,
   detectPatchTargets,
   normalizeTargetFolders,
   parseInstalledPackagesPath,

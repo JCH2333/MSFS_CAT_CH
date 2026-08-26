@@ -68,6 +68,41 @@ test('validates Gitee split assets for a large patch package', () => {
   )
 })
 
+test('validates a GSX combined patch installation plan', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro 简体中文',
+    version: '1.2.7',
+    addonVersion: '4.0.19',
+    status: 'published',
+    targetKind: 'gsx-combined',
+    fingerprint: [
+      { target: 'primary', relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) },
+      { target: 'gsx-runtime-res', relativePath: 'btn_select.png', sha256: 'c'.repeat(64) }
+    ],
+    package: {
+      releaseTag: 'gsx-pro-zh-cn-v1.2.7',
+      assetName: 'gsx-total.zip',
+      sha256: 'a'.repeat(64),
+      size: 100,
+      installPlan: [
+        { target: 'primary', contentRoot: 'community' },
+        { target: 'gsx-runtime-res', contentRoot: 'runtime-res' }
+      ]
+    }
+  }))
+
+  assert.deepEqual(result.patches[0].package.installPlan, [
+    { target: 'primary', contentRoot: 'community' },
+    { target: 'gsx-runtime-res', contentRoot: 'runtime-res' }
+  ])
+  assert.deepEqual(result.patches[0].fingerprint[1], {
+    target: 'gsx-runtime-res',
+    relativePath: 'btn_select.png',
+    sha256: 'c'.repeat(64)
+  })
+})
+
 test('rejects Gitee split assets whose total size differs from the complete package', () => {
   assert.throws(() => validateCatalog(catalogWith({
     id: 'gsx-pro-zh-cn-voice',

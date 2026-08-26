@@ -5,20 +5,23 @@ const path = require('node:path')
 
 const projectFile = (...parts) => fs.readFileSync(path.join(__dirname, '..', ...parts), 'utf8')
 
-test('checks for updates automatically after subscribing to update status', () => {
+test('reads the main-process update state after subscribing to update status', () => {
   const source = projectFile('src', 'App.vue')
   const subscribeIndex = source.indexOf('unsubscribeUpdates = bridge.updates.onStatus')
-  const startupCheckIndex = source.indexOf('void checkUpdate()')
+  const startupStatusIndex = source.indexOf('await bridge.updates.status()')
 
   assert.ok(subscribeIndex >= 0)
-  assert.ok(startupCheckIndex > subscribeIndex)
+  assert.ok(startupStatusIndex > subscribeIndex)
 })
 
-test('requires an available update to be downloaded and installed without a close or cancel action', () => {
+test('starts the required update flow automatically without renderer actions', () => {
+  const main = projectFile('electron', 'main.js')
   const source = projectFile('src', 'components', 'RequiredUpdateDialog.vue')
 
-  assert.match(source, /updateStatus\.state === 'available'/)
-  assert.match(source, /updateStatus\.state === 'downloaded'/)
+  assert.match(main, /void startRequiredSoftwareUpdate\(\)/)
+  assert.match(main, /autoUpdater\.quitAndInstall\(false, true\)/)
+  assert.match(source, /正在自动开始更新/)
+  assert.doesNotMatch(source, /\$emit\('download'\)|\$emit\('install'\)/)
   assert.doesNotMatch(source, /\$emit\('close'\)|取消更新|暂不更新|稍后更新/)
 })
 
