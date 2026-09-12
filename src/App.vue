@@ -8,6 +8,7 @@ import SettingsView from './views/SettingsView.vue'
 import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import SupportDialog from './components/SupportDialog.vue'
+import FeedbackDialog from './components/FeedbackDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
 import { AGREEMENT_ACCEPTANCE_VALUE, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
@@ -41,6 +42,10 @@ const developmentBridge = {
     install: async () => ({ state: 'development' }),
     onStatus: () => () => {}
   },
+  feedback: {
+    chooseImages: async () => [],
+    submit: async () => ({ ok: false, message: '请在桌面应用中使用问题反馈' })
+  },
   external: { open: async () => false }
 }
 
@@ -60,6 +65,7 @@ const showAgreement = ref(!agreementAccepted.value)
 const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
 const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
 const showSupport = ref(false)
+const showFeedback = ref(false)
 const updateRequired = computed(() => ['available', 'downloading', 'downloaded'].includes(updateStatus.state))
 let unsubscribeProgress = () => {}
 let unsubscribeUpdates = () => {}
@@ -305,12 +311,14 @@ onBeforeUnmount(() => {
           @open-link="bridge.external.open"
           @show-agreements="showAgreement = true"
           @support="showSupport = true"
+          @feedback="showFeedback = true"
         />
       </main>
     </div>
     <AgreementDialog v-if="showAgreement" :required="!agreementAccepted" @accept="acceptAgreements" @decline="declineAgreements" @close="showAgreement = false" />
     <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="showSupport = true" />
     <SupportDialog v-if="showSupport" @close="showSupport = false" />
+    <FeedbackDialog v-if="showFeedback" :bridge="bridge" @close="showFeedback = false" />
     <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" />
   </div>
 </template>

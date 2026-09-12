@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CheckCircle2, ExternalLink, FolderSearch, GitBranch, Heart, MapPin, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
+import { CheckCircle2, ExternalLink, FolderSearch, GitBranch, Heart, MapPin, MessageSquareText, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
 
 const props = defineProps({
   appInfo: { type: Object, required: true },
@@ -11,21 +11,17 @@ const props = defineProps({
   installations: { type: Object, required: true }
 })
 
-defineEmits(['check-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements', 'support'])
+defineEmits(['check-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements', 'support', 'feedback'])
 
 const updateLabel = computed(() => {
   const labels = {
     idle: '尚未检查',
-    'checking-server': '正在检查更新服务器',
-    checking: '正在检查',
-    'checking-direct': 'Gitee 不可用，正在检查 GitHub 备用源',
-    'checking-mirror': 'GitHub 不可用，正在检查国内镜像',
+    checking: '正在检查更新',
     current: '当前已是最新版本',
     available: `发现 v${props.updateStatus.info?.version || ''}`,
     downloading: `下载中 ${Math.round(props.updateStatus.progress?.percent || 0)}%`,
     downloaded: '更新已下载',
     installing: '正在重启并安装更新',
-    unpublished: '当前版本尚未发布',
     development: '开发模式',
     error: props.updateStatus.message || '暂时无法检查软件更新，请稍后再试'
   }
@@ -64,8 +60,8 @@ function targetSource(patch) {
         <span class="settings-detail">{{ updateLabel }}</span>
       </div>
       <div class="settings-actions">
-        <button class="button button-secondary" type="button" :disabled="['checking', 'checking-server', 'checking-direct', 'checking-mirror', 'downloading', 'installing'].includes(updateStatus.state)" @click="$emit('check-update')">
-          <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-server', 'checking-direct', 'checking-mirror'].includes(updateStatus.state) }" />
+        <button class="button button-secondary" type="button" :disabled="['checking', 'downloading', 'installing'].includes(updateStatus.state)" @click="$emit('check-update')">
+          <RefreshCw :size="17" :class="{ spinning: updateStatus.state === 'checking' }" />
           重新检查
         </button>
       </div>
@@ -109,22 +105,22 @@ function targetSource(patch) {
     <div class="settings-list">
       <button class="repository-row" type="button" @click="$emit('open-link', 'https://gitee.com/ljd123456/MSFS_CAT_CH')">
         <GitBranch :size="20" />
-        <span><strong>软件仓库（Gitee 主源）</strong><small>ljd123456/MSFS_CAT_CH</small></span>
+        <span><strong>软件仓库（Gitee）</strong><small>ljd123456/MSFS_CAT_CH</small></span>
         <ExternalLink :size="17" />
       </button>
       <button class="repository-row" type="button" @click="$emit('open-link', 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES')">
         <GitBranch :size="20" />
-        <span><strong>补丁仓库（Gitee 主源）</strong><small>ljd123456/MSFS_CAT_CH_PATCHES</small></span>
+        <span><strong>补丁仓库（Gitee）</strong><small>ljd123456/MSFS_CAT_CH_PATCHES</small></span>
         <ExternalLink :size="17" />
       </button>
       <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH')">
         <GitBranch :size="20" />
-        <span><strong>软件仓库（GitHub 备用）</strong><small>JCH2333/MSFS_CAT_CH</small></span>
+        <span><strong>软件仓库（GitHub）</strong><small>JCH2333/MSFS_CAT_CH</small></span>
         <ExternalLink :size="17" />
       </button>
       <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES')">
         <GitBranch :size="20" />
-        <span><strong>补丁仓库（GitHub 备用）</strong><small>JCH2333/MSFS_CAT_CH_PATCHES</small></span>
+        <span><strong>补丁仓库（GitHub）</strong><small>JCH2333/MSFS_CAT_CH_PATCHES</small></span>
         <ExternalLink :size="17" />
       </button>
     </div>
@@ -138,6 +134,7 @@ function targetSource(patch) {
       </div>
       <div class="legal-actions">
         <button class="button button-secondary" type="button" @click="$emit('show-agreements')"><ScrollText :size="16" />查看已同意的协议</button>
+        <button class="button button-secondary" type="button" @click="$emit('feedback')"><MessageSquareText :size="16" />问题反馈</button>
         <button class="button button-secondary" type="button" @click="$emit('support')"><Heart :size="16" />赞助支持</button>
       </div>
       <p class="agreement-status"><CheckCircle2 :size="16" />协议状态：已同意。撤销同意请在协议窗口选择“不同意并退出”。</p>
@@ -145,7 +142,7 @@ function targetSource(patch) {
 
     <div class="privacy-line">
       <CheckCircle2 :size="17" />
-      <span>完全免费使用，不需要账号，不上传使用记录</span>
+      <span>完全免费使用，不需要账号，不上传使用记录；反馈匿名提交，仅包含填写的内容和截图</span>
     </div>
   </section>
 </template>

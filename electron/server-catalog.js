@@ -1,16 +1,15 @@
 const fs = require('node:fs/promises')
 const path = require('node:path')
+const { SERVER_HOSTNAME, buildServerUrl } = require('./distribution-server')
 const { isSemanticVersion } = require('./versioning')
-const { CATALOG_RAW_URL, GITEE_CATALOG_RAW_URL, GITEE_PATCH_RELEASE_BASE, isTimeoutError, mirrorGitHubUrl } = require('./github-mirror')
 
-const CATALOG_URL = GITEE_CATALOG_RAW_URL
-const GITHUB_CATALOG_URL = CATALOG_RAW_URL
-const PATCH_RELEASE_BASE = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download'
+const CATALOG_MANIFEST_PATH = '/api/catalog/manifest.json'
+const CATALOG_URL = buildServerUrl(CATALOG_MANIFEST_PATH)
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
 const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn', 'gsx-pro-zh-cn-voice'])
 const TARGET_KINDS = new Set(['addon', 'gsx-audio', 'gsx-combined'])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
-const CATALOG_TIMEOUT_MS = 2000
+const CATALOG_TIMEOUT_MS = 5000
 
 function assertString(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
@@ -38,6 +37,19 @@ function validateInstallPlan(packageInfo, patchId) {
   })
 }
 
+function validateServerDownloadUrl(value, patchId) {
+  let url
+  try {
+    url = new URL(value)
+  } catch {
+    throw new Error(`补丁 ${patchId} package.downloadUrl 不是有效 URL`)
+  }
+  if (url.protocol !== 'https:' || url.hostname !== SERVER_HOSTNAME) {
+    throw new Error(`补丁 ${patchId} package.downloadUrl 必须指向分发服务器`)
+  }
+  return value
+}
+
 function validatePackage(packageInfo, patchId) {
   if (!packageInfo || typeof packageInfo !== 'object') {
     throw new Error(`补丁 ${patchId} 缺少 package`)
@@ -45,56 +57,28 @@ function validatePackage(packageInfo, patchId) {
 
   const releaseTag = assertString(packageInfo.releaseTag, `补丁 ${patchId} package.releaseTag`)
   const assetName = assertString(packageInfo.assetName, `补丁 ${patchId} package.assetName`)
+  if (assetName.includes('/') || assetName.includes('\\')) {
+    throw new Error(`补丁 ${patchId} package.assetName 无效`)
+  }
   const sha256 = assertString(packageInfo.sha256, `补丁 ${patchId} package.sha256`).toLowerCase()
   if (!/^[a-f0-9]{64}$/.test(sha256)) {
     throw new Error(`补丁 ${patchId} 的 SHA-256 格式无效`)
   }
-
-  const giteeParts = packageInfo.giteeParts === undefined
-    ? []
-    : (() => {
-        if (!Array.isArray(packageInfo.giteeParts) || packageInfo.giteeParts.length === 0) {
-          throw new Error(`补丁 ${patchId} package.giteeParts 必须是非空数组`)
-        }
-        const names = new Set()
-        return packageInfo.giteeParts.map((part, index) => {
-          const assetName = assertString(part?.assetName, `补丁 ${patchId} package.giteeParts[${index}].assetName`)
-          const partSha256 = assertString(part?.sha256, `补丁 ${patchId} package.giteeParts[${index}].sha256`).toLowerCase()
-          const size = Number(part?.size)
-          if (!/^[a-f0-9]{64}$/.test(partSha256) || !Number.isSafeInteger(size) || size <= 0) {
-            throw new Error(`补丁 ${patchId} package.giteeParts[${index}] 无效`)
-          }
-          if (assetName.includes('/') || assetName.includes('\\') || names.has(assetName)) {
-            throw new Error(`补丁 ${patchId} package.giteeParts[${index}].assetName 无效`)
-          }
-          names.add(assetName)
-          return {
-            assetName,
-            sha256: partSha256,
-            size,
-            downloadUrl: `${GITEE_PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`
-          }
-        })
-      })()
-
-  const packageSize = Number.isFinite(packageInfo.size) && packageInfo.size >= 0 ? packageInfo.size : 0
-  if (giteeParts.length > 0 && (
-    !Number.isSafeInteger(packageSize)
-    || packageSize <= 0
-    || giteeParts.reduce((total, part) => total + part.size, 0) !== packageSize
-  )) {
-    throw new Error(`补丁 ${patchId} package.giteeParts 总大小必须等于完整补丁包大小`)
+  const size = Number(packageInfo.size)
+  if (!Number.isSafeInteger(size) || size <= 0) {
+    throw new Error(`补丁 ${patchId} package.size 必须是大于 0 的整数`)
   }
+  const downloadUrl = packageInfo.downloadUrl === undefined || packageInfo.downloadUrl === null || packageInfo.downloadUrl === ''
+    ? ''
+    : validateServerDownloadUrl(assertString(packageInfo.downloadUrl, `补丁 ${patchId} package.downloadUrl`), patchId)
 
   return {
     releaseTag,
     assetName,
     sha256,
-    size: packageSize,
+    size,
     contentRoot: typeof packageInfo.contentRoot === 'string' ? packageInfo.contentRoot.trim() : '',
-    downloadUrl: `${GITEE_PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
-    githubDownloadUrl: `${PATCH_RELEASE_BASE}/${encodeURIComponent(releaseTag)}/${encodeURIComponent(assetName)}`,
-    giteeParts,
+    downloadUrl,
     installPlan: validateInstallPlan(packageInfo, patchId)
   }
 }
@@ -193,7 +177,7 @@ function validateCatalog(input) {
   }
 }
 
-class GitHubCatalog {
+class ServerCatalog {
   constructor({ cacheDirectory, fetchImpl = globalThis.fetch, catalogUrl = CATALOG_URL, timeoutMs = CATALOG_TIMEOUT_MS }) {
     this.cacheDirectory = cacheDirectory
     this.cachePath = path.join(cacheDirectory, 'patch-catalog.json')
@@ -220,54 +204,38 @@ class GitHubCatalog {
   async fetchCatalog(url) {
     const response = await this.fetchImpl(`${url}?t=${Date.now()}`, {
       headers: {
-        Accept: 'application/vnd.github.raw+json',
+        Accept: 'application/json',
         'User-Agent': 'msfs-cat-ch'
       },
       signal: AbortSignal.timeout(this.timeoutMs)
     })
     if (!response.ok) {
-      throw new Error(`下载源返回 HTTP ${response.status}`)
+      throw new Error(`补丁目录服务器返回 HTTP ${response.status}`)
     }
     return validateCatalog(await response.json())
   }
 
+  // 2.0 起目录只来自分发服务器；服务器不可用时读取本地缓存（可能过期），无缓存则报错。
   async refresh() {
     try {
       const catalog = await this.fetchCatalog(this.catalogUrl)
       await this.writeCache(catalog)
-      return { catalog, source: 'gitee', stale: false, error: null }
-    } catch (giteeError) {
-      let error = giteeError
-      try {
-        const catalog = await this.fetchCatalog(GITHUB_CATALOG_URL)
-        await this.writeCache(catalog)
-        return { catalog, source: 'github', stale: false, error: null }
-      } catch (githubError) {
-        error = githubError
-        if (isTimeoutError(githubError)) {
-          try {
-            const catalog = await this.fetchCatalog(mirrorGitHubUrl(GITHUB_CATALOG_URL))
-            await this.writeCache(catalog)
-            return { catalog, source: 'mirror', stale: false, error: null }
-          } catch (mirrorError) {
-            error = new Error(`Gitee 不可用，GitHub 超时，国内镜像也无法访问：${mirrorError.message}`)
-          }
-        }
-      }
+      return { catalog, source: 'server', stale: false, error: null }
+    } catch (error) {
       const cached = await this.readCache()
       if (cached) {
         return { catalog: cached, source: 'cache', stale: true, error: error.message }
       }
-      throw new Error(`无法读取 GitHub 补丁目录：${error.message}`)
+      throw new Error(`无法从云端服务器读取补丁目录：${error.message}`)
     }
   }
 }
 
 module.exports = {
-  CATALOG_URL,
-  GITHUB_CATALOG_URL,
+  CATALOG_MANIFEST_PATH,
   CATALOG_TIMEOUT_MS,
+  CATALOG_URL,
   DISPLAYED_PATCH_IDS,
-  GitHubCatalog,
+  ServerCatalog,
   validateCatalog
 }

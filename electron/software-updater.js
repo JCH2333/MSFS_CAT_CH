@@ -1,21 +1,8 @@
+const { buildServerUrl } = require('./distribution-server')
+
 const UPDATE_CHECK_TIMEOUT_MS = 15000
-const GITEE_RELEASE_LOOKUP_TIMEOUT_MS = 5000
-// 自建分发服务器的 electron-updater feed（2.0 起为唯一软件更新源）。
-// 备案生效、nginx 上线前该域名不可达，客户端会静默回落到 Gitee 链路；
-// 服务器就绪后此源自动生效，无需再改客户端。
-const SERVER_SOFTWARE_FEED_URL = 'https://jianchihu.online/downloads/software/'
-const GITEE_SOFTWARE_RELEASE_API = 'https://gitee.com/api/v5/repos/ljd123456/MSFS_CAT_CH/releases/latest'
-const GITEE_SOFTWARE_RELEASE_BASE = 'https://gitee.com/ljd123456/MSFS_CAT_CH/releases/download'
-const GITHUB_SOFTWARE_RELEASE_LATEST = 'https://github.com/JCH2333/MSFS_CAT_CH/releases/latest/download'
-const GITHUB_SOFTWARE_MIRROR_FEED = Object.freeze({
-  provider: 'generic',
-  url: `https://ghfast.top/${GITHUB_SOFTWARE_RELEASE_LATEST}`
-})
-const GITHUB_SOFTWARE_FEED = Object.freeze({
-  provider: 'github',
-  owner: 'JCH2333',
-  repo: 'MSFS_CAT_CH'
-})
+const SERVER_SOFTWARE_FEED_PATH = '/downloads/software/'
+const SERVER_SOFTWARE_FEED_URL = buildServerUrl(SERVER_SOFTWARE_FEED_PATH)
 
 function serverSoftwareFeed(url = SERVER_SOFTWARE_FEED_URL) {
   if (typeof url !== 'string' || url.trim() === '') return null
@@ -46,54 +33,9 @@ function updateStatusFromResult(result) {
   }
 }
 
-function assertReleaseTag(tag) {
-  if (typeof tag !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(tag)) {
-    throw new Error('Gitee latest release is missing a valid tag')
-  }
-  return tag
-}
-
-async function resolveGiteeSoftwareFeed({
-  fetchImpl = globalThis.fetch,
-  timeoutMs = GITEE_RELEASE_LOOKUP_TIMEOUT_MS
-} = {}) {
-  if (typeof fetchImpl !== 'function') throw new Error('Gitee update checks are unavailable in this environment')
-
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const response = await fetchImpl(GITEE_SOFTWARE_RELEASE_API, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal
-    })
-    if (!response.ok) throw new Error(`Gitee update source returned HTTP ${response.status}`)
-    const release = await response.json()
-    const tag = assertReleaseTag(release?.tag_name)
-    return {
-      provider: 'generic',
-      url: `${GITEE_SOFTWARE_RELEASE_BASE}/${encodeURIComponent(tag)}`
-    }
-  } catch (error) {
-    if (error?.name === 'AbortError') throw new UpdateCheckTimeoutError('Gitee software release lookup timed out')
-    throw error
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 async function downloadUpdate(updater) {
   await updater.downloadUpdate()
   return { state: 'downloaded' }
-}
-
-async function startRequiredUpdate({
-  updater,
-  ...options
-}) {
-  const status = await checkForUpdatesWithFallback({ updater, ...options })
-  if (status.state !== 'available') return status
-  await downloadUpdate(updater)
-  return { state: 'downloading', info: status.info }
 }
 
 async function resetTimedOutCheck(updater) {
@@ -102,65 +44,17 @@ async function resetTimedOutCheck(updater) {
   if ('checkForUpdatesPromise' in updater) updater.checkForUpdatesPromise = null
 }
 
-async function checkForUpdatesWithFallback({
+// 2.0 起自建分发服务器是唯一的软件更新源，不再提供多级回退链。
+async function checkForUpdates({
   updater,
   timeoutMs = UPDATE_CHECK_TIMEOUT_MS,
-  serverFeed = null,
-  onServerFallback = () => {},
-  resolveGiteeFeed = null,
-  githubFeed = GITHUB_SOFTWARE_FEED,
-  onGiteeFallback = () => {},
-  onDirectFallback = () => {},
-  mirrorFeed = GITHUB_SOFTWARE_MIRROR_FEED,
-  onMirrorFallback = () => {}
-}) {
-  if (serverFeed) {
-    try {
-      updater.setFeedURL(serverFeed)
-      await updater.netSession.setProxy({ mode: 'system' })
-      return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
-    } catch (error) {
-      // 桥接阶段服务器源只是可选优先源：任何失败（含非超时错误）都必须回落，不能阻断更新检查
-      onServerFallback(error)
-      await resetTimedOutCheck(updater)
-    }
-  }
+  feed = serverSoftwareFeed()
+} = {}) {
+  if (!feed) throw new Error('未配置软件更新服务器地址')
 
-  if (resolveGiteeFeed) {
-    try {
-      const giteeFeed = await resolveGiteeFeed()
-      updater.setFeedURL(giteeFeed)
-      await updater.netSession.setProxy({ mode: 'system' })
-      return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
-    } catch (error) {
-      onGiteeFallback(error)
-      await resetTimedOutCheck(updater)
-    }
-  }
-
-  updater.setFeedURL?.(githubFeed)
+  updater.setFeedURL(feed)
   await updater.netSession.setProxy({ mode: 'system' })
 
-  try {
-    return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
-  } catch (error) {
-    if (!(error instanceof UpdateCheckTimeoutError)) throw error
-  }
-
-  onDirectFallback()
-  await resetTimedOutCheck(updater)
-  await updater.netSession.setProxy({ mode: 'direct' })
-
-  try {
-    return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
-  } catch (error) {
-    if (error instanceof UpdateCheckTimeoutError) await resetTimedOutCheck(updater)
-    if (!(error instanceof UpdateCheckTimeoutError)) throw error
-  }
-
-  onMirrorFallback()
-  updater.setFeedURL?.(mirrorFeed)
-  await updater.netSession.setProxy({ mode: 'direct' })
   try {
     return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
   } catch (error) {
@@ -169,20 +63,24 @@ async function checkForUpdatesWithFallback({
   }
 }
 
+async function startRequiredUpdate({
+  updater,
+  ...options
+}) {
+  const status = await checkForUpdates({ updater, ...options })
+  if (status.state !== 'available') return status
+  await downloadUpdate(updater)
+  return { state: 'downloading', info: status.info }
+}
+
 module.exports = {
-  GITEE_RELEASE_LOOKUP_TIMEOUT_MS,
-  GITEE_SOFTWARE_RELEASE_API,
-  GITEE_SOFTWARE_RELEASE_BASE,
-  GITHUB_SOFTWARE_MIRROR_FEED,
-  GITHUB_SOFTWARE_RELEASE_LATEST,
-  GITHUB_SOFTWARE_FEED,
+  SERVER_SOFTWARE_FEED_PATH,
   SERVER_SOFTWARE_FEED_URL,
   UPDATE_CHECK_TIMEOUT_MS,
   UpdateCheckTimeoutError,
-  checkForUpdatesWithFallback,
+  checkForUpdates,
   downloadUpdate,
   serverSoftwareFeed,
   startRequiredUpdate,
-  resolveGiteeSoftwareFeed,
   updateStatusFromResult
 }

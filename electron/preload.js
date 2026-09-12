@@ -36,6 +36,10 @@ contextBridge.exposeInMainWorld('gsxTool', {
     install: () => ipcRenderer.invoke('updates:install'),
     onStatus: (listener) => subscribe('updates:status', listener)
   },
+  feedback: {
+    chooseImages: () => ipcRenderer.invoke('feedback:choose-images'),
+    submit: (payload) => ipcRenderer.invoke('feedback:submit', payload)
+  },
   external: {
     open: (url) => ipcRenderer.invoke('external:open', url)
   }

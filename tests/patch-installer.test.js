@@ -1,6 +1,5 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const crypto = require('node:crypto')
 const fs = require('node:fs/promises')
 const { execFile } = require('node:child_process')
 const os = require('node:os')
@@ -9,15 +8,17 @@ const { promisify } = require('node:util')
 const {
   PatchInstaller,
   currentWindowsFileTime,
-  downloadGiteeParts,
-  downloadWithMirrorFallback,
+  downloadToFile,
   ensureWithin,
+  isAllowedDownloadUrl,
   normalizeContentRoot,
+  serverPatchDownloadUrl,
   sha256,
   validateInstallationTarget,
   validatePatchFiles,
   validatePatchLayoutEntries
 } = require('../electron/patch-installer')
+const { buildServerUrl } = require('../electron/distribution-server')
 
 const execFileAsync = promisify(execFile)
 
@@ -41,7 +42,7 @@ function packageFor(version, archivePath, checksum) {
     version,
     status: 'published',
     package: {
-      downloadUrl: 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
+      downloadUrl: 'https://jianchihu.online/downloads/patches/test/test.zip',
       sha256: checksum,
       contentRoot: ''
     },
@@ -128,128 +129,111 @@ test('rejects a patch layout whose file size does not match its payload', async 
   await fs.rm(root, { recursive: true, force: true })
 })
 
-test('retries a timed-out GitHub package download through the domestic mirror', async () => {
-  const urls = []
-  await downloadWithMirrorFallback(
-    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
-    'C:/temporary/test.zip',
-    () => {},
-    async (url) => {
-      urls.push(url)
-      if (urls.length === 1) {
-        const error = new Error('timed out')
-        error.code = 'ETIMEDOUT'
-        throw error
-      }
-      return 'C:/temporary/test.zip'
-    }
-  )
-  assert.deepEqual(urls, [
-    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
-    'https://ghfast.top/https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip'
-  ])
+test('permits only https downloads from the distribution server host', () => {
+  assert.equal(isAllowedDownloadUrl('https://jianchihu.online/downloads/patches/test/test.zip'), true)
+  assert.equal(isAllowedDownloadUrl('http://jianchihu.online/downloads/patches/test/test.zip'), false)
+  assert.equal(isAllowedDownloadUrl('https://evil.example/test.zip'), false)
+  assert.equal(isAllowedDownloadUrl('https://jianchihu.online.evil.example/test.zip'), false)
 })
 
-test('retries a reset GitHub package download through the domestic mirror', async () => {
-  const urls = []
-  await downloadWithMirrorFallback(
-    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
-    'C:/temporary/test.zip',
-    () => {},
-    async (url) => {
-      urls.push(url)
-      if (urls.length === 1) {
-        const error = new Error('read ECONNRESET')
-        error.code = 'ECONNRESET'
-        throw error
-      }
-      return 'C:/temporary/test.zip'
-    }
-  )
-  assert.deepEqual(urls, [
-    'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip',
-    'https://ghfast.top/https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip'
-  ])
+test('derives the server download endpoint for a patch id', () => {
+  assert.equal(serverPatchDownloadUrl('gsx-pro-zh-cn'), buildServerUrl('/api/patches/download/gsx-pro-zh-cn'))
+  assert.equal(serverPatchDownloadUrl('gsx-pro-zh-cn'), 'https://jianchihu.online/api/patches/download/gsx-pro-zh-cn')
 })
 
-test('downloads, validates, and concatenates Gitee patch parts', async () => {
-  const root = await temporaryDirectory('gsx-installer-gitee-parts-')
-  const destination = path.join(root, 'voice.zip')
-  const contents = [Buffer.from('first part'), Buffer.from('second part')]
-  const calls = []
-  const parts = await Promise.all(contents.map(async (content, index) => ({
-    assetName: `voice.zip.00${index + 1}`,
-    downloadUrl: `https://gitee.com/example/voice.zip.00${index + 1}`,
-    sha256: crypto.createHash('sha256').update(content).digest('hex'),
-    size: content.length
-  })))
-
-  await downloadGiteeParts(parts, destination, () => {}, async (url, output, onProgress) => {
-    const index = calls.push(url) - 1
-    await fs.writeFile(output, contents[index])
-    onProgress({ received: contents[index].length, total: contents[index].length })
-  })
-
-  assert.deepEqual(calls, parts.map((part) => part.downloadUrl))
-  assert.deepEqual(await fs.readFile(destination), Buffer.concat(contents))
-  await assert.rejects(fs.stat(`${destination}.gitee-part-1`), { code: 'ENOENT' })
-  await fs.rm(root, { recursive: true, force: true })
-})
-
-test('removes every temporary Gitee part when a download fails', async () => {
-  const root = await temporaryDirectory('gsx-installer-gitee-parts-cleanup-')
-  const destination = path.join(root, 'voice.zip')
-  const parts = [{
-    assetName: 'voice.zip.001',
-    downloadUrl: 'https://gitee.com/example/voice.zip.001',
-    sha256: 'a'.repeat(64),
-    size: 1
-  }]
-
+test('rejects a download URL outside the trusted server hosts before any request', async () => {
   await assert.rejects(
-    downloadGiteeParts(parts, destination, () => {}, async (_url, output) => {
-      await fs.writeFile(output, 'x')
-      throw new Error('connection lost')
-    }),
-    /connection lost/
+    downloadToFile('https://evil.example/test.zip', 'C:/temporary/test.zip', () => {}),
+    /受信任的云端服务器地址/
   )
-  await assert.rejects(fs.stat(`${destination}.gitee-part-1`), { code: 'ENOENT' })
-  await fs.rm(root, { recursive: true, force: true })
 })
 
-test('falls back to the complete GitHub package when a Gitee part fails', async () => {
-  const root = await temporaryDirectory('gsx-installer-gitee-parts-fallback-')
+test('downloads a published patch from the catalog server URL and reports server progress', async () => {
+  const root = await temporaryDirectory('gsx-installer-server-download-')
   const target = path.join(root, 'target')
   const userData = path.join(root, 'user-data')
   const source = path.join(root, 'source')
-  const archive = path.join(root, 'voice.zip')
+  const archive = path.join(root, 'patch.zip')
   await fs.mkdir(target, { recursive: true })
-  await fs.mkdir(source)
   await fs.writeFile(path.join(target, 'panel.txt'), 'original')
+  await fs.mkdir(source)
   await fs.writeFile(path.join(source, 'panel.txt'), 'localized')
   await createZip(source, archive)
 
   const calls = []
+  const events = []
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    onProgress: (event) => events.push(event),
+    download: async (url, destination, onProgress) => {
+      calls.push(url)
+      await fs.copyFile(archive, destination)
+      onProgress?.({ received: 10, total: 10 })
+    }
+  })
   const patch = packageFor('1.0.0', archive, await sha256(archive))
-  patch.package.githubDownloadUrl = 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES/releases/download/test/test.zip'
-  patch.package.giteeParts = [{
-    assetName: 'test.zip.001',
-    downloadUrl: 'https://gitee.com/example/test.zip.001',
-    sha256: 'a'.repeat(64),
-    size: 1
-  }]
+  await installer.install(patch, target)
+
+  assert.deepEqual(calls, ['https://jianchihu.online/downloads/patches/test/test.zip'])
+  const downloadEvents = events.filter((event) => event.phase === 'download')
+  assert.equal(downloadEvents[0].message, '正在从云端服务器下载补丁')
+  const progressEvent = downloadEvents.find((event) => event.source !== undefined)
+  assert.equal(progressEvent.source, 'server')
+  assert.equal(progressEvent.message, '正在从云端服务器下载补丁')
+  assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'localized')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('falls back to the server download endpoint when the catalog omits a download URL', async () => {
+  const root = await temporaryDirectory('gsx-installer-server-fallback-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.mkdir(source)
+  await fs.writeFile(path.join(source, 'panel.txt'), 'localized')
+  await createZip(source, archive)
+
+  const calls = []
   const installer = new PatchInstaller({
     userDataDirectory: userData,
     download: async (url, destination) => {
       calls.push(url)
-      if (url.includes('.001')) throw new Error('Gitee part missing')
       await fs.copyFile(archive, destination)
     }
   })
-
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  patch.package.downloadUrl = ''
   await installer.install(patch, target)
-  assert.deepEqual(calls, [patch.package.giteeParts[0].downloadUrl, patch.package.githubDownloadUrl])
+
+  assert.deepEqual(calls, ['https://jianchihu.online/api/patches/download/test-patch'])
   assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'localized')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('refuses to install when the downloaded package fails the catalog checksum', async () => {
+  const root = await temporaryDirectory('gsx-installer-download-checksum-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'panel.txt'), 'original')
+  await fs.mkdir(source)
+  await fs.writeFile(path.join(source, 'panel.txt'), 'unexpected content')
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (_url, destination) => fs.copyFile(archive, destination)
+  })
+  await assert.rejects(
+    installer.install(packageFor('1.0.0', archive, '0'.repeat(64)), target),
+    /SHA-256/
+  )
+  assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'original')
+  assert.deepEqual(await installer.listInstallations(), {})
   await fs.rm(root, { recursive: true, force: true })
 })
 

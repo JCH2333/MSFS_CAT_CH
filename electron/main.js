@@ -1,10 +1,12 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
-const { GitHubCatalog } = require('./github-catalog')
+const { SERVER_HOSTNAME } = require('./distribution-server')
+const { ServerCatalog } = require('./server-catalog')
+const { loadFeedbackImages, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
-const { UpdateCheckTimeoutError, downloadUpdate, resolveGiteeSoftwareFeed, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
+const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
@@ -73,11 +75,7 @@ function configureUpdater() {
       autoUpdater.quitAndInstall(false, true)
     })
   })
-  autoUpdater.on('error', (error) => {
-    if (/no published versions on github/i.test(error.message)) {
-      setUpdateStatus({ state: 'unpublished' })
-      return
-    }
+  autoUpdater.on('error', () => {
     setUpdateStatus({ state: 'error', message: '暂时无法检查软件更新，请稍后再试' })
   })
 }
@@ -89,20 +87,12 @@ async function startRequiredSoftwareUpdate() {
     return status
   }
   try {
-    const status = await startRequiredUpdate({
-      updater: autoUpdater,
-      serverFeed: serverSoftwareFeed(),
-      onServerFallback: () => setUpdateStatus({ state: 'checking-server' }),
-      resolveGiteeFeed: () => resolveGiteeSoftwareFeed(),
-      onGiteeFallback: () => setUpdateStatus({ state: 'checking' }),
-      onDirectFallback: () => setUpdateStatus({ state: 'checking-direct' }),
-      onMirrorFallback: () => setUpdateStatus({ state: 'checking-mirror' })
-    })
+    const status = await startRequiredUpdate({ updater: autoUpdater, feed: serverSoftwareFeed() })
     if (status.state === 'current') setUpdateStatus(status)
     return status
   } catch (error) {
     const status = error instanceof UpdateCheckTimeoutError
-      ? { state: 'error', message: '检查更新超时。已依次尝试更新服务器、Gitee、GitHub 和国内镜像，请检查网络或代理设置后重试。' }
+      ? { state: 'error', message: '暂时无法连接更新服务器，请检查网络后重试' }
       : { state: 'error', message: '暂时无法检查软件更新，请稍后再试。' }
     setUpdateStatus(status)
     return status
@@ -171,8 +161,24 @@ function registerIpc() {
     return { state: 'installing' }
   })
 
+  ipcMain.handle('feedback:choose-images', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择反馈截图',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: '图片 (png/jpg/jpeg/webp)', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
+    })
+    if (result.canceled || result.filePaths.length === 0) return []
+    return loadFeedbackImages(result.filePaths)
+  })
+  ipcMain.handle('feedback:submit', async (_event, payload) => {
+    const validated = validateFeedbackPayload(payload)
+    if (!validated.ok) return validated
+    return submitFeedback({ content: validated.content, images: validated.images })
+  })
+
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)
+    const isDistributionServer = url.protocol === 'https:' && url.hostname === SERVER_HOSTNAME
     const isProjectGitee = url.protocol === 'https:' && url.hostname === 'gitee.com' && url.pathname.startsWith('/ljd123456/')
     const isProjectGitHub = url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname.startsWith('/JCH2333/')
     const isGsxBaiduMirror = url.protocol === 'https:'
@@ -185,8 +191,8 @@ function registerIpc() {
       && url.hostname === 'qun.qq.com'
       && url.pathname === '/join.html'
       && url.searchParams.get('gc') === '1101733374'
-    if (!isProjectGitee && !isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili && !isQqGroupJoin) {
-      throw new Error('只允许打开已配置的项目、分流或作者地址')
+    if (!isDistributionServer && !isProjectGitee && !isProjectGitHub && !isGsxBaiduMirror && !isAuthorBilibili && !isQqGroupJoin) {
+      throw new Error('只允许打开已配置的项目、分发服务器、分流或作者地址')
     }
     await shell.openExternal(url.toString())
     return true
@@ -195,7 +201,7 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   const userDataDirectory = app.getPath('userData')
-  catalog = new GitHubCatalog({ cacheDirectory: path.join(userDataDirectory, 'cache') })
+  catalog = new ServerCatalog({ cacheDirectory: path.join(userDataDirectory, 'cache') })
   installer = new PatchInstaller({
     userDataDirectory,
     onProgress: (payload) => send('patch:progress', payload),

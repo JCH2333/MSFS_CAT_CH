@@ -1,8 +1,8 @@
 {
   "name": "msfs-cat-ch",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "MSFS_CAT_CH Microsoft Flight Simulator localization patch manager with server-first updates",
+  "description": "MSFS_CAT_CH Microsoft Flight Simulator localization patch manager with self-hosted distribution",
   "author": "JCH2333",
   "license": "MIT",
   "main": "electron/main.js",
@@ -68,9 +68,8 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "JCH2333",
-        "repo": "MSFS_CAT_CH"
+        "provider": "generic",
+        "url": "https://jianchihu.online/downloads/software/"
       }
     ]
   }

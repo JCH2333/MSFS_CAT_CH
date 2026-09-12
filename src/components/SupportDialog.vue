@@ -26,7 +26,7 @@ function loadQr(index) {
   }
 
   sourceIndex = index
-  qrStatus.value = index === 0 ? 'gitee-loading' : 'fallback-loading'
+  qrStatus.value = 'loading'
   const image = new Image()
   image.onload = () => {
     if (sourceIndex !== index) return
@@ -66,7 +66,7 @@ onBeforeUnmount(clearFallbackTimer)
       <img v-if="qrUrl" :src="qrUrl" alt="微信赞助收款码" />
       <div v-else-if="qrStatus !== 'error'" class="support-qr-state" aria-live="polite">
         <LoaderCircle :size="22" class="support-qr-spinner" />
-        <span>{{ qrStatus === 'fallback-loading' ? 'Gitee 加载较慢，正在切换备用源…' : '正在从 Gitee 加载赞助码…' }}</span>
+        <span>正在加载赞助码…</span>
       </div>
       <div v-else class="support-qr-state support-qr-error" role="alert">
         <TriangleAlert :size="22" />

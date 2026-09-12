@@ -30,3 +30,11 @@ test('does not keep a duplicate main-process startup update check', () => {
 
   assert.doesNotMatch(source, /setTimeout\(\(\) => checkForSoftwareUpdates\(\)\.catch\(\(\) => \{\}\), 1500\)/)
 })
+
+test('exposes the narrow feedback bridge through the preload contract', () => {
+  const preload = projectFile('electron', 'preload.js')
+
+  assert.match(preload, /contextBridge\.exposeInMainWorld\('gsxTool'/)
+  assert.match(preload, /chooseImages: \(\) => ipcRenderer\.invoke\('feedback:choose-images'\)/)
+  assert.match(preload, /submit: \(payload\) => ipcRenderer\.invoke\('feedback:submit', payload\)/)
+})

@@ -4,17 +4,12 @@ const fsp = require('node:fs/promises')
 const https = require('node:https')
 const os = require('node:os')
 const path = require('node:path')
-const { pipeline } = require('node:stream/promises')
 const extractZip = require('extract-zip')
-const { githubFallbackForGiteePatchUrl, isOfficialGiteePatchReleaseUrl, isOfficialPatchReleaseUrl, isTimeoutError, isTrustedMirrorUrl, mirrorGitHubUrl } = require('./github-mirror')
+const { SERVER_HOSTNAME, buildServerUrl } = require('./distribution-server')
 
-const ALLOWED_DOWNLOAD_HOSTS = new Set([
-  'gitee.com',
-  'github.com',
-  'objects.githubusercontent.com',
-  'release-assets.githubusercontent.com'
-])
+const ALLOWED_DOWNLOAD_HOSTS = new Set([SERVER_HOSTNAME])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
+const SERVER_PATCH_DOWNLOAD_PATH = '/api/patches/download/'
 
 function ensureSafeId(value) {
   if (typeof value !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(value)) {
@@ -277,18 +272,18 @@ function validatePatchLayoutEntries(sourceFiles, contentRoot) {
   }
 }
 
+function serverPatchDownloadUrl(patchId) {
+  return buildServerUrl(`${SERVER_PATCH_DOWNLOAD_PATH}${encodeURIComponent(patchId)}`)
+}
+
 function isAllowedDownloadUrl(input) {
   const url = new URL(input)
-  if (isTrustedMirrorUrl(input)) return true
-  return url.protocol === 'https:' && (
-    ALLOWED_DOWNLOAD_HOSTS.has(url.hostname)
-    || url.hostname.endsWith('.githubusercontent.com')
-  )
+  return url.protocol === 'https:' && ALLOWED_DOWNLOAD_HOSTS.has(url.hostname)
 }
 
 async function downloadToFile(url, destination, onProgress, redirectsRemaining = 6) {
   if (!isAllowedDownloadUrl(url)) {
-    throw new Error('补丁下载地址不是受信任的 Gitee、GitHub 或镜像地址')
+    throw new Error('补丁下载地址不是受信任的云端服务器地址')
   }
 
   await fsp.mkdir(path.dirname(destination), { recursive: true })
@@ -344,56 +339,8 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
   })
 }
 
-async function downloadWithMirrorFallback(url, destination, onProgress, download = downloadToFile) {
-  if (isOfficialGiteePatchReleaseUrl(url)) {
-    try {
-      return await download(url, destination, (progress) => onProgress?.({ ...progress, source: 'gitee' }))
-    } catch {
-      return downloadWithMirrorFallback(githubFallbackForGiteePatchUrl(url), destination, onProgress, download)
-    }
-  }
-  try {
-    return await download(url, destination, (progress) => onProgress?.({ ...progress, source: 'github' }))
-  } catch (error) {
-    if (!isTimeoutError(error) || !isOfficialPatchReleaseUrl(url)) throw error
-    onProgress?.({ phase: 'download', received: 0, total: 0, source: 'mirror' })
-    return download(mirrorGitHubUrl(url), destination, (progress) => onProgress?.({ ...progress, source: 'mirror' }))
-  }
-}
-
-async function downloadGiteeParts(parts, destination, onProgress, download = downloadWithMirrorFallback) {
-  const expectedTotal = parts.reduce((total, part) => total + part.size, 0)
-  const partPaths = parts.map((_, index) => `${destination}.gitee-part-${index + 1}`)
-  let receivedBase = 0
-
-  try {
-    for (let index = 0; index < parts.length; index += 1) {
-      const part = parts[index]
-      const partPath = partPaths[index]
-      await download(part.downloadUrl, partPath, ({ received = 0 }) => {
-        onProgress?.({ phase: 'download', received: receivedBase + received, total: expectedTotal, source: 'gitee' })
-      })
-      const stats = await fsp.stat(partPath)
-      if (stats.size !== part.size || await sha256(partPath) !== part.sha256) {
-        throw new Error(`Gitee 分片校验失败：${part.assetName}`)
-      }
-      receivedBase += part.size
-    }
-
-    for (let index = 0; index < partPaths.length; index += 1) {
-      await pipeline(
-        fs.createReadStream(partPaths[index]),
-        fs.createWriteStream(destination, { flags: index === 0 ? 'w' : 'a' })
-      )
-    }
-    return destination
-  } finally {
-    await Promise.all(partPaths.map((partPath) => fsp.rm(partPath, { force: true }).catch(() => {})))
-  }
-}
-
 class PatchInstaller {
-  constructor({ userDataDirectory, onProgress = () => {}, download = downloadWithMirrorFallback, resolveAdditionalTarget = null }) {
+  constructor({ userDataDirectory, onProgress = () => {}, download = downloadToFile, resolveAdditionalTarget = null }) {
     this.userDataDirectory = userDataDirectory
     this.statePath = path.join(userDataDirectory, 'installations.json')
     this.backupRoot = path.join(userDataDirectory, 'backups')
@@ -643,8 +590,8 @@ class PatchInstaller {
         await fsp.copyFile(localArchivePath, archivePath)
         this.emit(patchId, { phase: 'import', percent: 55, message: '离线补丁包已导入' })
       } else {
-        this.emit(patchId, { phase: 'download', percent: patch.targetKind === 'gsx-audio' ? 12 : 0, message: '正在下载补丁' })
-        const emitDownloadProgress = ({ received, total, source }) => {
+        this.emit(patchId, { phase: 'download', percent: patch.targetKind === 'gsx-audio' ? 12 : 0, message: '正在从云端服务器下载补丁' })
+        const emitDownloadProgress = ({ received, total }) => {
           const percent = total > 0
             ? Math.min(55, (patch.targetKind === 'gsx-audio' ? 12 : 0) + Math.round((received / total) * (patch.targetKind === 'gsx-audio' ? 43 : 55)))
             : patch.targetKind === 'gsx-audio' ? 12 : 0
@@ -653,23 +600,12 @@ class PatchInstaller {
             percent,
             received,
             total,
-            message: source === 'gitee' ? '正在从 Gitee 下载补丁' : source === 'mirror' ? 'GitHub 连接异常，正在使用国内镜像下载补丁' : '正在从 GitHub 下载补丁'
+            source: 'server',
+            message: '正在从云端服务器下载补丁'
           })
         }
-        const giteeParts = Array.isArray(patch.package.giteeParts) ? patch.package.giteeParts : []
-        if (giteeParts.length > 0) {
-          try {
-            await downloadGiteeParts(giteeParts, archivePath, emitDownloadProgress, this.download)
-          } catch {
-            await this.download(
-              patch.package.githubDownloadUrl || githubFallbackForGiteePatchUrl(patch.package.downloadUrl),
-              archivePath,
-              emitDownloadProgress
-            )
-          }
-        } else {
-          await this.download(patch.package.downloadUrl, archivePath, emitDownloadProgress)
-        }
+        const remoteUrl = patch.package.downloadUrl || serverPatchDownloadUrl(patchId)
+        await this.download(remoteUrl, archivePath, emitDownloadProgress)
       }
 
       this.emit(patchId, { phase: 'verify', percent: 58, message: '正在校验补丁' })
@@ -838,9 +774,9 @@ class PatchInstaller {
 module.exports = {
   PatchInstaller,
   currentWindowsFileTime,
-  downloadWithMirrorFallback,
-  downloadGiteeParts,
+  downloadToFile,
   ensureWithin,
+  serverPatchDownloadUrl,
   synchronizeInstalledLayoutDates,
   isAllowedDownloadUrl,
   normalizeContentRoot,
