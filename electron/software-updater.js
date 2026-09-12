@@ -1,5 +1,9 @@
 const UPDATE_CHECK_TIMEOUT_MS = 15000
 const GITEE_RELEASE_LOOKUP_TIMEOUT_MS = 5000
+// 自建分发服务器的 electron-updater feed（2.0 起为唯一软件更新源）。
+// 备案生效、nginx 上线前该域名不可达，客户端会静默回落到 Gitee 链路；
+// 服务器就绪后此源自动生效，无需再改客户端。
+const SERVER_SOFTWARE_FEED_URL = 'https://jianchihu.online/downloads/software/'
 const GITEE_SOFTWARE_RELEASE_API = 'https://gitee.com/api/v5/repos/ljd123456/MSFS_CAT_CH/releases/latest'
 const GITEE_SOFTWARE_RELEASE_BASE = 'https://gitee.com/ljd123456/MSFS_CAT_CH/releases/download'
 const GITHUB_SOFTWARE_RELEASE_LATEST = 'https://github.com/JCH2333/MSFS_CAT_CH/releases/latest/download'
@@ -12,6 +16,11 @@ const GITHUB_SOFTWARE_FEED = Object.freeze({
   owner: 'JCH2333',
   repo: 'MSFS_CAT_CH'
 })
+
+function serverSoftwareFeed(url = SERVER_SOFTWARE_FEED_URL) {
+  if (typeof url !== 'string' || url.trim() === '') return null
+  return { provider: 'generic', url: url.trim() }
+}
 
 class UpdateCheckTimeoutError extends Error {
   constructor() {
@@ -96,6 +105,8 @@ async function resetTimedOutCheck(updater) {
 async function checkForUpdatesWithFallback({
   updater,
   timeoutMs = UPDATE_CHECK_TIMEOUT_MS,
+  serverFeed = null,
+  onServerFallback = () => {},
   resolveGiteeFeed = null,
   githubFeed = GITHUB_SOFTWARE_FEED,
   onGiteeFallback = () => {},
@@ -103,6 +114,18 @@ async function checkForUpdatesWithFallback({
   mirrorFeed = GITHUB_SOFTWARE_MIRROR_FEED,
   onMirrorFallback = () => {}
 }) {
+  if (serverFeed) {
+    try {
+      updater.setFeedURL(serverFeed)
+      await updater.netSession.setProxy({ mode: 'system' })
+      return updateStatusFromResult(await withTimeout(updater.checkForUpdates(), timeoutMs))
+    } catch (error) {
+      // 桥接阶段服务器源只是可选优先源：任何失败（含非超时错误）都必须回落，不能阻断更新检查
+      onServerFallback(error)
+      await resetTimedOutCheck(updater)
+    }
+  }
+
   if (resolveGiteeFeed) {
     try {
       const giteeFeed = await resolveGiteeFeed()
@@ -153,10 +176,12 @@ module.exports = {
   GITHUB_SOFTWARE_MIRROR_FEED,
   GITHUB_SOFTWARE_RELEASE_LATEST,
   GITHUB_SOFTWARE_FEED,
+  SERVER_SOFTWARE_FEED_URL,
   UPDATE_CHECK_TIMEOUT_MS,
   UpdateCheckTimeoutError,
   checkForUpdatesWithFallback,
   downloadUpdate,
+  serverSoftwareFeed,
   startRequiredUpdate,
   resolveGiteeSoftwareFeed,
   updateStatusFromResult

@@ -4,10 +4,12 @@ const {
   GITEE_SOFTWARE_RELEASE_API,
   GITHUB_SOFTWARE_MIRROR_FEED,
   GITHUB_SOFTWARE_FEED,
+  SERVER_SOFTWARE_FEED_URL,
   UpdateCheckTimeoutError,
   checkForUpdatesWithFallback,
   downloadUpdate,
   resolveGiteeSoftwareFeed,
+  serverSoftwareFeed,
   startRequiredUpdate,
   updateStatusFromResult
 } = require('../electron/software-updater')
@@ -70,6 +72,77 @@ test('uses Gitee first when its release feed is available', async () => {
 
   assert.deepEqual(updater.calls.feeds, [giteeFeed])
   assert.deepEqual(status, { state: 'available', info: { version: '1.2.10' } })
+})
+
+test('builds a generic server feed only when a server URL is configured', () => {
+  assert.equal(serverSoftwareFeed(''), null)
+  assert.equal(serverSoftwareFeed(null), null)
+  assert.equal(SERVER_SOFTWARE_FEED_URL, 'https://jianchihu.online/downloads/software/')
+  assert.deepEqual(serverSoftwareFeed(), {
+    provider: 'generic',
+    url: 'https://jianchihu.online/downloads/software/'
+  })
+})
+
+test('checks the self-hosted server feed before the Gitee chain', async () => {
+  const updater = createUpdater(async () => ({ isUpdateAvailable: true, updateInfo: { version: '1.4.0' } }))
+  const serverFeed = serverSoftwareFeed('https://dist.example.com/downloads/software/')
+
+  const status = await checkForUpdatesWithFallback({
+    updater,
+    serverFeed,
+    resolveGiteeFeed: async () => { throw new Error('Gitee should not be reached') },
+    timeoutMs: 20
+  })
+
+  assert.deepEqual(updater.calls.feeds, [serverFeed])
+  assert.deepEqual(status, { state: 'available', info: { version: '1.4.0' } })
+})
+
+test('falls back to the Gitee chain when the optional server feed fails for any reason', async () => {
+  let attempts = 0
+  const updater = createUpdater(() => {
+    attempts += 1
+    return attempts === 1
+      ? Promise.reject(new Error('server feed unreachable'))
+      : Promise.resolve({ isUpdateAvailable: false, updateInfo: { version: '1.4.0' } })
+  })
+  const giteeFeed = { provider: 'generic', url: 'https://gitee.example/releases/download/v1.4.0' }
+  const serverErrors = []
+  const giteeErrors = []
+
+  const status = await checkForUpdatesWithFallback({
+    updater,
+    serverFeed: serverSoftwareFeed('https://dist.example.com/downloads/software/'),
+    onServerFallback: (error) => { serverErrors.push(error) },
+    resolveGiteeFeed: async () => giteeFeed,
+    onGiteeFallback: (error) => { giteeErrors.push(error) },
+    timeoutMs: 20
+  })
+
+  assert.equal(serverErrors.length, 1)
+  assert.equal(serverErrors[0].message, 'server feed unreachable')
+  assert.deepEqual(giteeErrors, [])
+  assert.deepEqual(updater.calls.feeds, [
+    serverSoftwareFeed('https://dist.example.com/downloads/software/'),
+    giteeFeed
+  ])
+  assert.deepEqual(status, { state: 'current', info: { version: '1.4.0' } })
+})
+
+test('skips the server step entirely when no server feed is configured', async () => {
+  const updater = createUpdater(async () => ({ isUpdateAvailable: false, updateInfo: { version: '1.4.0' } }))
+  const giteeFeed = { provider: 'generic', url: 'https://gitee.example/releases/download/v1.4.0' }
+
+  const status = await checkForUpdatesWithFallback({
+    updater,
+    serverFeed: serverSoftwareFeed(''),
+    resolveGiteeFeed: async () => giteeFeed,
+    timeoutMs: 20
+  })
+
+  assert.deepEqual(updater.calls.feeds, [giteeFeed])
+  assert.deepEqual(status, { state: 'current', info: { version: '1.4.0' } })
 })
 
 test('returns the actual available state instead of leaving the renderer checking', async () => {

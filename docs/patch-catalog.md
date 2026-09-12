@@ -2,6 +2,8 @@
 
 The live catalog is `manifest.json` on the `main` branch of `JCH2333/MSFS_CAT_CH_PATCHES`.
 
+Distribution host transition (ADR-0004): client 1.4 keeps reading this Gitee-hosted catalog; client 2.0 reads the catalog from the Distribution Server at `GET /api/catalog/manifest.json` (same schema below) and the Gitee/GitHub hosts stop being used. The schema, SHA-256 verification, and stale-cache rules are identical on both hosts; `package.giteeParts` exists only for Gitee-era packages and is never produced for server-hosted packages.
+
 ```json
 {
   "schemaVersion": 1,

@@ -16,6 +16,7 @@ defineEmits(['check-update', 'open-link', 'choose-target', 'clear-target', 'show
 const updateLabel = computed(() => {
   const labels = {
     idle: '尚未检查',
+    'checking-server': '正在检查更新服务器',
     checking: '正在检查',
     'checking-direct': 'Gitee 不可用，正在检查 GitHub 备用源',
     'checking-mirror': 'GitHub 不可用，正在检查国内镜像',
@@ -63,8 +64,8 @@ function targetSource(patch) {
         <span class="settings-detail">{{ updateLabel }}</span>
       </div>
       <div class="settings-actions">
-        <button class="button button-secondary" type="button" :disabled="['checking', 'checking-direct', 'checking-mirror', 'downloading', 'installing'].includes(updateStatus.state)" @click="$emit('check-update')">
-          <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-direct', 'checking-mirror'].includes(updateStatus.state) }" />
+        <button class="button button-secondary" type="button" :disabled="['checking', 'checking-server', 'checking-direct', 'checking-mirror', 'downloading', 'installing'].includes(updateStatus.state)" @click="$emit('check-update')">
+          <RefreshCw :size="17" :class="{ spinning: ['checking', 'checking-server', 'checking-direct', 'checking-mirror'].includes(updateStatus.state) }" />
           重新检查
         </button>
       </div>

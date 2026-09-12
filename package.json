@@ -1,8 +1,8 @@
 {
   "name": "msfs-cat-ch",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "private": true,
-  "description": "MSFS_CAT_CH Microsoft Flight Simulator localization patch manager with Gitee-primary updates",
+  "description": "MSFS_CAT_CH Microsoft Flight Simulator localization patch manager with server-first updates",
   "author": "JCH2333",
   "license": "MIT",
   "main": "electron/main.js",

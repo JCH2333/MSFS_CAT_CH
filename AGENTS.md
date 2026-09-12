@@ -14,10 +14,9 @@ Use the domain terms from `CONTEXT.md` consistently in code, tests, documentatio
 
 This repository contains a Windows Electron application for installing and managing Microsoft Flight Simulator add-on Chinese localization patches.
 
-- Public Gitee is the primary distribution service. Public GitHub is the fallback service; `ghfast.top` is used only after a GitHub timeout where the client supports it.
-- Software releases use Gitee `ljd123456/MSFS_CAT_CH` first and `JCH2333/MSFS_CAT_CH` GitHub Releases second.
-- The Patch Catalog and Patch Package releases use Gitee `ljd123456/MSFS_CAT_CH_PATCHES` first and `JCH2333/MSFS_CAT_CH_PATCHES` second.
-- Do not add a custom server, login, activation, database, Redis, WebSocket, telemetry, feedback upload, queue, or watermark system.
+- Distribution is moving to the self-hosted Distribution Server (see `docs/adr/0004-server-distribution.md` and the separate `MSFS_CAT_CH_SERVER` repository). During the transition the client checks the server update feed first, while Gitee `ljd123456/MSFS_CAT_CH` / `ljd123456/MSFS_CAT_CH_PATCHES` remain the primary release publishers with `JCH2333/...` GitHub Releases second and `ghfast.top` only after a GitHub timeout. From client 2.0 the server is the only distribution source and the legacy hosts are removed from the client.
+- The client never embeds player login, activation, telemetry, or watermark systems, and never tracks usage. Anonymous, user-initiated Feedback Submission (text plus optional screenshot) is allowed and goes only to the Distribution Server.
+- The server side keeps MySQL/Redis and an authenticated admin API for itself; players stay anonymous — downloads and feedback require no account.
 - Keep catalog caching so local operations remain available during temporary distribution-host outages.
 - Development of the newest localization content is tracked separately in GitHub issue `#1` and is deferred until network access permits it.
 
@@ -30,6 +29,7 @@ This repository contains a Windows Electron application for installing and manag
 - `src/`: Vue renderer and desktop interface.
 - `tests/`: Node tests for catalog and installer behavior.
 - `.github/workflows/release.yml`: tagged Windows release workflow.
+- Distribution Server and admin frontend live in the separate local repository `MSFS_CAT_CH_SERVER` (`../MSFS_CAT_CH_SERVER`); never copy its server/admin code into this repository.
 
 Keep filesystem and network privileges in Electron's main process. Do not expose raw Node.js, Electron, filesystem, or shell APIs to the renderer.
 
@@ -80,6 +80,8 @@ For interface changes, also inspect desktop and narrow layouts and check the bro
 ### Future Release Checklist
 
 Do not create a Release merely because source code has changed. Only perform the following after the user explicitly authorizes a Software Release or Patch Package release.
+
+This checklist describes Gitee-era publishing and applies while the Distribution Server transition is in progress (client 1.4 bridge releases and any earlier versions). The 1.4 bridge release must ship before the server goes live, because it teaches installed clients to check the server feed first. Server-era publishing for client 2.0 and later (build once → upload through the server admin frontend → verify the public asset SHA-256 → publish the catalog) is defined in `docs/adr/0004-server-distribution.md` and replaces this checklist once the server is live.
 
 1. Run the required tests, build, and Windows package checks from **Verification**.
 2. Commit and push the approved source changes to GitHub `main`; wait until the matching Gitee mirror branch reaches the same commit before creating a release tag or presenting the release as ready.

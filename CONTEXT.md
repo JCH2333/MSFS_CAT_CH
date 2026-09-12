@@ -30,11 +30,19 @@ Local metadata stored under Electron user data. It records the patch version, In
 
 The local operation that reinstates original files from an Installation Record and removes files introduced by a Patch Package when they have not been modified afterward.
 
+### Distribution Server
+
+The self-hosted Alibaba Cloud server that serves the software update feed, the Patch Catalog, and Patch Package downloads. Its code lives in the separate `MSFS_CAT_CH_SERVER` repository. Avoid: cloud platform, third-party host.
+
+### Feedback Submission
+
+An anonymous, user-initiated report (text plus optional screenshot) sent to the Distribution Server and visible in its admin frontend. It collects no personal data and is rate limited per IP. Avoid: telemetry, usage tracking.
+
 ## System Shape
 
 - Vue renders the local desktop interface.
 - Electron owns filesystem, download, verification, backup, install, restore, and software-update operations.
-- Public Gitee is the primary Patch Catalog and Patch Package source; public GitHub is the secondary source and `ghfast.top` is a GitHub timeout fallback.
-- Software updates resolve the newest public Gitee Release into an `electron-updater` generic feed, then fall back to the GitHub Release provider if Gitee is unavailable. Each Gitee Software Release must include `latest.yml`, the installer, and its `.blockmap` asset.
-- The application remains usable with cached Patch Catalog data when distribution hosts are temporarily unavailable.
-- There is no login, activation, telemetry, feedback upload, queue, watermark, database, Redis, WebSocket, or custom server.
+- The Distribution Server is the primary source for the software update feed, the Patch Catalog, and Patch Package downloads. During the transition (client 1.4) the server feed is checked first and public Gitee stays the release/publish path with GitHub second and `ghfast.top` as a GitHub-timeout fallback; from client 2.0 the server is the only distribution source and the legacy hosts are removed.
+- Software updates resolve the Distribution Server's `electron-updater` generic feed (each Gitee-era Software Release keeps `latest.yml`, the installer, and its `.blockmap` asset for the transition).
+- The application remains usable with cached Patch Catalog data when the Distribution Server is temporarily unavailable.
+- There is no login, activation, telemetry, watermark, queue, or custom account system on the client; feedback submission is anonymous.

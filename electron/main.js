@@ -4,7 +4,7 @@ const path = require('node:path')
 const { GitHubCatalog } = require('./github-catalog')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
-const { UpdateCheckTimeoutError, downloadUpdate, resolveGiteeSoftwareFeed, startRequiredUpdate } = require('./software-updater')
+const { UpdateCheckTimeoutError, downloadUpdate, resolveGiteeSoftwareFeed, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
@@ -91,6 +91,8 @@ async function startRequiredSoftwareUpdate() {
   try {
     const status = await startRequiredUpdate({
       updater: autoUpdater,
+      serverFeed: serverSoftwareFeed(),
+      onServerFallback: () => setUpdateStatus({ state: 'checking-server' }),
       resolveGiteeFeed: () => resolveGiteeSoftwareFeed(),
       onGiteeFallback: () => setUpdateStatus({ state: 'checking' }),
       onDirectFallback: () => setUpdateStatus({ state: 'checking-direct' }),
@@ -100,7 +102,7 @@ async function startRequiredSoftwareUpdate() {
     return status
   } catch (error) {
     const status = error instanceof UpdateCheckTimeoutError
-      ? { state: 'error', message: '检查更新超时。已依次尝试 Gitee、GitHub 和国内镜像，请检查网络或代理设置后重试。' }
+      ? { state: 'error', message: '检查更新超时。已依次尝试更新服务器、Gitee、GitHub 和国内镜像，请检查网络或代理设置后重试。' }
       : { state: 'error', message: '暂时无法检查软件更新，请稍后再试。' }
     setUpdateStatus(status)
     return status
