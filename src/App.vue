@@ -1,14 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { Network, Package, Settings } from '@lucide/vue'
+import { Heart, MessageSquareText, Package, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
-import DistributionView from './views/DistributionView.vue'
+import FeedbackView from './views/FeedbackView.vue'
+import SupportView from './views/SupportView.vue'
 import SettingsView from './views/SettingsView.vue'
 import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
-import SupportDialog from './components/SupportDialog.vue'
-import FeedbackDialog from './components/FeedbackDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
 import { AGREEMENT_ACCEPTANCE_VALUE, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
@@ -64,8 +63,6 @@ const agreementAccepted = ref(hasAcceptedAgreements(localStorage.getItem('msfs-c
 const showAgreement = ref(!agreementAccepted.value)
 const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
 const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
-const showSupport = ref(false)
-const showFeedback = ref(false)
 const updateRequired = computed(() => ['available', 'downloading', 'downloaded'].includes(updateStatus.state))
 let unsubscribeProgress = () => {}
 let unsubscribeUpdates = () => {}
@@ -260,9 +257,13 @@ onBeforeUnmount(() => {
             <Package :size="19" />
             <span>汉化补丁</span>
           </button>
-          <button type="button" :class="{ active: activeView === 'distribution' }" @click="activeView = 'distribution'">
-            <Network :size="19" />
-            <span>分流包</span>
+          <button type="button" :class="{ active: activeView === 'feedback' }" @click="activeView = 'feedback'">
+            <MessageSquareText :size="19" />
+            <span>问题反馈</span>
+          </button>
+          <button type="button" :class="{ active: activeView === 'support' }" @click="activeView = 'support'">
+            <Heart :size="19" />
+            <span>赞助</span>
           </button>
           <button type="button" :class="{ active: activeView === 'settings' }" @click="activeView = 'settings'">
             <Settings :size="19" />
@@ -277,48 +278,53 @@ onBeforeUnmount(() => {
       </aside>
 
       <main class="content-area">
-        <CatalogView
-          v-if="activeView === 'catalog'"
-          :catalog-state="catalogState"
-          :installations="installations"
-          :installation-checks="installationChecks"
-          :targets="targets"
-          :detected-targets="detectedTargets"
-          :operations="operations"
-          :loading="loadingCatalog"
-          @refresh="refreshCatalog"
-          @install="installPatch"
-          @import="importPatch"
-          @restore="restorePatch"
-          @verify="verifyInstallations"
-          @author="bridge.external.open('https://space.bilibili.com/472309803?spm_id_from=333.1007.0.0')"
-        />
-        <DistributionView
-          v-else-if="activeView === 'distribution'"
-          @open-link="bridge.external.open"
-        />
-        <SettingsView
-          v-else
-          :app-info="appInfo"
-          :update-status="updateStatus"
-          :patches="catalogState.catalog?.patches || []"
-          :targets="targets"
-          :detected-targets="detectedTargets"
-          :installations="installations"
-          @choose-target="chooseTarget"
-          @clear-target="clearTarget"
-          @check-update="checkUpdate"
-          @open-link="bridge.external.open"
-          @show-agreements="showAgreement = true"
-          @support="showSupport = true"
-          @feedback="showFeedback = true"
-        />
+        <Transition name="view" mode="out-in">
+          <CatalogView
+            v-if="activeView === 'catalog'"
+            key="catalog"
+            :catalog-state="catalogState"
+            :installations="installations"
+            :installation-checks="installationChecks"
+            :targets="targets"
+            :detected-targets="detectedTargets"
+            :operations="operations"
+            :loading="loadingCatalog"
+            @refresh="refreshCatalog"
+            @install="installPatch"
+            @import="importPatch"
+            @restore="restorePatch"
+            @verify="verifyInstallations"
+            @author="bridge.external.open('https://space.bilibili.com/472309803?spm_id_from=333.1007.0.0')"
+          />
+          <FeedbackView
+            v-else-if="activeView === 'feedback'"
+            key="feedback"
+            :bridge="bridge"
+          />
+          <SupportView
+            v-else-if="activeView === 'support'"
+            key="support"
+          />
+          <SettingsView
+            v-else
+            key="settings"
+            :app-info="appInfo"
+            :update-status="updateStatus"
+            :patches="catalogState.catalog?.patches || []"
+            :targets="targets"
+            :detected-targets="detectedTargets"
+            :installations="installations"
+            @choose-target="chooseTarget"
+            @clear-target="clearTarget"
+            @check-update="checkUpdate"
+            @open-link="bridge.external.open"
+            @show-agreements="showAgreement = true"
+          />
+        </Transition>
       </main>
     </div>
     <AgreementDialog v-if="showAgreement" :required="!agreementAccepted" @accept="acceptAgreements" @decline="declineAgreements" @close="showAgreement = false" />
-    <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="showSupport = true" />
-    <SupportDialog v-if="showSupport" @close="showSupport = false" />
-    <FeedbackDialog v-if="showFeedback" :bridge="bridge" @close="showFeedback = false" />
+    <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="activeView = 'support'" />
     <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" />
   </div>
 </template>

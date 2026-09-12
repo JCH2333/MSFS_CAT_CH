@@ -1,12 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { CheckCircle2, LoaderCircle, MessageSquareText, Paperclip, Send, ShieldCheck, Trash2, TriangleAlert, X } from '@lucide/vue'
+import { CheckCircle2, LoaderCircle, MessageSquareText, Paperclip, Send, ShieldCheck, Trash2, TriangleAlert } from '@lucide/vue'
 
 const props = defineProps({
   bridge: { type: Object, required: true }
 })
-
-defineEmits(['close'])
 
 const MAX_IMAGES = 4
 const MAX_CONTENT_LENGTH = 2000
@@ -62,23 +60,32 @@ async function submit() {
     submitting.value = false
   }
 }
+
+function resetForm() {
+  content.value = ''
+  images.value = []
+  errorMessage.value = ''
+  submitted.value = false
+}
 </script>
 
 <template>
-  <div class="modal-backdrop" role="presentation">
-    <section class="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-      <button class="dialog-icon-close" type="button" title="关闭" @click="$emit('close')"><X :size="18" /></button>
-      <div class="feedback-dialog-heading">
-        <div><p class="eyebrow">ANONYMOUS FEEDBACK</p><h2 id="feedback-title">问题反馈</h2></div>
-        <MessageSquareText :size="22" />
+  <section class="view-shell feedback-view">
+    <div class="view-header">
+      <div>
+        <p class="eyebrow">ANONYMOUS FEEDBACK</p>
+        <h1>问题反馈</h1>
       </div>
+      <MessageSquareText :size="24" class="view-header-glyph" />
+    </div>
 
+    <div class="feedback-panel">
       <template v-if="!submitted">
         <p class="feedback-privacy"><ShieldCheck :size="15" />反馈匿名提交，仅包含你填写的内容和截图</p>
         <div class="feedback-editor">
           <textarea
             v-model="content"
-            rows="6"
+            rows="7"
             maxlength="2000"
             placeholder="请描述遇到的问题，例如：补丁安装失败、界面显示异常、模拟器内出现乱码…"
             :disabled="submitting"
@@ -111,7 +118,6 @@ async function submit() {
         </div>
 
         <div class="dialog-actions">
-          <button class="button button-secondary" type="button" :disabled="submitting" @click="$emit('close')">关闭</button>
           <button class="button button-primary" type="button" :disabled="!canSubmit" @click="submit">
             <LoaderCircle v-if="submitting" :size="16" class="feedback-spinner" />
             <Send v-else :size="16" />
@@ -124,8 +130,8 @@ async function submit() {
         <CheckCircle2 :size="30" />
         <strong>反馈已提交</strong>
         <p>感谢你的反馈，我们会尽快查看并处理。</p>
-        <button class="button button-primary" type="button" @click="$emit('close')">完成</button>
+        <button class="button button-primary" type="button" @click="resetForm">继续填写</button>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </template>

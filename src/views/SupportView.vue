@@ -1,9 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { Heart, LoaderCircle, TriangleAlert, X } from '@lucide/vue'
+import { Heart, LoaderCircle, TriangleAlert } from '@lucide/vue'
 import { SUPPORT_QR_SOURCES } from '../lib/support-qr.mjs'
-
-defineEmits(['close'])
 
 const qrUrl = ref('')
 const qrStatus = ref('loading')
@@ -56,12 +54,16 @@ onBeforeUnmount(clearFallbackTimer)
 </script>
 
 <template>
-  <div class="modal-backdrop" role="presentation">
-    <section class="support-dialog" role="dialog" aria-modal="true" aria-labelledby="support-title">
-      <button class="dialog-icon-close" type="button" title="关闭" @click="$emit('close')"><X :size="18" /></button>
-      <Heart :size="25" />
-      <p class="eyebrow">OPTIONAL SUPPORT</p>
-      <h2 id="support-title">赞助支持</h2>
+  <section class="view-shell support-view">
+    <div class="view-header">
+      <div>
+        <p class="eyebrow">OPTIONAL SUPPORT</p>
+        <h1>赞助支持</h1>
+      </div>
+      <Heart :size="24" class="view-header-glyph" />
+    </div>
+
+    <div class="support-panel">
       <p>免费制作更新不易，还请各位大佬支持！</p>
       <img v-if="qrUrl" :src="qrUrl" alt="微信赞助收款码" />
       <div v-else-if="qrStatus !== 'error'" class="support-qr-state" aria-live="polite">
@@ -70,9 +72,9 @@ onBeforeUnmount(clearFallbackTimer)
       </div>
       <div v-else class="support-qr-state support-qr-error" role="alert">
         <TriangleAlert :size="22" />
-        <span>赞助码暂时无法加载，请检查网络后重新打开此窗口。</span>
+        <span>赞助码暂时无法加载，请检查网络后重试。</span>
       </div>
       <small>微信扫码赞助，金额完全自愿。</small>
-    </section>
-  </div>
+    </div>
+  </section>
 </template>

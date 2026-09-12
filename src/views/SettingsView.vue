@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CheckCircle2, ExternalLink, FolderSearch, GitBranch, Heart, MapPin, MessageSquareText, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
+import { CheckCircle2, ExternalLink, FolderSearch, MapPin, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
 
 const props = defineProps({
   appInfo: { type: Object, required: true },
@@ -11,7 +11,7 @@ const props = defineProps({
   installations: { type: Object, required: true }
 })
 
-defineEmits(['check-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements', 'support', 'feedback'])
+defineEmits(['check-update', 'open-link', 'choose-target', 'clear-target', 'show-agreements'])
 
 const updateLabel = computed(() => {
   const labels = {
@@ -102,29 +102,6 @@ function targetSource(patch) {
       </div>
     </section>
 
-    <div class="settings-list">
-      <button class="repository-row" type="button" @click="$emit('open-link', 'https://gitee.com/ljd123456/MSFS_CAT_CH')">
-        <GitBranch :size="20" />
-        <span><strong>软件仓库（Gitee）</strong><small>ljd123456/MSFS_CAT_CH</small></span>
-        <ExternalLink :size="17" />
-      </button>
-      <button class="repository-row" type="button" @click="$emit('open-link', 'https://gitee.com/ljd123456/MSFS_CAT_CH_PATCHES')">
-        <GitBranch :size="20" />
-        <span><strong>补丁仓库（Gitee）</strong><small>ljd123456/MSFS_CAT_CH_PATCHES</small></span>
-        <ExternalLink :size="17" />
-      </button>
-      <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH')">
-        <GitBranch :size="20" />
-        <span><strong>软件仓库（GitHub）</strong><small>JCH2333/MSFS_CAT_CH</small></span>
-        <ExternalLink :size="17" />
-      </button>
-      <button class="repository-row" type="button" @click="$emit('open-link', 'https://github.com/JCH2333/MSFS_CAT_CH_PATCHES')">
-        <GitBranch :size="20" />
-        <span><strong>补丁仓库（GitHub）</strong><small>JCH2333/MSFS_CAT_CH_PATCHES</small></span>
-        <ExternalLink :size="17" />
-      </button>
-    </div>
-
     <section class="settings-legal">
       <div class="settings-section-heading"><div><p class="eyebrow">AUTHOR & TERMS</p><h2>作者与使用协议</h2></div><span>软件与补丁完全免费</span></div>
       <div class="author-panel">
@@ -134,8 +111,6 @@ function targetSource(patch) {
       </div>
       <div class="legal-actions">
         <button class="button button-secondary" type="button" @click="$emit('show-agreements')"><ScrollText :size="16" />查看已同意的协议</button>
-        <button class="button button-secondary" type="button" @click="$emit('feedback')"><MessageSquareText :size="16" />问题反馈</button>
-        <button class="button button-secondary" type="button" @click="$emit('support')"><Heart :size="16" />赞助支持</button>
       </div>
       <p class="agreement-status"><CheckCircle2 :size="16" />协议状态：已同意。撤销同意请在协议窗口选择“不同意并退出”。</p>
     </section>
