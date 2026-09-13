@@ -5,7 +5,7 @@ const https = require('node:https')
 const os = require('node:os')
 const path = require('node:path')
 const extractZip = require('extract-zip')
-const { SERVER_HOSTNAME, buildServerUrl } = require('./distribution-server')
+const { SERVER_HOSTNAME, buildServerUrl, serverOriginProtocol } = require('./distribution-server')
 
 const ALLOWED_DOWNLOAD_HOSTS = new Set([SERVER_HOSTNAME])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
@@ -278,7 +278,8 @@ function serverPatchDownloadUrl(patchId) {
 
 function isAllowedDownloadUrl(input) {
   const url = new URL(input)
-  return url.protocol === 'https:' && ALLOWED_DOWNLOAD_HOSTS.has(url.hostname)
+  // 过渡期允许配置源对应的协议（IP+端口联调时为 http），主机始终只认分发服务器
+  return url.protocol === serverOriginProtocol() && ALLOWED_DOWNLOAD_HOSTS.has(url.hostname)
 }
 
 async function downloadToFile(url, destination, onProgress, redirectsRemaining = 6) {

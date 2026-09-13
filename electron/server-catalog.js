@@ -1,6 +1,6 @@
 const fs = require('node:fs/promises')
 const path = require('node:path')
-const { SERVER_HOSTNAME, buildServerUrl } = require('./distribution-server')
+const { buildServerUrl, isTrustedServerUrl } = require('./distribution-server')
 const { isSemanticVersion } = require('./versioning')
 
 const CATALOG_MANIFEST_PATH = '/api/catalog/manifest.json'
@@ -38,13 +38,12 @@ function validateInstallPlan(packageInfo, patchId) {
 }
 
 function validateServerDownloadUrl(value, patchId) {
-  let url
   try {
-    url = new URL(value)
+    new URL(value)
   } catch {
     throw new Error(`补丁 ${patchId} package.downloadUrl 不是有效 URL`)
   }
-  if (url.protocol !== 'https:' || url.hostname !== SERVER_HOSTNAME) {
+  if (!isTrustedServerUrl(value)) {
     throw new Error(`补丁 ${patchId} package.downloadUrl 必须指向分发服务器`)
   }
   return value
