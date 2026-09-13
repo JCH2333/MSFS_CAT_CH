@@ -45,7 +45,8 @@ contextBridge.exposeInMainWorld('gsxTool', {
   },
   feedback: {
     chooseImages: () => ipcRenderer.invoke('feedback:choose-images'),
-    submit: (payload) => ipcRenderer.invoke('feedback:submit', payload)
+    submit: (payload) => ipcRenderer.invoke('feedback:submit', payload),
+    query: (code) => ipcRenderer.invoke('feedback:query', code)
   },
   external: {
     open: (url) => ipcRenderer.invoke('external:open', url)

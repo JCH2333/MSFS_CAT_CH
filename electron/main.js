@@ -4,7 +4,7 @@ const path = require('node:path')
 const { SERVER_HOSTNAME } = require('./distribution-server')
 const { ServerCatalog } = require('./server-catalog')
 const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements')
-const { loadFeedbackImages, submitFeedback, validateFeedbackPayload } = require('./feedback')
+const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { fetchSponsorQr } = require('./support-qr')
@@ -180,7 +180,14 @@ function registerIpc() {
   ipcMain.handle('feedback:submit', async (_event, payload) => {
     const validated = validateFeedbackPayload(payload)
     if (!validated.ok) return validated
-    return submitFeedback({ content: validated.content, images: validated.images })
+    return submitFeedback({
+      content: validated.content,
+      username: validated.username,
+      images: validated.images
+    })
+  })
+  ipcMain.handle('feedback:query', async (_event, code) => {
+    return queryFeedback(typeof code === 'string' ? code : '')
   })
 
   ipcMain.handle('external:open', async (_event, input) => {

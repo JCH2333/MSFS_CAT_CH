@@ -340,6 +340,35 @@ button { color: inherit; }
 .feedback-alert { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--danger); background: rgba(230, 108, 98, 0.08); color: #f0aa9f; font-size: 12px; }.feedback-alert svg { flex: 0 0 auto; }
 .feedback-spinner { animation: support-qr-spin 0.85s linear infinite; }
 .feedback-success { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 26px 0 8px; text-align: center; }.feedback-success > svg { color: var(--signal); }.feedback-success strong { font-size: 17px; }.feedback-success p { margin: 0 0 14px; color: var(--text-secondary); font-size: 12px; }
+.feedback-username { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.feedback-username input { flex: 1; min-width: 0; max-width: 280px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; background: #151613; color: var(--text); font: 12px "Microsoft YaHei UI", "Noto Sans SC", sans-serif; }
+.feedback-username input:focus { outline: none; border-color: rgba(98, 214, 163, 0.5); }
+.feedback-username input:disabled { opacity: 0.6; }
+.feedback-username > span { color: var(--text-muted); font-size: 10px; }
+.feedback-code-box { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 380px; margin: 4px 0 12px; padding: 16px; border: 1px dashed rgba(98, 214, 163, 0.45); border-radius: 10px; background: rgba(98, 214, 163, 0.06); }
+.feedback-code-label { color: var(--text-muted); font-size: 10px; letter-spacing: 2px; }
+.feedback-code-row { display: flex; align-items: center; gap: 10px; }
+.feedback-code { color: var(--signal); font: 700 26px/1 Consolas, "JetBrains Mono", monospace; letter-spacing: 3px; user-select: all; }
+.feedback-code-copy { min-height: 30px; padding: 0 12px; font-size: 11px; }
+.feedback-code-box small { color: var(--text-muted); font-size: 10px; line-height: 1.6; }
+.feedback-query { margin-top: 14px; }
+.feedback-query-title { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; }
+.feedback-query-title svg { color: var(--signal); }
+.feedback-query-row { display: flex; gap: 9px; }
+.feedback-query-row input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; background: #151613; color: var(--text); font: 500 13px Consolas, "Microsoft YaHei UI", monospace; letter-spacing: 1px; }
+.feedback-query-row input:focus { outline: none; border-color: rgba(98, 214, 163, 0.5); }
+.feedback-query-row input:disabled { opacity: 0.6; }
+.feedback-query-result { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255, 255, 255, 0.02); }
+.feedback-query-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.feedback-query-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.feedback-query-state.state-pending { color: var(--warning); }
+.feedback-query-state.state-done { color: var(--signal); }
+.feedback-query-state.state-missing { color: var(--danger); }
+.feedback-query-state.state-expired { color: var(--text-muted); }
+.feedback-query-name { color: var(--text-secondary); font-size: 11px; }
+.feedback-query-meta { margin: 0; color: var(--text-muted); font-size: 11px; }
+.feedback-query-reply { margin: 0; padding: 10px 12px; border-left: 3px solid var(--signal); border-radius: 4px; background: rgba(98, 214, 163, 0.06); color: var(--text-secondary); font-size: 12px; line-height: 1.7; white-space: pre-wrap; }
+.feedback-query-reset { align-self: flex-end; min-height: 28px; padding: 0 10px; font-size: 10px; }
 
 .brand-bell {
   position: relative;
