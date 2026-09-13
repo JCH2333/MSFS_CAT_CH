@@ -7,6 +7,7 @@ const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements
 const { loadFeedbackImages, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
+const { fetchSponsorQr } = require('./support-qr')
 const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
 
 let mainWindow = null
@@ -164,6 +165,8 @@ function registerIpc() {
 
   ipcMain.handle('announcements:list', () => fetchAnnouncements())
   ipcMain.handle('announcements:popup', () => fetchPopupAnnouncements())
+
+  ipcMain.handle('support:qr', () => fetchSponsorQr())
 
   ipcMain.handle('feedback:choose-images', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {

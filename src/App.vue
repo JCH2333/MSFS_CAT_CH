@@ -53,6 +53,9 @@ const developmentBridge = {
     list: async () => ({ ok: true, announcements: [] }),
     popup: async () => ({ ok: true, announcements: [] })
   },
+  support: {
+    qr: async () => ({ ok: false, error: 'development' })
+  },
   external: { open: async () => false }
 }
 

@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld('gsxTool', {
     list: () => ipcRenderer.invoke('announcements:list'),
     popup: () => ipcRenderer.invoke('announcements:popup')
   },
+  support: {
+    qr: () => ipcRenderer.invoke('support:qr')
+  },
   feedback: {
     chooseImages: () => ipcRenderer.invoke('feedback:choose-images'),
     submit: (payload) => ipcRenderer.invoke('feedback:submit', payload)

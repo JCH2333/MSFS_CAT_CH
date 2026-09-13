@@ -1,56 +1,28 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Heart, LoaderCircle, TriangleAlert } from '@lucide/vue'
-import { SUPPORT_QR_SOURCES } from '../lib/support-qr.mjs'
 
-const qrUrl = ref('')
+const qrDataUrl = ref('')
 const qrStatus = ref('loading')
-let fallbackTimer = null
-let sourceIndex = 0
 
-function clearFallbackTimer() {
-  if (fallbackTimer) {
-    clearTimeout(fallbackTimer)
-    fallbackTimer = null
-  }
-}
-
-function loadQr(index) {
-  const entry = SUPPORT_QR_SOURCES[index]
-  if (!entry) {
-    clearFallbackTimer()
-    qrStatus.value = 'error'
-    return
-  }
-
-  sourceIndex = index
+async function loadQr() {
+  qrDataUrl.value = ''
   qrStatus.value = 'loading'
-  const image = new Image()
-  image.onload = () => {
-    if (sourceIndex !== index) return
-    clearFallbackTimer()
-    qrUrl.value = entry.url
-    qrStatus.value = entry.source
+  try {
+    const result = await window.gsxTool?.support?.qr?.()
+    if (result?.ok && typeof result.dataUrl === 'string' && result.dataUrl.startsWith('data:image/')) {
+      qrDataUrl.value = result.dataUrl
+      qrStatus.value = 'ready'
+      return
+    }
+  } catch {
+    // 桥不可用时按加载失败处理，不让页面抛错。
   }
-  image.onerror = () => {
-    if (sourceIndex === index) useFallback()
-  }
-  image.src = entry.url
+  qrStatus.value = 'error'
 }
 
-function useFallback() {
-  clearFallbackTimer()
-  loadQr(sourceIndex + 1)
-}
-
-onMounted(() => {
-  loadQr(0)
-  fallbackTimer = setTimeout(() => {
-    if (!qrUrl.value && sourceIndex === 0) useFallback()
-  }, 2000)
-})
-
-onBeforeUnmount(clearFallbackTimer)
+// 每次进入赞助页都重新从分发服务器拉取并解密赞助码。
+onMounted(loadQr)
 </script>
 
 <template>
@@ -65,7 +37,7 @@ onBeforeUnmount(clearFallbackTimer)
 
     <div class="support-panel">
       <p>免费制作更新不易，还请各位大佬支持！</p>
-      <img v-if="qrUrl" :src="qrUrl" alt="微信赞助收款码" />
+      <img v-if="qrDataUrl" :src="qrDataUrl" alt="微信赞助收款码" />
       <div v-else-if="qrStatus !== 'error'" class="support-qr-state" aria-live="polite">
         <LoaderCircle :size="22" class="support-qr-spinner" />
         <span>正在加载赞助码…</span>
