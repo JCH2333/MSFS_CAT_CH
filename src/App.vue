@@ -1,9 +1,11 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { Heart, MessageSquareText, Package, Settings } from '@lucide/vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { Bell, Heart, MessageSquareText, Package, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
 import FeedbackView from './views/FeedbackView.vue'
+import AnnouncementsView from './views/AnnouncementsView.vue'
+import AnnouncementPopupDialog from './components/AnnouncementPopupDialog.vue'
 import SupportView from './views/SupportView.vue'
 import SettingsView from './views/SettingsView.vue'
 import AgreementDialog from './components/AgreementDialog.vue'
@@ -11,6 +13,8 @@ import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
 import { AGREEMENT_ACCEPTANCE_VALUE, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
+
+const ANNOUNCEMENT_POPUP_HISTORY_LIMIT = 50
 
 const developmentBridge = {
   app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }), quit: async () => {} },
@@ -45,6 +49,10 @@ const developmentBridge = {
     chooseImages: async () => [],
     submit: async () => ({ ok: false, message: '请在桌面应用中使用问题反馈' })
   },
+  announcements: {
+    list: async () => ({ ok: true, announcements: [] }),
+    popup: async () => ({ ok: true, announcements: [] })
+  },
   external: { open: async () => false }
 }
 
@@ -64,8 +72,31 @@ const showAgreement = ref(!agreementAccepted.value)
 const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
 const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
 const updateRequired = computed(() => ['available', 'downloading', 'downloaded'].includes(updateStatus.state))
+
+const announcements = ref([])
+const popupAnnouncements = ref([])
+const announcementsLoading = ref(false)
+const announcementsError = ref('')
+const lastReadAnnouncementId = ref(Number(localStorage.getItem('announcement-last-read-id')) || 0)
+const shownAnnouncementPopupIds = ref(readShownAnnouncementPopupIds())
+const hasUnreadAnnouncements = computed(() => announcements.value.some((announcement) => announcement.id > lastReadAnnouncementId.value))
+const pendingPopupAnnouncements = computed(() => popupAnnouncements.value.filter((announcement) => !shownAnnouncementPopupIds.value.includes(announcement.id)))
+const activePopupAnnouncement = computed(() => {
+  if (!agreementAccepted.value || !freeNoticeAccepted.value) return null
+  if (updateRequired.value) return null
+  return pendingPopupAnnouncements.value[0] || null
+})
 let unsubscribeProgress = () => {}
 let unsubscribeUpdates = () => {}
+
+function readShownAnnouncementPopupIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('announcement-shown-popup-ids') || '[]')
+    return Array.isArray(parsed) ? parsed.filter((id) => Number.isInteger(id)) : []
+  } catch {
+    return []
+  }
+}
 
 function replaceReactive(target, value) {
   Object.keys(target).forEach((key) => delete target[key])
@@ -148,6 +179,50 @@ function acknowledgeFreeNotice() {
   freeNoticeAccepted.value = true
   showFreeNotice.value = false
 }
+
+async function loadAnnouncements() {
+  announcementsLoading.value = true
+  announcementsError.value = ''
+  try {
+    const [listResult, popupResult] = await Promise.all([
+      bridge.announcements.list(),
+      bridge.announcements.popup()
+    ])
+    if (listResult?.ok) {
+      announcements.value = Array.isArray(listResult.announcements) ? listResult.announcements : []
+    } else {
+      announcementsError.value = listResult?.error || '公告获取失败，请稍后重试'
+    }
+    if (popupResult?.ok) {
+      popupAnnouncements.value = Array.isArray(popupResult.announcements) ? popupResult.announcements : []
+    }
+  } catch {
+    announcementsError.value = '公告获取失败，请稍后重试'
+  } finally {
+    announcementsLoading.value = false
+  }
+  if (activeView.value === 'announcements') markAnnouncementsRead()
+}
+
+function markAnnouncementsRead() {
+  const maxId = announcements.value.reduce((max, announcement) => Math.max(max, announcement.id), 0)
+  if (maxId <= lastReadAnnouncementId.value) return
+  lastReadAnnouncementId.value = maxId
+  localStorage.setItem('announcement-last-read-id', String(maxId))
+}
+
+function dismissAnnouncementPopup() {
+  const announcement = activePopupAnnouncement.value
+  if (!announcement) return
+  const next = shownAnnouncementPopupIds.value.filter((id) => id !== announcement.id)
+  next.push(announcement.id)
+  shownAnnouncementPopupIds.value = next.slice(-ANNOUNCEMENT_POPUP_HISTORY_LIMIT)
+  localStorage.setItem('announcement-shown-popup-ids', JSON.stringify(shownAnnouncementPopupIds.value))
+}
+
+watch(activeView, (view) => {
+  if (view === 'announcements') markAnnouncementsRead()
+})
 
 function openAuthorPage() {
   bridge.external.open(AUTHOR_URL)
@@ -234,6 +309,7 @@ onMounted(async () => {
   unsubscribeUpdates = bridge.updates.onStatus((status) => Object.assign(updateStatus, status))
   Object.assign(updateStatus, await bridge.updates.status())
   await refreshCatalog()
+  void loadAnnouncements()
 })
 
 onBeforeUnmount(() => {
@@ -250,6 +326,10 @@ onBeforeUnmount(() => {
         <div class="brand-block">
           <img src="/logo.png" alt="MSFS_CAT_CH" />
           <div><strong>MSFS</strong><span>CAT CH</span></div>
+          <button type="button" class="brand-bell" title="公告" aria-label="查看公告" @click="activeView = 'announcements'">
+            <Bell :size="15" />
+            <span v-if="hasUnreadAnnouncements" class="bell-dot" />
+          </button>
         </div>
 
         <nav class="primary-nav" aria-label="主导航">
@@ -301,6 +381,14 @@ onBeforeUnmount(() => {
             key="feedback"
             :bridge="bridge"
           />
+          <AnnouncementsView
+            v-else-if="activeView === 'announcements'"
+            key="announcements"
+            :announcements="announcements"
+            :loading="announcementsLoading"
+            :error="announcementsError"
+            @reload="loadAnnouncements"
+          />
           <SupportView
             v-else-if="activeView === 'support'"
             key="support"
@@ -326,5 +414,10 @@ onBeforeUnmount(() => {
     <AgreementDialog v-if="showAgreement" :required="!agreementAccepted" @accept="acceptAgreements" @decline="declineAgreements" @close="showAgreement = false" />
     <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="activeView = 'support'" />
     <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" />
+    <AnnouncementPopupDialog
+      v-if="activePopupAnnouncement"
+      :announcement="activePopupAnnouncement"
+      @close="dismissAnnouncementPopup"
+    />
   </div>
 </template>

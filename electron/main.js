@@ -3,6 +3,7 @@ const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
 const { SERVER_HOSTNAME } = require('./distribution-server')
 const { ServerCatalog } = require('./server-catalog')
+const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements')
 const { loadFeedbackImages, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
@@ -160,6 +161,9 @@ function registerIpc() {
     setImmediate(() => autoUpdater.quitAndInstall(false, true))
     return { state: 'installing' }
   })
+
+  ipcMain.handle('announcements:list', () => fetchAnnouncements())
+  ipcMain.handle('announcements:popup', () => fetchPopupAnnouncements())
 
   ipcMain.handle('feedback:choose-images', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
