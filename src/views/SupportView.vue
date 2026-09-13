@@ -46,7 +46,7 @@ onMounted(loadQr)
         <TriangleAlert :size="22" />
         <span>赞助码暂时无法加载，请检查网络后重试。</span>
       </div>
-      <small>微信扫码赞助，金额完全自愿。</small>
+      <small class="support-author-line">作者：b站 一只剑齿虎呀</small>
     </div>
   </section>
 </template>

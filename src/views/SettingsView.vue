@@ -33,7 +33,6 @@ function targetPath(patch) {
 }
 
 function patchVersionLabel(patch) {
-  if (patch.id === 'gsx-pro-zh-cn-voice') return `补丁 v${patch.version}`
   return `${patch.addonVersion ? `插件 v${patch.addonVersion}` : '插件版本未声明'} · 补丁 v${patch.version}`
 }
 

@@ -7,11 +7,12 @@ function source(...parts) {
   return fs.readFileSync(path.join(__dirname, '..', ...parts), 'utf8')
 }
 
-test('does not display the GSX add-on version on the Chinese voice package', () => {
+test('displays the add-on version on the Chinese voice package like the text patch', () => {
   const card = source('src', 'components', 'PatchCard.vue')
   const settings = source('src', 'views', 'SettingsView.vue')
 
-  assert.match(card, /const showAddonVersion = computed\(\(\) => Boolean\(props\.patch\.addonVersion\) && !isNetworkAuthored\.value\)/)
+  assert.match(card, /const showAddonVersion = computed\(\(\) => Boolean\(props\.patch\.addonVersion\)\)/)
   assert.match(card, /<span v-if="showAddonVersion">/)
-  assert.match(settings, /patch\.id === 'gsx-pro-zh-cn-voice'\) return `补丁 v\$\{patch\.version\}`/)
+  assert.doesNotMatch(settings, /patch\.id === 'gsx-pro-zh-cn-voice'/)
+  assert.match(settings, /patch\.addonVersion \? `插件 v\$\{patch\.addonVersion\}` : '插件版本未声明'\} · 补丁 v\$\{patch\.version\}/)
 })

@@ -18,7 +18,7 @@ defineEmits(['install', 'import', 'restore', 'author'])
 const published = computed(() => props.patch.status === 'published')
 const isNetworkAuthored = computed(() => props.patch.id === 'gsx-pro-zh-cn-voice')
 const isGsxCombined = computed(() => props.patch.targetKind === 'gsx-combined')
-const showAddonVersion = computed(() => Boolean(props.patch.addonVersion) && !isNetworkAuthored.value)
+const showAddonVersion = computed(() => Boolean(props.patch.addonVersion))
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
 const needsInstall = computed(() => !props.installation || versionComparison.value > 0 || props.installationCheck?.state !== 'intact')
 const status = computed(() => {
