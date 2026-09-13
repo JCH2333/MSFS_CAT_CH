@@ -106,7 +106,6 @@ test('submits the payload to the server feedback endpoint', async () => {
   assert.deepEqual(result, { ok: true })
   assert.equal(calls.length, 1)
   assert.equal(calls[0].url, `${SERVER_ORIGIN}${FEEDBACK_ENDPOINT_PATH}`)
-  assert.equal(calls[0].url, 'https://jianchihu.online/api/feedback')
   assert.equal(calls[0].options.method, 'POST')
   assert.equal(calls[0].options.headers['Content-Type'], 'application/json')
   assert.deepEqual(JSON.parse(calls[0].options.body), { content: '无法下载补丁', images: [PNG_BASE64] })

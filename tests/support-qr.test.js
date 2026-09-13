@@ -44,7 +44,6 @@ test('decrypts a valid jpeg payload into a data url with a matching sha256', asy
   })
   assert.equal(calls.length, 1)
   assert.equal(calls[0], `${SERVER_ORIGIN}${SPONSOR_QR_ENDPOINT_PATH}`)
-  assert.equal(calls[0], 'https://jianchihu.online/api/assets/sponsor-qr')
 })
 
 test('detects png magic bytes and reports the png mime in the data url', async () => {

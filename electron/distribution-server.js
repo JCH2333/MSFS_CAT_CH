@@ -1,9 +1,13 @@
 // 全应用唯一的分发服务器地址出处。
 // 其他模块必须通过 buildServerUrl 拼接服务器地址，禁止再硬编码域名。
-// 过渡期（备案未下来）：可用环境变量 MSFS_CAT_CH_SERVER_ORIGIN 覆盖为
-// IP+端口源（如 http://47.109.31.236:20075）做联调测试；
-// 正式发布包固定为 https://jianchihu.online。
-const DEFAULT_SERVER_ORIGIN = 'https://jianchihu.online'
+//
+// 发布策略（ADR-0004 过渡期）：
+// - 2.0.0 发布早于 ICP 备案通过，默认源临时指向公网 IP（阿里云 20075 端口）；
+// - 备案下来后发布一个小版本，把这里的默认值改回 https://jianchihu.online，
+//   通过服务器强制更新让全体用户迁移到域名；
+// - MSFS_CAT_CH_SERVER_ORIGIN 环境变量仍可覆盖（联调/提前验证域名用），
+//   正式用户不会设置它。
+const DEFAULT_SERVER_ORIGIN = 'http://47.109.31.236:20075'
 
 function normalizeOrigin(value) {
   if (typeof value !== 'string' || value.trim() === '') return null

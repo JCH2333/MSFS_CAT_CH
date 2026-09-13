@@ -1,3 +1,4 @@
+const { buildServerUrl } = require('../electron/distribution-server')
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
@@ -8,7 +9,7 @@ test('creates cloneable patch recognition descriptors from reactive-like catalog
     name: 'GSX Pro',
     version: '2.0.0',
     fingerprint: [new Proxy({ relativePath: 'html_ui/panel.js', sha256: 'a'.repeat(64) }, {})],
-    package: { downloadUrl: 'https://jianchihu.online/downloads/patches/test/test.zip' }
+    package: { downloadUrl: buildServerUrl('/downloads/patches/test/test.zip') }
   }, {})
 
   const descriptors = createRecognitionDescriptors([patch])
@@ -25,7 +26,7 @@ test('creates cloneable patch recognition descriptors from reactive-like catalog
 
 test('creates a cloneable installation request from a reactive-like catalog object', async () => {
   const { createInstallationRequest } = await import('../src/lib/patch-recognition.mjs')
-  const serverUrl = 'https://jianchihu.online/downloads/patches/fsr/fsr.zip'
+  const serverUrl = buildServerUrl('/downloads/patches/fsr/fsr.zip')
   const patch = new Proxy({
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro 简体中文',

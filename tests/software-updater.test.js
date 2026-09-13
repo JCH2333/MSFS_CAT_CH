@@ -10,7 +10,7 @@ const {
   startRequiredUpdate,
   updateStatusFromResult
 } = require('../electron/software-updater')
-const { SERVER_ORIGIN } = require('../electron/distribution-server')
+const { SERVER_ORIGIN, buildServerUrl } = require('../electron/distribution-server')
 
 function createUpdater(checkForUpdates) {
   const calls = { proxies: [], closeAllConnections: 0, feeds: [] }
@@ -27,11 +27,11 @@ function createUpdater(checkForUpdates) {
 }
 
 test('builds the only software feed from the distribution server origin', () => {
-  assert.equal(SERVER_ORIGIN, 'https://jianchihu.online')
-  assert.equal(SERVER_SOFTWARE_FEED_URL, 'https://jianchihu.online/downloads/software/')
+  assert.equal(SERVER_ORIGIN, 'http://47.109.31.236:20075')
+  assert.equal(SERVER_SOFTWARE_FEED_URL, buildServerUrl('/downloads/software/'))
   assert.deepEqual(serverSoftwareFeed(), {
     provider: 'generic',
-    url: 'https://jianchihu.online/downloads/software/'
+    url: buildServerUrl('/downloads/software/')
   })
 })
 

@@ -3,7 +3,9 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs/promises')
 const os = require('node:os')
 const path = require('node:path')
-const { CATALOG_TIMEOUT_MS, CATALOG_URL, ServerCatalog, validateCatalog } = require('../electron/server-catalog')
+const { buildServerUrl } = require('../electron/distribution-server')
+const { CATALOG_TIMEOUT_MS, CATALOG_URL, ServerCatalog, validateCatalog
+} = require('../electron/server-catalog')
 
 function catalogWith(patch) {
   return {
@@ -15,7 +17,7 @@ function catalogWith(patch) {
 }
 
 test('validates the server catalog manifest URL', () => {
-  assert.equal(CATALOG_URL, 'https://jianchihu.online/api/catalog/manifest.json')
+  assert.equal(CATALOG_URL, buildServerUrl('/api/catalog/manifest.json'))
 })
 
 test('validates a published package and keeps its server download URL', () => {
@@ -35,12 +37,12 @@ test('validates a published package and keeps its server download URL', () => {
       assetName: 'gsx-pro-zh-cn.zip',
       sha256: 'a'.repeat(64),
       size: 100,
-      downloadUrl: 'https://jianchihu.online/downloads/patches/gsx-pro-v2.0.0/gsx-pro-zh-cn.zip'
+      downloadUrl: buildServerUrl('/downloads/patches/gsx-pro-v2.0.0/gsx-pro-zh-cn.zip')
     }
   }))
 
   assert.equal(result.patches[0].package.downloadUrl,
-    'https://jianchihu.online/downloads/patches/gsx-pro-v2.0.0/gsx-pro-zh-cn.zip')
+    buildServerUrl('/downloads/patches/gsx-pro-v2.0.0/gsx-pro-zh-cn.zip'))
   assert.equal(result.patches[0].addonVersion, '4.0.19')
   assert.deepEqual(result.patches[0].fingerprint, [{ relativePath: 'html_ui/panel.js', sha256: 'b'.repeat(64) }])
   assert.deepEqual(result.patches[0].targetFolders, ['fsdreamteam-gsx-pro'])
@@ -90,7 +92,7 @@ test('rejects a download URL that is not https or not on the distribution server
   })), /downloadUrl/)
   assert.throws(() => validateCatalog(catalogWith({
     ...base,
-    package: { ...base.package, downloadUrl: 'https://jianchihu.online.evil.example/a.zip' }
+    package: { ...base.package, downloadUrl: 'http://47.109.31.236.evil.example/a.zip' }
   })), /downloadUrl/)
   assert.throws(() => validateCatalog(catalogWith({
     ...base,
@@ -298,7 +300,7 @@ test('fetches the catalog from the distribution server with a cache-busting quer
   assert.equal(result.stale, false)
   assert.equal(result.error, null)
   assert.equal(calls.length, 1)
-  assert.match(calls[0].url, /^https:\/\/jianchihu\.online\/api\/catalog\/manifest\.json\?t=\d+$/)
+  assert.match(calls[0].url, /^http:\/\/47\.109\.31\.236:20075\/api\/catalog\/manifest\.json\?t=\d+$/)
   assert.equal(calls[0].accept, 'application/json')
   assert.ok(JSON.parse(await fs.readFile(client.cachePath, 'utf8')))
   await fs.rm(cacheDirectory, { recursive: true, force: true })

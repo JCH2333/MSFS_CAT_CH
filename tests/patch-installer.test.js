@@ -42,7 +42,7 @@ function packageFor(version, archivePath, checksum) {
     version,
     status: 'published',
     package: {
-      downloadUrl: 'https://jianchihu.online/downloads/patches/test/test.zip',
+      downloadUrl: buildServerUrl('/downloads/patches/test/test.zip'),
       sha256: checksum,
       contentRoot: ''
     },
@@ -130,15 +130,15 @@ test('rejects a patch layout whose file size does not match its payload', async 
 })
 
 test('permits only https downloads from the distribution server host', () => {
-  assert.equal(isAllowedDownloadUrl('https://jianchihu.online/downloads/patches/test/test.zip'), true)
+  assert.equal(isAllowedDownloadUrl(buildServerUrl('/downloads/patches/test/test.zip')), true)
   assert.equal(isAllowedDownloadUrl('http://jianchihu.online/downloads/patches/test/test.zip'), false)
   assert.equal(isAllowedDownloadUrl('https://evil.example/test.zip'), false)
-  assert.equal(isAllowedDownloadUrl('https://jianchihu.online.evil.example/test.zip'), false)
+  assert.equal(isAllowedDownloadUrl('http://47.109.31.236.evil.example/test.zip'), false)
 })
 
 test('derives the server download endpoint for a patch id', () => {
   assert.equal(serverPatchDownloadUrl('gsx-pro-zh-cn'), buildServerUrl('/api/patches/download/gsx-pro-zh-cn'))
-  assert.equal(serverPatchDownloadUrl('gsx-pro-zh-cn'), 'https://jianchihu.online/api/patches/download/gsx-pro-zh-cn')
+  assert.equal(serverPatchDownloadUrl('gsx-pro-zh-cn'), buildServerUrl('/api/patches/download/gsx-pro-zh-cn'))
 })
 
 test('rejects a download URL outside the trusted server hosts before any request', async () => {
@@ -174,7 +174,7 @@ test('downloads a published patch from the catalog server URL and reports server
   const patch = packageFor('1.0.0', archive, await sha256(archive))
   await installer.install(patch, target)
 
-  assert.deepEqual(calls, ['https://jianchihu.online/downloads/patches/test/test.zip'])
+  assert.deepEqual(calls, [buildServerUrl('/downloads/patches/test/test.zip')])
   const downloadEvents = events.filter((event) => event.phase === 'download')
   assert.equal(downloadEvents[0].message, '正在从云端服务器下载补丁')
   const progressEvent = downloadEvents.find((event) => event.source !== undefined)
@@ -207,7 +207,7 @@ test('falls back to the server download endpoint when the catalog omits a downlo
   patch.package.downloadUrl = ''
   await installer.install(patch, target)
 
-  assert.deepEqual(calls, ['https://jianchihu.online/api/patches/download/test-patch'])
+  assert.deepEqual(calls, [buildServerUrl('/api/patches/download/test-patch')])
   assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'localized')
   await fs.rm(root, { recursive: true, force: true })
 })

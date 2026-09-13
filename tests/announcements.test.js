@@ -87,7 +87,6 @@ test('fetches the announcement list through the paginated server endpoint', asyn
   assert.deepEqual(result.announcements.map((item) => item.id), [3, 9])
   assert.equal(calls.length, 1)
   assert.equal(calls[0], `${SERVER_ORIGIN}${ANNOUNCEMENTS_ENDPOINT_PATH}?page=0&size=${ANNOUNCEMENTS_PAGE_SIZE}`)
-  assert.equal(calls[0], `https://jianchihu.online/api/announcements?page=0&size=${ANNOUNCEMENTS_PAGE_SIZE}`)
 })
 
 test('silently drops invalid entries from an otherwise valid list', async () => {
@@ -175,7 +174,6 @@ test('fetchPopupAnnouncements reads the popup endpoint and array envelope', asyn
   assert.equal(result.announcements[0].popup, true)
   assert.equal(calls.length, 1)
   assert.equal(calls[0], `${SERVER_ORIGIN}${POPUP_ANNOUNCEMENTS_ENDPOINT_PATH}`)
-  assert.equal(calls[0], 'https://jianchihu.online/api/announcements/popup')
 })
 
 test('fetchPopupAnnouncements rejects a non-array popup envelope', async () => {
