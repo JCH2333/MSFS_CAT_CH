@@ -6,6 +6,7 @@ const { ServerCatalog } = require('./server-catalog')
 const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements')
 const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence')
+const { getAgreementText } = require('./agreements-secure')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { fetchSponsorQr } = require('./support-qr')
@@ -199,6 +200,8 @@ function registerIpc() {
       appVersion: app.getVersion()
     })
   })
+  // 协议正文安全加载：主进程联网取钥解密内嵌密文，明文只经 IPC 交给渲染层弹窗
+  ipcMain.handle('legal:get-agreement-text', () => getAgreementText())
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)

@@ -12,7 +12,7 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
-import { AGREEMENT_ACCEPTANCE_VALUE, AGREEMENT_REVISION, AUTHOR_URL, agreements, hasAcceptedAgreements } from './lib/agreements.mjs'
+import { AGREEMENT_ACCEPTANCE_VALUE, AGREEMENT_REVISION, AGREEMENT_SECTIONS, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
 import { PENDING_STORAGE_KEY, createPendingRecord, parsePendingRecord, pendingRecordToReportPayload, serializePendingRecord } from './lib/legal-evidence.mjs'
 
 const ANNOUNCEMENT_POPUP_HISTORY_LIMIT = 50
@@ -52,7 +52,8 @@ const developmentBridge = {
   },
   legal: {
     reportAcceptance: async () => ({ ok: false, reason: 'development' }),
-    ensureDeviceId: async () => null
+    ensureDeviceId: async () => null,
+    getAgreementText: async () => ({ ok: false, error: 'development' })
   },
   announcements: {
     list: async () => ({ ok: true, announcements: [] }),
@@ -77,6 +78,9 @@ const updateStatus = reactive({ state: 'idle', info: null, progress: null, messa
 const loadingCatalog = ref(false)
 const agreementAccepted = ref(hasAcceptedAgreements(localStorage.getItem('msfs-cat-ch-agreements')))
 const showAgreement = ref(!agreementAccepted.value)
+// 协议正文（密文打包方案）：弹窗打开时经主进程联网取钥解密取得，仅保存在内存
+const agreementSections = ref(null)
+const agreementTextsFailed = ref(false)
 const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
 const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
 const updateRequired = computed(() => ['available', 'downloading', 'downloaded'].includes(updateStatus.state))
@@ -170,7 +174,36 @@ function clearTarget(patchId) {
   localStorage.setItem('patch-targets', JSON.stringify(targets))
 }
 
+// 把主进程解密出的正文 [{id, body}] 与渲染层章节元数据（标题）按 id 合并；
+// 任一章节缺失正文都视为失败，避免出现可同意但不完整的协议
+function mergeAgreementSections(loaded) {
+  const sections = AGREEMENT_SECTIONS.map((section) => ({
+    ...section,
+    body: loaded.find((item) => item?.id === section.id)?.body || ''
+  }))
+  return sections.every((section) => section.body) ? sections : null
+}
+
+async function loadAgreementTexts() {
+  if (agreementSections.value) return
+  agreementTextsFailed.value = false
+  try {
+    const result = await bridge.legal.getAgreementText()
+    agreementSections.value = result?.ok ? mergeAgreementSections(result.agreements || []) : null
+  } catch {
+    agreementSections.value = null
+  }
+  if (!agreementSections.value) agreementTextsFailed.value = true
+}
+
+watch(showAgreement, (open) => {
+  if (open) void loadAgreementTexts()
+}, { immediate: true })
+
 function acceptAgreements() {
+  const sections = agreementSections.value
+  // 未取得完整协议全文（解密失败/离线）时绝不允许同意
+  if (!sections || sections.length !== AGREEMENT_SECTIONS.length) return
   const previous = localStorage.getItem('msfs-cat-ch-agreements')
   localStorage.setItem('msfs-cat-ch-agreements', AGREEMENT_ACCEPTANCE_VALUE)
   agreementAccepted.value = true
@@ -180,8 +213,8 @@ function acceptAgreements() {
   // 协议同意存证：先落本地待补报记录，再匿名上报服务器（fire-and-forget）
   const record = createPendingRecord({
     revision: AGREEMENT_REVISION,
-    userAgreement: agreements[0]?.body || '',
-    disclaimer: agreements[1]?.body || ''
+    userAgreement: sections.find((section) => section.id === 'user')?.body || '',
+    disclaimer: sections.find((section) => section.id === 'notice')?.body || ''
   })
   localStorage.setItem(PENDING_STORAGE_KEY, serializePendingRecord(record))
   void submitAgreementEvidence(record)
@@ -446,7 +479,16 @@ onBeforeUnmount(() => {
         </Transition>
       </main>
     </div>
-    <AgreementDialog v-if="showAgreement" :required="!agreementAccepted" @accept="acceptAgreements" @decline="declineAgreements" @close="showAgreement = false" />
+    <AgreementDialog
+      v-if="showAgreement"
+      :required="!agreementAccepted"
+      :sections="agreementSections"
+      :load-failed="agreementTextsFailed"
+      @retry="loadAgreementTexts"
+      @accept="acceptAgreements"
+      @decline="declineAgreements"
+      @close="showAgreement = false"
+    />
     <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="activeView = 'support'" />
     <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" />
     <AnnouncementPopupDialog

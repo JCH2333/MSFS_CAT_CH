@@ -232,9 +232,10 @@ test('renderer pending record round-trips and rejects damaged data', async () =>
 
 test('agreement revision matches the archived evidence revision', async () => {
   const agreementModule = await import('../src/lib/agreements.mjs')
-  assert.equal(agreementModule.agreements.length, 2)
-  assert.match(agreementModule.agreements[0].body, new RegExp(`协议修订号：${agreementModule.AGREEMENT_REVISION}`))
-  assert.match(agreementModule.agreements[1].body, new RegExp(`协议修订号：${agreementModule.AGREEMENT_REVISION}`))
+  const { agreementTexts } = await import('../tools/agreements-texts.mjs')
+  assert.equal(agreementTexts.length, 2)
+  assert.match(agreementTexts[0].body, new RegExp(`协议修订号：${agreementModule.AGREEMENT_REVISION}`))
+  assert.match(agreementTexts[1].body, new RegExp(`协议修订号：${agreementModule.AGREEMENT_REVISION}`))
   // 与服务端归档 manifest 同口径的哈希必须可以稳定计算
-  assert.match(computeAgreementHash(agreementModule.agreements.map((agreement) => agreement.body)), /^[0-9a-f]{64}$/)
+  assert.match(computeAgreementHash(agreementTexts.map((agreement) => agreement.body)), /^[0-9a-f]{64}$/)
 })
