@@ -116,7 +116,7 @@ function targetSource(patch) {
 
     <div class="privacy-line">
       <CheckCircle2 :size="17" />
-      <span>完全免费使用，不需要账号，不上传使用记录；反馈匿名提交，仅包含填写的内容和截图</span>
+      <span>完全免费使用，不需要账号，不上传使用记录；仅匿名留存协议同意凭据（版本与时间）用于法律存证</span>
     </div>
   </section>
 </template>

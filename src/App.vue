@@ -12,7 +12,8 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
-import { AGREEMENT_ACCEPTANCE_VALUE, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
+import { AGREEMENT_ACCEPTANCE_VALUE, AGREEMENT_REVISION, AUTHOR_URL, agreements, hasAcceptedAgreements } from './lib/agreements.mjs'
+import { PENDING_STORAGE_KEY, createPendingRecord, parsePendingRecord, pendingRecordToReportPayload, serializePendingRecord } from './lib/legal-evidence.mjs'
 
 const ANNOUNCEMENT_POPUP_HISTORY_LIMIT = 50
 
@@ -48,6 +49,10 @@ const developmentBridge = {
   feedback: {
     chooseImages: async () => [],
     submit: async () => ({ ok: false, message: '请在桌面应用中使用问题反馈' })
+  },
+  legal: {
+    reportAcceptance: async () => ({ ok: false, reason: 'development' }),
+    ensureDeviceId: async () => null
   },
   announcements: {
     list: async () => ({ ok: true, announcements: [] }),
@@ -166,15 +171,41 @@ function clearTarget(patchId) {
 }
 
 function acceptAgreements() {
+  const previous = localStorage.getItem('msfs-cat-ch-agreements')
   localStorage.setItem('msfs-cat-ch-agreements', AGREEMENT_ACCEPTANCE_VALUE)
   agreementAccepted.value = true
   showAgreement.value = false
   showFreeNotice.value = true
+  if (hasAcceptedAgreements(previous)) return // 同一修订版内重复确认，无需再次存证
+  // 协议同意存证：先落本地待补报记录，再匿名上报服务器（fire-and-forget）
+  const record = createPendingRecord({
+    revision: AGREEMENT_REVISION,
+    userAgreement: agreements[0]?.body || '',
+    disclaimer: agreements[1]?.body || ''
+  })
+  localStorage.setItem(PENDING_STORAGE_KEY, serializePendingRecord(record))
+  void submitAgreementEvidence(record)
 }
 
 function declineAgreements() {
+  // 用户最终未同意（或撤回同意）：丢弃未报成的旧存证，避免上报已撤回的同意
+  localStorage.removeItem(PENDING_STORAGE_KEY)
   localStorage.removeItem('msfs-cat-ch-agreements')
   bridge.app.quit()
+}
+
+async function submitAgreementEvidence(record) {
+  try {
+    const result = await bridge.legal.reportAcceptance(pendingRecordToReportPayload(record))
+    if (result?.ok) localStorage.removeItem(PENDING_STORAGE_KEY)
+  } catch {
+    // 上报失败保持暂存，等待下次启动补报
+  }
+}
+
+async function retryPendingAgreementEvidence() {
+  const record = parsePendingRecord(localStorage.getItem(PENDING_STORAGE_KEY))
+  if (record) await submitAgreementEvidence(record)
 }
 
 function acknowledgeFreeNotice() {
@@ -313,6 +344,7 @@ onMounted(async () => {
   Object.assign(updateStatus, await bridge.updates.status())
   await refreshCatalog()
   void loadAnnouncements()
+  void retryPendingAgreementEvidence() // 离线时未报成的协议同意存证自动补报
 })
 
 onBeforeUnmount(() => {

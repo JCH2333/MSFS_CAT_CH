@@ -48,6 +48,10 @@ contextBridge.exposeInMainWorld('gsxTool', {
     submit: (payload) => ipcRenderer.invoke('feedback:submit', payload),
     query: (code) => ipcRenderer.invoke('feedback:query', code)
   },
+  legal: {
+    reportAcceptance: (payload) => ipcRenderer.invoke('legal:report-acceptance', payload),
+    ensureDeviceId: () => ipcRenderer.invoke('legal:ensure-device-id')
+  },
   external: {
     open: (url) => ipcRenderer.invoke('external:open', url)
   }

@@ -5,6 +5,7 @@ const { SERVER_HOSTNAME } = require('./distribution-server')
 const { ServerCatalog } = require('./server-catalog')
 const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements')
 const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPayload } = require('./feedback')
+const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { fetchSponsorQr } = require('./support-qr')
@@ -188,6 +189,15 @@ function registerIpc() {
   })
   ipcMain.handle('feedback:query', async (_event, code) => {
     return queryFeedback(typeof code === 'string' ? code : '')
+  })
+
+  // 协议同意存证（法律证据留存）：匿名设备标识维护与同意记录上报
+  ipcMain.handle('legal:ensure-device-id', () => ensureDeviceId(app.getPath('userData')))
+  ipcMain.handle('legal:report-acceptance', (_event, payload) => {
+    return reportAgreementAcceptance(payload, {
+      userDataDirectory: app.getPath('userData'),
+      appVersion: app.getVersion()
+    })
   })
 
   ipcMain.handle('external:open', async (_event, input) => {

@@ -3,7 +3,7 @@ export const AUTHOR_URL = 'https://space.bilibili.com/472309803?spm_id_from=333.
 
 // Increment this value whenever the agreement text or the legal basis for use changes.
 // A new value deliberately requires every existing installation to consent again.
-export const AGREEMENT_REVISION = '2026-09-13-v1'
+export const AGREEMENT_REVISION = '2026-09-15-v1'
 export const AGREEMENT_ACCEPTANCE_VALUE = `accepted-${AGREEMENT_REVISION}`
 
 export function hasAcceptedAgreements(value) {
@@ -14,7 +14,7 @@ export const agreements = [
   {
     id: 'user',
     title: '用户使用协议',
-    body: `生效日期：2026年9月13日
+    body: `生效日期：2026年9月15日
 协议修订号：${AGREEMENT_REVISION}
 
 请在安装、下载、导入、注入、使用本软件或任一补丁前，完整阅读本《用户使用协议》及《免责声明》。点击“同意并继续使用”表示您已阅读、理解并接受全部内容；不同意任何内容，请点击“不同意并退出”，并停止使用本软件及相关补丁。
@@ -22,7 +22,7 @@ export const agreements = [
 一、软件性质与适用范围
 1. MSFS CAT CH 是由网络作者“一只剑齿虎呀”维护的免费本地桌面工具，用于协助用户管理 Microsoft Flight Simulator（以下简称“MSFS”）第三方插件的中文本地化补丁、语音包及相关分发信息。
 2. 本软件、补丁及其说明均为非官方内容，仅限个人学习、交流和便利使用。软件完全免费，不出售、不收取账号费用、不提供会员或激活服务，也未授权任何个人、店铺、平台或群组以收费方式销售、代购、代安装或捆绑分发。
-3. 本软件不要求注册账号，不建立用户数据库，不提供遥测、行为追踪或使用记录上传服务。为获取补丁目录、更新信息或下载文件，软件可能直接连接作者的自建分发服务器或您主动打开的第三方页面；该等网络服务应适用其自身规则和隐私政策。您主动提交的问题反馈为匿名内容，仅包含您填写的文字与截图。
+3. 本软件不要求注册账号，不提供遥测、行为追踪或使用记录上传服务。为获取补丁目录、更新信息或下载文件，以及在您点击同意时留存协议同意凭据，软件可能直接连接作者的自建分发服务器或您主动打开的第三方页面；同意凭据仅包含协议修订号、协议文本校验值、随机生成的匿名设备标识与时间，不含您的姓名、联系方式或使用行为，仅用于证明相应修订版协议获得了您的同意；该等网络服务应适用其自身规则和隐私政策。您主动提交的问题反馈为匿名内容，仅包含您填写的文字与截图。
 
 二、同意、资格与协议更新
 1. 您确认自己具有订立本协议并使用相关软件的相应民事行为能力；如您为未成年人或受限制民事行为能力人，应在监护人同意、指导下使用。
@@ -58,7 +58,7 @@ export const agreements = [
   {
     id: 'notice',
     title: '免责声明',
-    body: `生效日期：2026年9月13日
+    body: `生效日期：2026年9月15日
 协议修订号：${AGREEMENT_REVISION}
 
 请特别阅读本免责声明。该免责声明旨在以清晰、显著的方式说明软件性质、风险边界和责任分配，不构成对法律规定责任的排除、限制或转移。
