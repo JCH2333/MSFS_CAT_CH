@@ -291,7 +291,9 @@ async function downloadToFile(url, destination, onProgress, redirectsRemaining =
   const temporaryPath = `${destination}.part`
 
   return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers: { 'User-Agent': 'msfs-cat-ch' } }, (response) => {
+    // 过渡期 IP 源为 http，正式域名源为 https：按 URL 协议选择请求模块
+    const transport = url.protocol === 'https:' ? https : require('node:http')
+    const request = transport.get(url, { headers: { 'User-Agent': 'msfs-cat-ch' } }, (response) => {
       const status = response.statusCode || 0
       if (status >= 300 && status < 400 && response.headers.location) {
         response.resume()
