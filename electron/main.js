@@ -9,12 +9,14 @@ const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence'
 const { getAgreementText } = require('./agreements-secure')
 const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
+const { GsxUpdater } = require('./gsx-updater')
 const { fetchSponsorQr } = require('./support-qr')
 const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
 
 let mainWindow = null
 let catalog = null
 let installer = null
+let gsxUpdater = null
 let latestUpdateStatus = { state: 'idle' }
 
 function send(channel, payload) {
@@ -203,6 +205,9 @@ function registerIpc() {
   // 协议正文安全加载：主进程联网取钥解密内嵌密文，明文只经 IPC 交给渲染层弹窗
   ipcMain.handle('legal:get-agreement-text', () => getAgreementText())
 
+  ipcMain.handle('gsx:status', () => gsxUpdater.getStatus())
+  ipcMain.handle('gsx:update:start', () => gsxUpdater.applyUpdate())
+
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)
     const isDistributionServer = url.protocol === 'https:' && url.hostname === SERVER_HOSTNAME
@@ -229,6 +234,10 @@ function registerIpc() {
 app.whenReady().then(() => {
   const userDataDirectory = app.getPath('userData')
   catalog = new ServerCatalog({ cacheDirectory: path.join(userDataDirectory, 'cache') })
+  gsxUpdater = new GsxUpdater({
+    userDataDirectory,
+    onProgress: (payload) => send('gsx:progress', payload)
+  })
   installer = new PatchInstaller({
     userDataDirectory,
     onProgress: (payload) => send('patch:progress', payload),

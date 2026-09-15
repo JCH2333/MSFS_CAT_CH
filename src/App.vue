@@ -1,12 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { Bell, Heart, MessageSquareText, Package, Settings } from '@lucide/vue'
+import { Bell, CloudDownload, Heart, MessageSquareText, Package, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
 import FeedbackView from './views/FeedbackView.vue'
 import AnnouncementsView from './views/AnnouncementsView.vue'
 import AnnouncementPopupDialog from './components/AnnouncementPopupDialog.vue'
 import SupportView from './views/SupportView.vue'
+import GsxUpdateView from './views/GsxUpdateView.vue'
 import SettingsView from './views/SettingsView.vue'
 import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
@@ -54,6 +55,11 @@ const developmentBridge = {
     download: async () => ({ state: 'development' }),
     install: async () => ({ state: 'development' }),
     onStatus: () => () => {}
+  },
+  gsx: {
+    status: async () => ({ installed: false, pending: [], updateAvailable: false }),
+    startUpdate: async () => { throw new Error('请在桌面应用中更新 GSX') },
+    onProgress: () => () => {}
   },
   feedback: {
     chooseImages: async () => [],
@@ -450,6 +456,10 @@ onBeforeUnmount(() => {
             <Package :size="19" />
             <span>汉化补丁</span>
           </button>
+          <button type="button" :class="{ active: activeView === 'gsx-update' }" @click="activeView = 'gsx-update'">
+            <CloudDownload :size="19" />
+            <span>GSX 更新</span>
+          </button>
           <button type="button" :class="{ active: activeView === 'feedback' }" @click="activeView = 'feedback'">
             <MessageSquareText :size="19" />
             <span>问题反馈</span>
@@ -488,6 +498,11 @@ onBeforeUnmount(() => {
             @restore="restorePatch"
             @verify="verifyInstallations"
             @author="bridge.external.open('https://space.bilibili.com/472309803?spm_id_from=333.1007.0.0')"
+          />
+          <GsxUpdateView
+            v-else-if="activeView === 'gsx-update'"
+            key="gsx-update"
+            :bridge="bridge"
           />
           <FeedbackView
             v-else-if="activeView === 'feedback'"

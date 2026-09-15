@@ -64,6 +64,7 @@ storage/
 !**/.env.*.example
 **/MSFS_P_CH/src/main/resources/application.yml
 .local-backups/
+.local-lab/
 local-patches/
 /语音包/
 /.agents/

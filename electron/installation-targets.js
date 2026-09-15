@@ -302,5 +302,6 @@ module.exports = {
   detectPatchTargets,
   normalizeTargetFolders,
   parseInstalledPackagesPath,
-  parseAddonManagerRoots
+  parseAddonManagerRoots,
+  registeredAddonManagerRoots
 }
