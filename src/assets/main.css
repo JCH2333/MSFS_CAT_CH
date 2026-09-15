@@ -278,6 +278,9 @@ button { color: inherit; }
 .target-settings-title small { color: var(--text-muted); font-size: 10px; }
 .target-settings-title > svg { flex: 0 0 auto; color: var(--signal); }
 .target-settings-path { min-height: 32px; margin: 13px 0 10px; overflow: hidden; color: var(--text-secondary); font: 10px/1.55 Consolas, monospace; text-overflow: ellipsis; }
+.target-hint { margin: 0 0 10px; color: var(--text-muted); font-size: 10px; line-height: 1.6; }
+.target-settings-path + .target-hint { margin-top: -6px; }
+.target-slot-row .target-hint { margin-bottom: 0; }
 .target-settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 10px; }
 .target-settings-actions > div { display: flex; gap: 6px; }
 .target-settings-actions .icon-button { width: 30px; height: 30px; flex-basis: 30px; }

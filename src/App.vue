@@ -20,6 +20,7 @@ import {
   manualSlotPaths,
   resolveSlotTarget
 } from './lib/dual-sim.mjs'
+import { manualTargetHint } from './lib/target-hints.mjs'
 import { AGREEMENT_ACCEPTANCE_VALUE, AGREEMENT_REVISION, AGREEMENT_SECTIONS, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
 import { PENDING_STORAGE_KEY, createPendingRecord, parsePendingRecord, pendingRecordToReportPayload, serializePendingRecord } from './lib/legal-evidence.mjs'
 
@@ -182,7 +183,7 @@ async function chooseTarget(patch, slot = null) {
     ? DUAL_SIM_SLOTS.find(({ id }) => id === (slot || 'msfs2024')) || null
     : null
   const selected = await bridge.patches.chooseTarget({
-    title: slotMeta ? slotMeta.hint : patch.targetHint,
+    title: slotMeta ? slotMeta.hint : manualTargetHint(patch),
     defaultPath: slotMeta
       ? resolveSlotTargetFor(patch, slotMeta.id) || undefined
       : targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || undefined

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { CheckCircle2, ExternalLink, FolderSearch, MapPin, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
 import { DUAL_SIM_SLOTS, isDualSimPatch, manualSlotPaths, resolveSlotTarget } from '../lib/dual-sim.mjs'
+import { manualTargetHint, slotManualHint } from '../lib/target-hints.mjs'
 
 const props = defineProps({
   appInfo: { type: Object, required: true },
@@ -111,6 +112,7 @@ function hasManualSlotPath(patch, slotId) {
                 <p class="target-settings-path" :title="slotTargetPath(patch, slotMeta.id) || slotMeta.hint">
                   {{ slotTargetPath(patch, slotMeta.id) || '未设置 · 点击右侧图标选择' }}
                 </p>
+                <p class="target-hint">{{ slotManualHint(slotMeta.id) }}</p>
               </div>
               <div class="target-settings-actions">
                 <span>{{ slotSource(patch, slotMeta.id) }}</span>
@@ -129,6 +131,7 @@ function hasManualSlotPath(patch, slotId) {
             <p class="target-settings-path" :title="targetPath(patch) || patch.targetHint">
               {{ targetPath(patch) || patch.targetHint }}
             </p>
+            <p class="target-hint">{{ manualTargetHint(patch) }}</p>
             <div class="target-settings-actions">
               <span>{{ targetSource(patch) }}</span>
               <div>
