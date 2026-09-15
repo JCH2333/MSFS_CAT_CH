@@ -12,6 +12,14 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
+import {
+  DUAL_SIM_SLOTS,
+  collectInstallTargets,
+  describeDualSim,
+  isDualSimPatch,
+  manualSlotPaths,
+  resolveSlotTarget
+} from './lib/dual-sim.mjs'
 import { AGREEMENT_ACCEPTANCE_VALUE, AGREEMENT_REVISION, AGREEMENT_SECTIONS, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
 import { PENDING_STORAGE_KEY, createPendingRecord, parsePendingRecord, pendingRecordToReportPayload, serializePendingRecord } from './lib/legal-evidence.mjs'
 
@@ -128,16 +136,26 @@ async function detectTargets(patches = catalogState.catalog?.patches || []) {
   const descriptors = patches.map((patch) => ({
     id: patch.id,
     targetKind: patch.targetKind,
-    targetFolders: Array.isArray(patch.targetFolders) ? [...patch.targetFolders] : []
+    targetFolders: Array.isArray(patch.targetFolders) ? [...patch.targetFolders] : [],
+    dualSim: describeDualSim(patch)
   }))
   replaceReactive(detectedTargets, await bridge.patches.detectTargets(descriptors))
+}
+
+// 目标路径选择顺序：手动指定 > 已安装记录 > 自动检测；双版本补丁按槽位分别解析
+function resolveSlotTargetFor(patch, slotId) {
+  return resolveSlotTarget({ targets, installations, detectedTargets }, patch, slotId)
 }
 
 async function reconcileInstallations(patches = catalogState.catalog?.patches || []) {
   const descriptors = createRecognitionDescriptors(patches)
   const targetPaths = Object.fromEntries(descriptors.map((patch) => [
     patch.id,
-    targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || null
+    isDualSimPatch(patch)
+      ? Object.fromEntries(DUAL_SIM_SLOTS
+        .map(({ id }) => [id, resolveSlotTargetFor(patch, id)])
+        .filter(([, value]) => value))
+      : targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || null
   ]))
   await bridge.patches.reconcileInstallations(descriptors, targetPaths)
 }
@@ -159,18 +177,34 @@ async function refreshCatalog() {
   }
 }
 
-async function chooseTarget(patch) {
+async function chooseTarget(patch, slot = null) {
+  const slotMeta = isDualSimPatch(patch)
+    ? DUAL_SIM_SLOTS.find(({ id }) => id === (slot || 'msfs2024')) || null
+    : null
   const selected = await bridge.patches.chooseTarget({
-    title: patch.targetHint,
-    defaultPath: targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath
+    title: slotMeta ? slotMeta.hint : patch.targetHint,
+    defaultPath: slotMeta
+      ? resolveSlotTargetFor(patch, slotMeta.id) || undefined
+      : targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || undefined
   })
   if (!selected) return
-  targets[patch.id] = selected
+  if (slotMeta) {
+    targets[patch.id] = { ...manualSlotPaths(targets, patch.id), [slotMeta.id]: selected }
+  } else {
+    targets[patch.id] = selected
+  }
   localStorage.setItem('patch-targets', JSON.stringify(targets))
 }
 
-function clearTarget(patchId) {
-  delete targets[patchId]
+function clearTarget(patch, slot = null) {
+  const patchId = typeof patch === 'string' ? patch : patch?.id
+  if (patchId && isDualSimPatch({ id: patchId }) && slot) {
+    const next = { ...manualSlotPaths(targets, patchId), [slot]: '' }
+    if (next.msfs2024 || next.msfs2020) targets[patchId] = next
+    else delete targets[patchId]
+  } else {
+    delete targets[patchId]
+  }
   localStorage.setItem('patch-targets', JSON.stringify(targets))
 }
 
@@ -296,17 +330,22 @@ function openAuthorPage() {
 }
 
 async function installPatch(patch) {
-  const targetPath = targets[patch.id]
-    || installations[patch.id]?.targetPath
-    || detectedTargets[patch.id]?.targetPath
-  if (!targetPath) {
-    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: '请先在设置中选择安装目录' }
+  const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
+  if (!installTargets.length) {
+    operations[patch.id] = {
+      busy: false,
+      phase: 'error',
+      percent: 0,
+      message: isDualSimPatch(patch)
+        ? '未找到 MSFS 2020/2024 的 A350 社区目录，请在设置中手动选择'
+        : '请先在设置中选择安装目录'
+    }
     return
   }
 
   operations[patch.id] = { busy: true, phase: 'prepare', percent: 0, message: '准备安装' }
   try {
-    await bridge.patches.install(createInstallationRequest(patch), targetPath)
+    await bridge.patches.install(createInstallationRequest(patch), installTargets)
     await loadInstallations()
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
@@ -316,11 +355,16 @@ async function installPatch(patch) {
 }
 
 async function importPatch(patch) {
-  const targetPath = targets[patch.id]
-    || installations[patch.id]?.targetPath
-    || detectedTargets[patch.id]?.targetPath
-  if (!targetPath) {
-    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: '请先在设置中选择安装目录' }
+  const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
+  if (!installTargets.length) {
+    operations[patch.id] = {
+      busy: false,
+      phase: 'error',
+      percent: 0,
+      message: isDualSimPatch(patch)
+        ? '未找到 MSFS 2020/2024 的 A350 社区目录，请在设置中手动选择'
+        : '请先在设置中选择安装目录'
+    }
     return
   }
 
@@ -329,7 +373,7 @@ async function importPatch(patch) {
 
   operations[patch.id] = { busy: true, phase: 'import', percent: 0, message: '正在导入离线补丁包' }
   try {
-    await bridge.patches.installFromFile(createInstallationRequest(patch), targetPath, sourceArchivePath)
+    await bridge.patches.installFromFile(createInstallationRequest(patch), installTargets, sourceArchivePath)
     await loadInstallations()
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }

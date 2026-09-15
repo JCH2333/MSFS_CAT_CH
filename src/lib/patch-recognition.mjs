@@ -1,3 +1,8 @@
+function describeDualSim(patch) {
+  const marker = patch?.dualSim?.markerFolder
+  return typeof marker === 'string' && marker.trim() ? { markerFolder: marker.trim() } : null
+}
+
 export function createRecognitionDescriptors(patches) {
   if (!Array.isArray(patches)) return []
 
@@ -6,6 +11,7 @@ export function createRecognitionDescriptors(patches) {
     name: typeof patch?.name === 'string' ? patch.name : '',
     version: typeof patch?.version === 'string' ? patch.version : '',
     targetKind: typeof patch?.targetKind === 'string' ? patch.targetKind : 'addon',
+    dualSim: describeDualSim(patch),
     fingerprint: Array.isArray(patch?.fingerprint)
       ? patch.fingerprint.map((file) => ({
         target: typeof file?.target === 'string' ? file.target : 'primary',

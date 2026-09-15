@@ -38,7 +38,65 @@ async function isDirectory(candidate) {
 
 function communityRoots(packageRoot) {
   const normalized = path.resolve(packageRoot)
-  return [...new Set([path.join(normalized, 'Community'), normalized])]
+  // MSFS 2024（SU4 起）社区目录更名为 Community2024，旧版仍为 Community；
+  // 两个都作为候选，最后回退到包根本身（个别用户把包路径直接指到社区层）。
+  return [...new Set([
+    path.join(normalized, 'Community2024'),
+    path.join(normalized, 'Community'),
+    normalized
+  ])]
+}
+
+const SIM_SLOT_RULES = [
+  { slot: 'msfs2024', pattern: /msfs\s*2024/i },
+  { slot: 'msfs2020', pattern: /msfs\s*2020/i }
+]
+
+const SLOT_ORDER = { msfs2024: 0, msfs2020: 1 }
+
+function classifySimSlot(source) {
+  return SIM_SLOT_RULES.find(({ pattern }) => pattern.test(source || ''))?.slot || null
+}
+
+function dualSimMarkerFolder(patch) {
+  const marker = patch?.dualSim?.markerFolder
+  return typeof marker === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(marker.trim())
+    ? marker.trim()
+    : null
+}
+
+function entryNameMatchesMarker(entryName, markerFolder) {
+  const name = entryName.toLowerCase()
+  const marker = markerFolder.toLowerCase()
+  // 精确命中本体包（inibuilds-aircraft-a350）；前缀命中覆盖涂装包命名（inibuilds-aircraft-a350-900-…）
+  return name === marker || name.startsWith(`${marker}-`)
+}
+
+async function findMarkerCommunityRoot(root, markerFolder) {
+  let fallback = null
+  for (const communityRoot of communityRoots(root.packageRoot)) {
+    if (!await isDirectory(communityRoot)) continue
+    let entries
+    try {
+      entries = await fs.readdir(communityRoot, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    let exact = false
+    let prefixed = false
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      if (!entryNameMatchesMarker(entry.name, markerFolder)) continue
+      if (entry.name.toLowerCase() === markerFolder.toLowerCase()) {
+        exact = true
+        break
+      }
+      prefixed = true
+    }
+    if (exact) return { targetPath: communityRoot, source: root.source }
+    if (prefixed && !fallback) fallback = { targetPath: communityRoot, source: root.source }
+  }
+  return fallback
 }
 
 async function configuredRoots({ appData, localAppData, configLocations }) {
@@ -190,6 +248,26 @@ async function detectPatchTargets(patches, options = {}) {
         candidates.push(candidate)
       }
       if (candidates.length) result[patch.id] = { ...candidates[0], candidates }
+      continue
+    }
+
+    // 双版本补丁（如 iniBuilds A350 汉化）：按模拟器槽位分别定位含标记包的社区目录
+    const markerFolder = dualSimMarkerFolder(patch)
+    if (patch?.id && markerFolder) {
+      const slots = []
+      const seenSlots = new Set()
+      for (const root of roots) {
+        const slot = classifySimSlot(root?.source)
+        if (!slot || seenSlots.has(slot)) continue
+        const found = await findMarkerCommunityRoot(root, markerFolder)
+        if (!found) continue
+        seenSlots.add(slot)
+        slots.push({ slot, ...found })
+      }
+      slots.sort((a, b) => (SLOT_ORDER[a.slot] ?? 9) - (SLOT_ORDER[b.slot] ?? 9))
+      if (slots.length) {
+        result[patch.id] = { targetPath: slots[0].targetPath, source: slots[0].source, slots }
+      }
       continue
     }
 

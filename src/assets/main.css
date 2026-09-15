@@ -281,6 +281,13 @@ button { color: inherit; }
 .target-settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 10px; }
 .target-settings-actions > div { display: flex; gap: 6px; }
 .target-settings-actions .icon-button { width: 30px; height: 30px; flex-basis: 30px; }
+.target-slot-row { display: grid; gap: 4px; margin-top: 10px; }
+.target-slot-row:first-of-type { margin-top: 13px; }
+.target-slot-row + .target-slot-row { border-top: 1px dashed var(--glass-border); padding-top: 10px; }
+.target-slot-info { display: grid; gap: 3px; min-width: 0; }
+.target-slot-label { color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.4px; }
+.target-slot-row .target-settings-path { min-height: 0; margin: 0; }
+.target-slot-row .target-settings-actions { margin-top: 6px; }
 .settings-list { margin-top: 30px; border-top: 1px solid var(--border); }
 .privacy-line { display: flex; align-items: center; gap: 9px; margin-top: 24px; color: var(--text-muted); font-size: 11px; }
 .privacy-line svg { color: var(--signal); }

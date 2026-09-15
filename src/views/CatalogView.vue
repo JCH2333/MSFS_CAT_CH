@@ -2,6 +2,7 @@
 import { PackageOpen, RefreshCw, ShieldCheck, ShieldAlert, Wifi, WifiOff } from '@lucide/vue'
 import PatchCard from '../components/PatchCard.vue'
 import { catalogSourcePresentation } from '../lib/catalog-source.mjs'
+import { hasAnyTarget } from '../lib/dual-sim.mjs'
 
 const props = defineProps({
   catalogState: { type: Object, required: true },
@@ -14,6 +15,14 @@ const props = defineProps({
 })
 
 defineEmits(['refresh', 'install', 'import', 'restore', 'verify', 'author'])
+
+// 双版本补丁（A350 汉化）任一模拟器槽位有目标即可安装；单目标补丁维持原判断
+function patchHasTarget(patch) {
+  return hasAnyTarget(
+    { targets: props.targets, installations: props.installations, detectedTargets: props.detectedTargets },
+    patch
+  )
+}
 
 </script>
 
@@ -57,7 +66,7 @@ defineEmits(['refresh', 'install', 'import', 'restore', 'verify', 'author'])
         :patch="patch"
         :installation="installations[patch.id]"
         :installation-check="installationChecks[patch.id] || null"
-        :target-ready="Boolean(targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath)"
+        :target-ready="patchHasTarget(patch)"
         :detected-target="detectedTargets[patch.id] || null"
         :progress="operations[patch.id] || null"
         :busy="operations[patch.id]?.busy || false"

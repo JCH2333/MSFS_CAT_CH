@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { CheckCircle2, ExternalLink, FolderSearch, MapPin, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
+import { DUAL_SIM_SLOTS, isDualSimPatch, manualSlotPaths, resolveSlotTarget } from '../lib/dual-sim.mjs'
 
 const props = defineProps({
   appInfo: { type: Object, required: true },
@@ -40,6 +41,26 @@ function targetSource(patch) {
   if (props.targets[patch.id]) return '手动选择'
   if (props.installations[patch.id]?.targetPath) return '已安装目录'
   return props.detectedTargets[patch.id]?.source || '未检测到'
+}
+
+// 双版本补丁（A350 汉化）：每个模拟器槽位独立展示路径、来源与操作
+function slotTargetPath(patch, slotId) {
+  return resolveSlotTarget(
+    { targets: props.targets, installations: props.installations, detectedTargets: props.detectedTargets },
+    patch,
+    slotId
+  ) || ''
+}
+
+function slotSource(patch, slotId) {
+  if (manualSlotPaths(props.targets, patch.id)[slotId]) return '手动选择'
+  if (props.installations[patch.id]?.slots?.some((slot) => slot.slot === slotId)) return '已安装目录'
+  const detected = props.detectedTargets[patch.id]?.slots?.find((slot) => slot.slot === slotId)
+  return detected?.source || '未检测到'
+}
+
+function hasManualSlotPath(patch, slotId) {
+  return Boolean(manualSlotPaths(props.targets, patch.id)[slotId])
 }
 </script>
 
@@ -83,20 +104,43 @@ function targetSource(patch) {
             </div>
             <MapPin :size="17" />
           </div>
-          <p class="target-settings-path" :title="targetPath(patch) || patch.targetHint">
-            {{ targetPath(patch) || patch.targetHint }}
-          </p>
-          <div class="target-settings-actions">
-            <span>{{ targetSource(patch) }}</span>
-            <div>
-              <button v-if="targets[patch.id]" class="icon-button" type="button" title="恢复自动检测" aria-label="恢复自动检测" @click="$emit('clear-target', patch.id)">
-                <Undo2 :size="16" />
-              </button>
-              <button class="icon-button" type="button" title="选择插件目录" aria-label="选择插件目录" @click="$emit('choose-target', patch)">
-                <FolderSearch :size="17" />
-              </button>
+          <template v-if="isDualSimPatch(patch)">
+            <div v-for="slotMeta in DUAL_SIM_SLOTS" :key="slotMeta.id" class="target-slot-row">
+              <div class="target-slot-info">
+                <span class="target-slot-label">{{ slotMeta.label }}</span>
+                <p class="target-settings-path" :title="slotTargetPath(patch, slotMeta.id) || slotMeta.hint">
+                  {{ slotTargetPath(patch, slotMeta.id) || '未设置 · 点击右侧图标选择' }}
+                </p>
+              </div>
+              <div class="target-settings-actions">
+                <span>{{ slotSource(patch, slotMeta.id) }}</span>
+                <div>
+                  <button v-if="hasManualSlotPath(patch, slotMeta.id)" class="icon-button" type="button" title="恢复自动检测" aria-label="恢复自动检测" @click="$emit('clear-target', patch, slotMeta.id)">
+                    <Undo2 :size="16" />
+                  </button>
+                  <button class="icon-button" type="button" title="选择插件目录" aria-label="选择插件目录" @click="$emit('choose-target', patch, slotMeta.id)">
+                    <FolderSearch :size="17" />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          </template>
+          <template v-else>
+            <p class="target-settings-path" :title="targetPath(patch) || patch.targetHint">
+              {{ targetPath(patch) || patch.targetHint }}
+            </p>
+            <div class="target-settings-actions">
+              <span>{{ targetSource(patch) }}</span>
+              <div>
+                <button v-if="targets[patch.id]" class="icon-button" type="button" title="恢复自动检测" aria-label="恢复自动检测" @click="$emit('clear-target', patch)">
+                  <Undo2 :size="16" />
+                </button>
+                <button class="icon-button" type="button" title="选择插件目录" aria-label="选择插件目录" @click="$emit('choose-target', patch)">
+                  <FolderSearch :size="17" />
+                </button>
+              </div>
+            </div>
+          </template>
         </article>
       </div>
     </section>

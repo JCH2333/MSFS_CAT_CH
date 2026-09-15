@@ -9,7 +9,53 @@ const { SERVER_HOSTNAME, buildServerUrl, serverOriginProtocol } = require('./dis
 
 const ALLOWED_DOWNLOAD_HOSTS = new Set([SERVER_HOSTNAME])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
+const INSTALL_SLOT_PATTERN = /^[a-z0-9][a-z0-9-]{0,20}$/
 const SERVER_PATCH_DOWNLOAD_PATH = '/api/patches/download/'
+
+// 安装目标列表归一化：兼容旧的单路径字符串与新的 [{slot, path}] 双版本形式；
+// 同一路径只保留首次出现的槽位，避免重复写入同一目录
+function normalizeInstallTargets(targetPaths) {
+  const list = Array.isArray(targetPaths) ? targetPaths : [targetPaths]
+  const normalized = []
+  const seen = new Set()
+  for (const entry of list) {
+    const raw = typeof entry === 'string' ? entry : entry?.path
+    if (typeof raw !== 'string' || !raw.trim()) continue
+    const slot = typeof entry === 'object' && typeof entry?.slot === 'string' && INSTALL_SLOT_PATTERN.test(entry.slot)
+      ? entry.slot.toLowerCase()
+      : null
+    const resolved = path.resolve(raw.trim())
+    const key = resolved.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    normalized.push({ slot, targetPath: resolved })
+  }
+  return normalized
+}
+
+// 对账目标归一化：字符串 / [{slot,path}] 数组 / {msfs2024: path, msfs2020: path} 对象
+function normalizeReconcileTargetPaths(value) {
+  if (!value) return []
+  if (typeof value === 'string') return [{ slot: null, targetPath: value }]
+  if (Array.isArray(value)) return normalizeInstallTargets(value)
+  if (typeof value !== 'object') return []
+  return Object.entries(value)
+    .filter(([slot, raw]) => typeof slot === 'string' && INSTALL_SLOT_PATTERN.test(slot) && typeof raw === 'string' && raw.trim())
+    .map(([slot, raw]) => ({ slot: slot.toLowerCase(), targetPath: path.resolve(raw.trim()) }))
+}
+
+function dualSimMarkerFolder(patch) {
+  const marker = patch?.dualSim?.markerFolder
+  return typeof marker === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(marker.trim())
+    ? marker.trim()
+    : null
+}
+
+function folderNameMatchesMarker(entryName, markerFolder) {
+  const name = entryName.toLowerCase()
+  const marker = markerFolder.toLowerCase()
+  return name === marker || name.startsWith(`${marker}-`)
+}
 
 function ensureSafeId(value) {
   if (typeof value !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(value)) {
@@ -37,11 +83,30 @@ function normalizeContentRoot(value) {
 }
 
 async function validateInstallationTarget(patch, target) {
-  if (patch?.targetKind !== 'gsx-audio') return
-  const soundsDirectory = ensureWithin(target, path.join(target, 'sounds'))
-  const soundsStats = await fsp.stat(soundsDirectory).catch(() => null)
-  if (!soundsStats?.isDirectory()) {
-    throw new Error('GSX 中文语音包必须安装到 Addon Manager\\couatl\\GSX 目录，其中应包含 sounds 文件夹')
+  if (patch?.targetKind === 'gsx-audio') {
+    const soundsDirectory = ensureWithin(target, path.join(target, 'sounds'))
+    const soundsStats = await fsp.stat(soundsDirectory).catch(() => null)
+    if (!soundsStats?.isDirectory()) {
+      throw new Error('GSX 中文语音包必须安装到 Addon Manager\\couatl\\GSX 目录，其中应包含 sounds 文件夹')
+    }
+    return
+  }
+
+  // 双版本补丁（如 A350 汉化）：目标必须是包含 A350 本体包的社区文件夹，
+  // 或至少已有本补丁的安装目录（覆盖重装/更新场景），避免再装错位置
+  const markerFolder = dualSimMarkerFolder(patch)
+  if (!markerFolder) return
+  const entries = await fsp.readdir(target, { withFileTypes: true }).catch(() => null)
+  if (!entries) {
+    throw new Error(`安装目录不存在或不可访问：${target}`)
+  }
+  const patchFolders = Array.isArray(patch.targetFolders)
+    ? patch.targetFolders.filter((folder) => typeof folder === 'string').map((folder) => folder.toLowerCase())
+    : []
+  const markerHit = entries.some((entry) => entry.isDirectory()
+    && (folderNameMatchesMarker(entry.name, markerFolder) || patchFolders.includes(entry.name.toLowerCase())))
+  if (!markerHit) {
+    throw new Error(`所选目录中未找到 ${markerFolder}：请选择包含 iniBuilds A350 的社区文件夹（Community 或 Community2024）`)
   }
 }
 
@@ -70,7 +135,9 @@ function normalizeInstallPlan(patch) {
   return plan
 }
 
-function backupRelativePath(target, relativePath) {
+function backupRelativePath(target, relativePath, slot = null) {
+  // 双版本补丁同一文件会写入多个模拟器目录，备份按槽位隔离避免互相覆盖
+  if (slot) return path.join('slots', slot, relativePath)
   return target === 'primary' ? relativePath : path.join('targets', target, relativePath)
 }
 
@@ -439,55 +506,62 @@ class PatchInstaller {
     for (const patch of Array.isArray(patches) ? patches : []) {
       const patchId = ensureSafeId(patch?.id)
       if (state.installations[patchId]) continue
-      const targetPath = targetPaths?.[patchId]
       const fingerprints = fingerprintFiles(patch)
-      if (!targetPath || fingerprints.length === 0) continue
+      if (fingerprints.length === 0) continue
 
-      const target = path.resolve(targetPath)
-      const targetStats = await fsp.stat(target).catch(() => null)
-      if (!targetStats?.isDirectory()) continue
-      const installTargets = await this.resolvePlanTargets(patch, target).catch(() => null)
-      if (!installTargets) continue
+      const requested = normalizeReconcileTargetPaths(targetPaths?.[patchId])
+      if (requested.length === 0) continue
 
-      let matches = true
-      for (const file of fingerprints) {
-        try {
-          const fileTarget = installTargets.get(file.target || 'primary')
-          if (!fileTarget) {
-            matches = false
+      // 逐槽位核对指纹：双版本补丁在哪个模拟器目录完整命中，就把哪个槽位记为已识别
+      const matchedSlots = []
+      for (const entry of requested) {
+        const target = path.resolve(entry.targetPath)
+        const targetStats = await fsp.stat(target).catch(() => null)
+        if (!targetStats?.isDirectory()) continue
+        const installTargets = await this.resolvePlanTargets(patch, target).catch(() => null)
+        if (!installTargets) continue
+
+        const matchedFiles = []
+        for (const file of fingerprints) {
+          try {
+            const fileTarget = installTargets.get(file.target || 'primary')
+            if (!fileTarget) break
+            const destination = ensureWithin(fileTarget.targetPath, path.join(fileTarget.targetPath, file.relativePath))
+            const stats = await fsp.stat(destination).catch(() => null)
+            if (!stats?.isFile() || await sha256(destination) !== file.sha256) break
+            matchedFiles.push({
+              target: file.target || 'primary',
+              slot: entry.slot,
+              targetPath: fileTarget.targetPath,
+              relativePath: file.relativePath,
+              hadOriginal: false,
+              backupPath: null,
+              installedHash: file.sha256
+            })
+          } catch {
             break
           }
-          const destination = ensureWithin(fileTarget.targetPath, path.join(fileTarget.targetPath, file.relativePath))
-          const stats = await fsp.stat(destination).catch(() => null)
-          if (!stats?.isFile() || await sha256(destination) !== file.sha256) {
-            matches = false
-            break
-          }
-        } catch {
-          matches = false
-          break
+        }
+        if (matchedFiles.length === fingerprints.length) {
+          matchedSlots.push({ targetPath: target, slot: entry.slot, files: matchedFiles })
         }
       }
 
-      if (!matches) continue
+      if (matchedSlots.length === 0) continue
       const now = new Date().toISOString()
       state.installations[patchId] = {
         patchId,
         name: patch.name,
         version: patch.version,
-        targetPath: target,
+        targetPath: matchedSlots[0].targetPath,
+        slots: matchedSlots
+          .map(({ targetPath, slot }) => ({ slot, targetPath }))
+          .filter((slotEntry) => slotEntry.slot),
         installedAt: now,
         detectedAt: now,
         source: 'detected',
         backupDirectory: null,
-        files: fingerprints.map((file) => ({
-          target: file.target || 'primary',
-          targetPath: installTargets.get(file.target || 'primary').targetPath,
-          relativePath: file.relativePath,
-          hadOriginal: false,
-          backupPath: null,
-          installedHash: file.sha256
-        }))
+        files: matchedSlots.flatMap(({ files }) => files)
       }
       result[patchId] = 'recognized'
       changed = true
@@ -524,22 +598,35 @@ class PatchInstaller {
     return this.install(patch, targetPath, { localArchivePath: source })
   }
 
-  async install(patch, targetPath, { localArchivePath = null } = {}) {
+  async install(patch, targetPaths, { localArchivePath = null } = {}) {
     const patchId = ensureSafeId(patch?.id)
     if (patch.status !== 'published' || !patch.package) {
       throw new Error('该补丁尚未发布')
     }
-    if (typeof targetPath !== 'string' || !targetPath.trim()) {
+    // 双版本补丁传入多个槽位目标（缺失的模拟器由调用方过滤后不出现），单目标补丁仍是单个目录
+    const slotTargets = normalizeInstallTargets(targetPaths)
+    if (slotTargets.length === 0) {
       throw new Error('请选择安装目录')
     }
 
-    const target = path.resolve(targetPath)
-    const targetStats = await fsp.stat(target).catch(() => null)
-    if (!targetStats?.isDirectory()) {
-      throw new Error('安装目录不存在或不可访问')
+    const plan = normalizeInstallPlan(patch)
+    if (slotTargets.length > 1 && plan.some((entry) => entry.target !== 'primary')) {
+      throw new Error('多版本安装仅支持单一内容目标的补丁')
     }
-    await validateInstallationTarget(patch, target)
-    const installTargets = await this.resolvePlanTargets(patch, target)
+
+    for (const slotTarget of slotTargets) {
+      const targetStats = await fsp.stat(slotTarget.targetPath).catch(() => null)
+      if (!targetStats?.isDirectory()) {
+        throw new Error(`安装目录不存在或不可访问${slotTarget.slot ? `（${slotTarget.slot}）` : ''}`)
+      }
+      await validateInstallationTarget(patch, slotTarget.targetPath)
+    }
+
+    // 单槽位沿用既有计划解析（GSX 总补丁的 gsx-runtime-res 在此定位）；多槽位只有 primary 内容目标
+    let resolvedPlanTargets = null
+    if (slotTargets.length === 1) {
+      resolvedPlanTargets = await this.resolvePlanTargets(patch, slotTargets[0].targetPath)
+    }
 
     const state = await this.readState()
     const existingInstallation = state.installations[patchId]
@@ -559,6 +646,11 @@ class PatchInstaller {
     const backupDirectory = path.join(this.backupRoot, patchId, String(Date.now()))
     const appliedFiles = []
     const preparedBackups = new Set()
+    const slotPlanTargets = new Map()
+    for (const slotTarget of slotTargets) {
+      slotPlanTargets.set(slotTarget, resolvedPlanTargets
+        ?? new Map(plan.map((entry) => [entry.target, { ...entry, targetPath: slotTarget.targetPath }])))
+    }
 
     try {
       const fingerprints = fingerprintFiles(patch)
@@ -570,21 +662,24 @@ class PatchInstaller {
         if (patch.targetKind === 'gsx-audio') {
           this.emit(patchId, { phase: 'backup', percent: 0, message: `正在备份原始语音 0/${fingerprints.length}` })
         }
-        for (let index = 0; index < fingerprints.length; index += 1) {
-          const file = fingerprints[index]
-          const installTarget = installTargets.get(file.target)
-          if (!installTarget) throw new Error(`补丁文件目标无效：${file.target}`)
-          const destination = ensureWithin(installTarget.targetPath, path.join(installTarget.targetPath, file.relativePath))
-          const existingStats = await fsp.stat(destination).catch(() => null)
-          if (existingStats?.isFile()) {
-            const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, backupRelativePath(file.target, file.relativePath)))
-            await fsp.mkdir(path.dirname(backupPath), { recursive: true })
-            await fsp.copyFile(destination, backupPath)
-            preparedBackups.add(`${file.target}:${file.relativePath}`)
-          }
-          if (patch.targetKind === 'gsx-audio' && (index === fingerprints.length - 1 || index % 40 === 0)) {
-            const percent = Math.round(((index + 1) / fingerprints.length) * 12)
-            this.emit(patchId, { phase: 'backup', percent, message: `正在备份原始语音 ${index + 1}/${fingerprints.length}` })
+        for (const slotTarget of slotTargets) {
+          const installTargets = slotPlanTargets.get(slotTarget)
+          for (let index = 0; index < fingerprints.length; index += 1) {
+            const file = fingerprints[index]
+            const installTarget = installTargets.get(file.target)
+            if (!installTarget) throw new Error(`补丁文件目标无效：${file.target}`)
+            const destination = ensureWithin(installTarget.targetPath, path.join(installTarget.targetPath, file.relativePath))
+            const existingStats = await fsp.stat(destination).catch(() => null)
+            if (existingStats?.isFile()) {
+              const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, backupRelativePath(file.target, file.relativePath, slotTarget.slot)))
+              await fsp.mkdir(path.dirname(backupPath), { recursive: true })
+              await fsp.copyFile(destination, backupPath)
+              preparedBackups.add(`${slotTarget.slot ?? ''}:${file.target}:${file.relativePath}`)
+            }
+            if (patch.targetKind === 'gsx-audio' && (index === fingerprints.length - 1 || index % 40 === 0)) {
+              const percent = Math.round(((index + 1) / fingerprints.length) * 12)
+              this.emit(patchId, { phase: 'backup', percent, message: `正在备份原始语音 ${index + 1}/${fingerprints.length}` })
+            }
           }
         }
       }
@@ -621,75 +716,85 @@ class PatchInstaller {
       this.emit(patchId, { phase: 'extract', percent: 64, message: '正在解压补丁' })
       await extractZip(archivePath, { dir: extractDirectory })
       const planFiles = []
-      for (const installTarget of installTargets.values()) {
-        const contentRoot = ensureWithin(extractDirectory, path.join(extractDirectory, installTarget.contentRoot))
+      for (const planEntry of plan) {
+        const contentRoot = ensureWithin(extractDirectory, path.join(extractDirectory, planEntry.contentRoot))
         const contentStats = await fsp.stat(contentRoot).catch(() => null)
         if (!contentStats?.isDirectory()) {
-          throw new Error(`补丁包缺少安装内容：${installTarget.target}`)
+          throw new Error(`补丁包缺少安装内容：${planEntry.target}`)
         }
         const sourceFiles = await walkFiles(contentRoot)
         if (sourceFiles.length === 0) {
-          throw new Error(`补丁包安装内容为空：${installTarget.target}`)
+          throw new Error(`补丁包安装内容为空：${planEntry.target}`)
         }
         validatePatchFiles(patchId, sourceFiles.map((sourceFile) => path.relative(contentRoot, sourceFile)))
-        if (installTarget.target === 'primary') validatePatchLayoutEntries(sourceFiles, contentRoot)
-        planFiles.push({ ...installTarget, contentRoot, sourceFiles })
+        if (planEntry.target === 'primary') validatePatchLayoutEntries(sourceFiles, contentRoot)
+        planFiles.push({ ...planEntry, contentRoot, sourceFiles })
       }
 
       await fsp.mkdir(backupDirectory, { recursive: true })
       const recordFiles = []
-      const totalSourceFiles = planFiles.reduce((total, entry) => total + entry.sourceFiles.length, 0)
+      const totalSourceFiles = planFiles.reduce((total, entry) => total + entry.sourceFiles.length, 0) * slotTargets.length
       let installedCount = 0
-      for (const planEntry of planFiles) {
-        for (const sourceFile of planEntry.sourceFiles) {
-          const relativePath = path.relative(planEntry.contentRoot, sourceFile)
-          if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-            throw new Error(`补丁文件路径无效：${relativePath}`)
-          }
-          const destination = ensureWithin(planEntry.targetPath, path.join(planEntry.targetPath, relativePath))
-          const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, backupRelativePath(planEntry.target, relativePath)))
-          const existingStats = await fsp.stat(destination).catch(() => null)
-          if (existingStats?.isDirectory()) {
-            throw new Error(`目标位置是目录，无法写入文件：${relativePath}`)
-          }
+      for (const slotTarget of slotTargets) {
+        const installTargets = slotPlanTargets.get(slotTarget)
+        for (const planEntry of planFiles) {
+          const installTarget = installTargets.get(planEntry.target)
+          for (const sourceFile of planEntry.sourceFiles) {
+            const relativePath = path.relative(planEntry.contentRoot, sourceFile)
+            if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+              throw new Error(`补丁文件路径无效：${relativePath}`)
+            }
+            const destination = ensureWithin(installTarget.targetPath, path.join(installTarget.targetPath, relativePath))
+            const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, backupRelativePath(planEntry.target, relativePath, slotTarget.slot)))
+            const existingStats = await fsp.stat(destination).catch(() => null)
+            if (existingStats?.isDirectory()) {
+              throw new Error(`目标位置是目录，无法写入文件：${relativePath}`)
+            }
 
-          const hadOriginal = Boolean(existingStats?.isFile())
-          if (hadOriginal && !preparedBackups.has(`${planEntry.target}:${relativePath}`)) {
-            await fsp.mkdir(path.dirname(backupPath), { recursive: true })
-            await fsp.copyFile(destination, backupPath)
-          }
+            const hadOriginal = Boolean(existingStats?.isFile())
+            if (hadOriginal && !preparedBackups.has(`${slotTarget.slot ?? ''}:${planEntry.target}:${relativePath}`)) {
+              await fsp.mkdir(path.dirname(backupPath), { recursive: true })
+              await fsp.copyFile(destination, backupPath)
+            }
 
-          await fsp.mkdir(path.dirname(destination), { recursive: true })
-          await fsp.copyFile(sourceFile, destination)
-          const installedHash = await sha256(destination)
-          const fileRecord = {
-            target: planEntry.target,
-            targetPath: planEntry.targetPath,
-            relativePath,
-            hadOriginal,
-            backupPath: hadOriginal ? backupPath : null,
-            installedHash
-          }
-          recordFiles.push(fileRecord)
-          appliedFiles.push({ destination, ...fileRecord })
+            await fsp.mkdir(path.dirname(destination), { recursive: true })
+            await fsp.copyFile(sourceFile, destination)
+            const installedHash = await sha256(destination)
+            const fileRecord = {
+              target: planEntry.target,
+              slot: slotTarget.slot,
+              targetPath: installTarget.targetPath,
+              relativePath,
+              hadOriginal,
+              backupPath: hadOriginal ? backupPath : null,
+              installedHash
+            }
+            recordFiles.push(fileRecord)
+            appliedFiles.push({ destination, ...fileRecord })
 
-          installedCount += 1
-          const percent = 68 + Math.round((installedCount / totalSourceFiles) * 30)
-          this.emit(patchId, { phase: 'install', percent, message: `正在安装 ${installedCount}/${totalSourceFiles}` })
+            installedCount += 1
+            const percent = 68 + Math.round((installedCount / totalSourceFiles) * 30)
+            this.emit(patchId, { phase: 'install', percent, message: `正在安装 ${installedCount}/${totalSourceFiles}` })
+          }
         }
       }
 
-      const primaryFiles = recordFiles.filter((file) => file.target === 'primary')
-      if (await synchronizeInstalledLayoutDates(target, primaryFiles)) {
-        const layoutRecord = primaryFiles.find((file) => file.relativePath.toLowerCase() === 'layout.json')
-        if (layoutRecord) layoutRecord.installedHash = await sha256(path.join(target, layoutRecord.relativePath))
+      for (const slotTarget of slotTargets) {
+        const primaryFiles = recordFiles.filter((file) => file.target === 'primary' && file.targetPath === slotTarget.targetPath)
+        if (await synchronizeInstalledLayoutDates(slotTarget.targetPath, primaryFiles)) {
+          const layoutRecord = primaryFiles.find((file) => file.relativePath.toLowerCase() === 'layout.json')
+          if (layoutRecord) layoutRecord.installedHash = await sha256(path.join(slotTarget.targetPath, layoutRecord.relativePath))
+        }
       }
 
       const installation = {
         patchId,
         name: patch.name,
         version: patch.version,
-        targetPath: target,
+        targetPath: slotTargets[0].targetPath,
+        slots: slotTargets
+          .filter((slotTarget) => slotTarget.slot)
+          .map((slotTarget) => ({ slot: slotTarget.slot, targetPath: slotTarget.targetPath })),
         installedAt: new Date().toISOString(),
         source: 'managed',
         backupDirectory,
@@ -779,6 +884,7 @@ module.exports = {
   currentWindowsFileTime,
   downloadToFile,
   ensureWithin,
+  normalizeInstallTargets,
   serverPatchDownloadUrl,
   synchronizeInstalledLayoutDates,
   isAllowedDownloadUrl,

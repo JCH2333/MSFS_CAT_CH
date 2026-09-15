@@ -42,6 +42,13 @@ const verificationLabel = computed(() => {
   return `需处理：${changed} 个已修改，${missing} 个缺失`
 })
 
+// 双版本补丁（A350 汉化）展示各模拟器槽位的安装情况
+const SLOT_LABELS = { msfs2024: 'MSFS 2024 已装', msfs2020: 'MSFS 2020 已装' }
+const installedSlotLabels = computed(() => {
+  const slots = Array.isArray(props.installation?.slots) ? props.installation.slots : []
+  return slots.map((slot) => SLOT_LABELS[slot?.slot]).filter(Boolean)
+})
+
 const packageSize = computed(() => {
   const size = props.patch.package?.size || 0
   if (!size) return ''
@@ -74,6 +81,7 @@ const packageSize = computed(() => {
 
       <div class="patch-meta">
         <span v-for="item in patch.compatibility" :key="item">{{ item }}</span>
+        <span v-for="label in installedSlotLabels" :key="label">{{ label }}</span>
         <span v-if="packageSize">{{ packageSize }}</span>
         <span v-if="installation">本机 v{{ installation.version }}</span>
         <span v-else-if="detectedTarget"><MapPin :size="11" /> {{ detectedTarget.source }}</span>

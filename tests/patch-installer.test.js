@@ -12,6 +12,7 @@ const {
   ensureWithin,
   isAllowedDownloadUrl,
   normalizeContentRoot,
+  normalizeInstallTargets,
   serverPatchDownloadUrl,
   sha256,
   validateInstallationTarget,
@@ -684,5 +685,185 @@ test('installs, verifies, updates, and restores a real Patch Package', async () 
   assert.equal(restored.restored, true)
   assert.equal(await fs.readFile(path.join(target, 'panel.txt'), 'utf8'), 'original')
   await assert.rejects(fs.stat(path.join(target, 'introduced.txt')), { code: 'ENOENT' })
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('normalizes multi-target install paths and drops duplicate directories', () => {
+  const list = normalizeInstallTargets([
+    { slot: 'msfs2024', path: 'C:/a' },
+    { slot: 'msfs2020', path: 'c:/A' },
+    { slot: 'BAD SLOT!', path: 'C:/b' },
+    'C:/c',
+    { slot: 'msfs2020', path: '' }
+  ])
+  assert.equal(list.length, 3)
+  assert.deepEqual(list[0], { slot: 'msfs2024', targetPath: path.resolve('C:/a') })
+  assert.equal(list[1].slot, null)
+  assert.deepEqual(list[2], { slot: null, targetPath: path.resolve('C:/c') })
+})
+
+test('rejects a dual-sim target folder that does not contain the A350 base package', async () => {
+  const root = await temporaryDirectory('a350-target-validation-')
+  const good = path.join(root, 'Community2024')
+  const bad = path.join(root, 'somewhere-else')
+  await fs.mkdir(path.join(good, 'inibuilds-aircraft-a350'), { recursive: true })
+  await fs.mkdir(bad, { recursive: true })
+
+  const patch = { targetKind: 'addon', targetFolders: ['zzz-a350-efb-zh-patch'], dualSim: { markerFolder: 'inibuilds-aircraft-a350' } }
+  await assert.rejects(validateInstallationTarget(patch, bad), /inibuilds-aircraft-a350/)
+  await assert.doesNotReject(validateInstallationTarget(patch, good))
+  // 飞机被移走但本补丁目录仍在（重装/更新场景）时同样放行
+  const patchOnly = path.join(root, 'patch-only')
+  await fs.mkdir(path.join(patchOnly, 'zzz-a350-efb-zh-patch'), { recursive: true })
+  await assert.doesNotReject(validateInstallationTarget(patch, patchOnly))
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+function dualSimPatchFor(version, archivePath, checksum) {
+  return {
+    id: 'ini350-efb-zh-cn',
+    name: 'INI A350 EFB 简体中文',
+    version,
+    status: 'published',
+    targetKind: 'addon',
+    targetFolders: ['zzz-a350-efb-zh-patch'],
+    dualSim: { markerFolder: 'inibuilds-aircraft-a350' },
+    package: {
+      downloadUrl: buildServerUrl('/downloads/patches/test/test.zip'),
+      sha256: checksum,
+      contentRoot: ''
+    }
+  }
+}
+
+async function createA350Targets(root) {
+  const community2024 = path.join(root, 'Community2024')
+  const community2020 = path.join(root, 'Community2020')
+  await fs.mkdir(path.join(community2024, 'inibuilds-aircraft-a350'), { recursive: true })
+  await fs.mkdir(path.join(community2020, 'inibuilds-aircraft-a350'), { recursive: true })
+  return { community2024, community2020 }
+}
+
+test('installs a dual-sim patch into both simulator community folders at once', async () => {
+  const root = await temporaryDirectory('a350-dual-install-')
+  const { community2024, community2020 } = await createA350Targets(root)
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(path.join(source, 'zzz-a350-efb-zh-patch'), { recursive: true })
+  await fs.writeFile(path.join(source, 'zzz-a350-efb-zh-patch', 'panel.txt'), 'localized')
+  await createZip(source, archive)
+
+  const downloads = []
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (url, destination) => {
+      downloads.push(url)
+      await fs.copyFile(archive, destination)
+    }
+  })
+  const patch = dualSimPatchFor('0.1.1', archive, await sha256(archive))
+  const installation = await installer.install(patch, [
+    { slot: 'msfs2024', path: community2024 },
+    { slot: 'msfs2020', path: community2020 }
+  ])
+
+  assert.equal(downloads.length, 1, 'the archive must be downloaded only once')
+  assert.equal(await fs.readFile(path.join(community2024, 'zzz-a350-efb-zh-patch', 'panel.txt'), 'utf8'), 'localized')
+  assert.equal(await fs.readFile(path.join(community2020, 'zzz-a350-efb-zh-patch', 'panel.txt'), 'utf8'), 'localized')
+  assert.deepEqual(installation.slots, [
+    { slot: 'msfs2024', targetPath: community2024 },
+    { slot: 'msfs2020', targetPath: community2020 }
+  ])
+  assert.equal(installation.files.length, 2)
+  assert.equal((await installer.verifyInstallations())[patch.id].state, 'intact')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('updates and restores a dual-sim patch across both simulator folders with isolated backups', async () => {
+  const root = await temporaryDirectory('a350-dual-update-')
+  const { community2024, community2020 } = await createA350Targets(root)
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archiveV1 = path.join(root, 'patch-v1.zip')
+  const archiveV2 = path.join(root, 'patch-v2.zip')
+  // 两个社区目录各有一份已被汉化的旧文件：更新时必须按槽位分别备份，还原时各回各家
+  const panelFile = path.join('zzz-a350-efb-zh-patch', 'panel.txt')
+  await fs.mkdir(path.join(community2024, 'zzz-a350-efb-zh-patch'), { recursive: true })
+  await fs.writeFile(path.join(community2024, panelFile), 'user original 2024')
+  await fs.mkdir(path.join(community2020, 'zzz-a350-efb-zh-patch'), { recursive: true })
+  await fs.writeFile(path.join(community2020, panelFile), 'user original 2020')
+  await fs.mkdir(path.join(source, 'zzz-a350-efb-zh-patch'), { recursive: true })
+  await fs.writeFile(path.join(source, panelFile), 'v1')
+  await createZip(source, archiveV1)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (_url, destination) => fs.copyFile(installer.currentArchive, destination)
+  })
+  installer.currentArchive = archiveV1
+  const patchV1 = dualSimPatchFor('0.1.0', archiveV1, await sha256(archiveV1))
+  patchV1.fingerprint = [{ relativePath: panelFile, sha256: 'a'.repeat(64) }]
+  await installer.install(patchV1, [
+    { slot: 'msfs2024', path: community2024 },
+    { slot: 'msfs2020', path: community2020 }
+  ])
+  assert.equal(await fs.readFile(path.join(community2024, panelFile), 'utf8'), 'v1')
+  assert.equal(await fs.readFile(path.join(community2020, panelFile), 'utf8'), 'v1')
+
+  await fs.writeFile(path.join(source, panelFile), 'v2')
+  await createZip(source, archiveV2)
+  installer.currentArchive = archiveV2
+  const patchV2 = dualSimPatchFor('0.1.1', archiveV2, await sha256(archiveV2))
+  patchV2.fingerprint = patchV1.fingerprint
+  const installation = await installer.install(patchV2, [
+    { slot: 'msfs2024', path: community2024 },
+    { slot: 'msfs2020', path: community2020 }
+  ])
+
+  assert.equal(installation.version, '0.1.1')
+  assert.equal(await fs.readFile(path.join(community2024, panelFile), 'utf8'), 'v2')
+  assert.equal(await fs.readFile(path.join(community2020, panelFile), 'utf8'), 'v2')
+  // 备份按槽位隔离：两个模拟器的原始文件互不覆盖
+  const backupVersions = await fs.readdir(path.join(userData, 'backups', 'ini350-efb-zh-cn'))
+  assert.equal(backupVersions.length, 1)
+  const backupRoot = path.join(userData, 'backups', 'ini350-efb-zh-cn', backupVersions[0])
+  assert.equal(await fs.readFile(path.join(backupRoot, 'slots', 'msfs2024', panelFile), 'utf8'), 'user original 2024')
+  assert.equal(await fs.readFile(path.join(backupRoot, 'slots', 'msfs2020', panelFile), 'utf8'), 'user original 2020')
+
+  const restoreResult = await installer.restore('ini350-efb-zh-cn')
+  assert.equal(restoreResult.restored, true)
+  assert.equal(await fs.readFile(path.join(community2024, panelFile), 'utf8'), 'user original 2024')
+  assert.equal(await fs.readFile(path.join(community2020, panelFile), 'utf8'), 'user original 2020')
+  assert.deepEqual(await installer.listInstallations(), {})
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('recognizes an externally installed dual-sim patch only where fingerprints match', async () => {
+  const root = await temporaryDirectory('a350-dual-reconcile-')
+  const { community2024, community2020 } = await createA350Targets(root)
+  const userData = path.join(root, 'user-data')
+  const installedFile = path.join(community2024, 'zzz-a350-efb-zh-patch', 'panel.txt')
+  await fs.mkdir(path.dirname(installedFile), { recursive: true })
+  await fs.writeFile(installedFile, 'localized')
+  await fs.mkdir(path.join(community2020, 'zzz-a350-efb-zh-patch'), { recursive: true })
+  await fs.writeFile(path.join(community2020, 'zzz-a350-efb-zh-patch', 'panel.txt'), 'tampered')
+
+  const installer = new PatchInstaller({ userDataDirectory: userData })
+  const result = await installer.reconcileInstallations([{
+    id: 'ini350-efb-zh-cn',
+    name: 'INI A350 EFB 简体中文',
+    version: '0.1.1',
+    fingerprint: [{ relativePath: 'zzz-a350-efb-zh-patch/panel.txt', sha256: await sha256(installedFile) }]
+  }], {
+    'ini350-efb-zh-cn': { msfs2024: community2024, msfs2020: community2020 }
+  })
+
+  assert.deepEqual(result, { 'ini350-efb-zh-cn': 'recognized' })
+  const installation = (await installer.listInstallations())['ini350-efb-zh-cn']
+  assert.equal(installation.source, 'detected')
+  assert.deepEqual(installation.slots, [{ slot: 'msfs2024', targetPath: community2024 }])
+  assert.equal(installation.files.length, 1)
+  assert.equal(installation.files[0].slot, 'msfs2024')
   await fs.rm(root, { recursive: true, force: true })
 })
