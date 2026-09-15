@@ -34,6 +34,10 @@ The local operation that reinstates original files from an Installation Record a
 
 The self-hosted Alibaba Cloud server that serves the software update feed, the Patch Catalog, and Patch Package downloads. Its code lives in the separate `MSFS_CAT_CH_SERVER` repository. Avoid: cloud platform, third-party host.
 
+### GSX Update Mirror
+
+The byte-identical mirror of FSDreamTeam's publicly released GSX update ZIPs, hosted on the Distribution Server and deployed by the client with the same target mapping as the official updater. Intended only for users who own GSX; activation and license enforcement stay with FSDreamTeam. Avoid: repackaging, cracked payload, license bypass.
+
 ### Feedback Submission
 
 An anonymous, user-initiated report (text plus optional screenshot) sent to the Distribution Server and visible in its admin frontend. It collects no personal data and is rate limited per IP. Avoid: telemetry, usage tracking.

@@ -24,7 +24,8 @@ This repository contains a Windows Electron application for installing and manag
 
 - `electron/main.js`: Electron lifecycle, IPC registration, window creation, and software updates.
 - `electron/preload.js`: narrow renderer-to-main bridge exposed through `contextBridge`.
-- `electron/github-catalog.js`: Patch Catalog fetching, caching, validation, and release URL handling.
+- `electron/server-catalog.js`: Patch Catalog fetching, caching, and validation from the Distribution Server.
+- `electron/gsx-updater.js`: GSX official update mirror manifest client, install detection, pending computation, and verified deployment of official update ZIPs (see `docs/adr/0005-gsx-update-mirror.md`).
 - `electron/patch-installer.js`: package download, checksum verification, safe extraction, backup, installation records, verification, and restore.
 - `src/`: Vue renderer and desktop interface.
 - `tests/`: Node tests for catalog and installer behavior.
@@ -63,7 +64,8 @@ npm test
 npm run build
 node --check electron/main.js
 node --check electron/preload.js
-node --check electron/github-catalog.js
+node --check electron/server-catalog.js
+node --check electron/gsx-updater.js
 node --check electron/patch-installer.js
 ```
 
