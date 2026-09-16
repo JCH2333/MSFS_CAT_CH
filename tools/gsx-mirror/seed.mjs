@@ -7,7 +7,7 @@
 //
 // 用法：
 //   NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://127.0.0.1:7897 \
-//   GSX_ADMIN_USERNAME=admin GSX_ADMIN_PASSWORD=*** \
+//   GSX_ADMIN_USERNAME=JCH2333 GSX_ADMIN_PASSWORD=*** \
 //   node tools/gsx-mirror/seed.mjs [--dry-run] [--force] [--version 4.0.23]
 //
 // - 每个组件先 HEAD ETag 与服务器已发布版本比对，一致则跳过
