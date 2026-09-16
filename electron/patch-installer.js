@@ -476,7 +476,7 @@ class PatchInstaller {
         if (typeof this.resolveAdditionalTarget !== 'function') {
           throw new Error('无法自动定位 GSX 图片资源目录')
         }
-        targetPath = await this.resolveAdditionalTarget(entry.target)
+        targetPath = await this.resolveAdditionalTarget(entry.target, { patch, primaryTarget })
       }
       if (typeof targetPath !== 'string' || !targetPath.trim()) {
         throw new Error(`无法定位补丁安装目标：${entry.target}`)

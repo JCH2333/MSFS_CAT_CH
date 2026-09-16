@@ -3,7 +3,15 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs/promises')
 const os = require('node:os')
 const path = require('node:path')
-const { detectGsxRuntimeResTarget, detectPatchTargets, normalizeTargetFolders, parseInstalledPackagesPath } = require('../electron/installation-targets')
+const {
+  addonManagerRootsFromPrimaryPath,
+  addonManagerRootsFromRecordedResPath,
+  detectGsxRuntimeResTarget,
+  detectPatchTargets,
+  normalizeTargetFolders,
+  parseInstalledPackagesPath,
+  recordedGsxRuntimeResRoots
+} = require('../electron/installation-targets')
 
 async function temporaryDirectory(prefix) {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix))
@@ -186,5 +194,77 @@ test('add-on detection also finds targets inside the MSFS 2024 Community2024 fol
   })
 
   assert.equal(targets['gsx-pro-zh-cn'].targetPath, path.join(packageRoot, 'Community2024', 'fsdreamteam-gsx-pro'))
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('derives the Addon Manager root from an MSFS community package target', () => {
+  assert.deepEqual(
+    addonManagerRootsFromPrimaryPath('F:/Addon Manager/MSFS/fsdreamteam-gsx-pro'),
+    [path.resolve('F:/Addon Manager')]
+  )
+  // 非标准布局（Community 直装、非 MSFS 层）无法反推
+  assert.deepEqual(addonManagerRootsFromPrimaryPath(path.join('F:', 'games', 'Community', 'fsdreamteam-gsx-pro')), [])
+  assert.deepEqual(addonManagerRootsFromPrimaryPath(''), [])
+  assert.deepEqual(addonManagerRootsFromPrimaryPath(null), [])
+})
+
+test('derives the Addon Manager root from a recorded runtime-res path', () => {
+  assert.deepEqual(
+    addonManagerRootsFromRecordedResPath('F:/Addon Manager/couatl/GSX/res'),
+    [path.resolve('F:/Addon Manager')]
+  )
+  assert.deepEqual(
+    addonManagerRootsFromRecordedResPath('F:/Addon Manager/couatl64/GSX/res'),
+    [path.resolve('F:/Addon Manager')]
+  )
+  assert.deepEqual(addonManagerRootsFromRecordedResPath(path.join('F:', 'somewhere', 'else')), [])
+})
+
+test('reads recorded gsx-runtime-res roots from installation records', async () => {
+  const userData = await temporaryDirectory('gsx-recorded-res-')
+  const records = {
+    schemaVersion: 1,
+    installations: {
+      'gsx-pro-zh-cn': {
+        patchId: 'gsx-pro-zh-cn',
+        targetPath: path.join('F:', 'Addon Manager', 'MSFS', 'fsdreamteam-gsx-pro'),
+        files: [
+          { target: 'primary', targetPath: path.join('F:', 'Addon Manager', 'MSFS', 'fsdreamteam-gsx-pro'), relativePath: 'a.html' },
+          { target: 'gsx-runtime-res', targetPath: path.join('F:', 'Addon Manager', 'couatl', 'GSX', 'res'), relativePath: 'btn_select.png' }
+        ]
+      },
+      'other-patch': {
+        patchId: 'other-patch',
+        files: [
+          { target: 'gsx-runtime-res', targetPath: path.join('F:', 'Elsewhere', 'couatl', 'GSX', 'res'), relativePath: 'x.png' }
+        ]
+      }
+    }
+  }
+  await fs.writeFile(path.join(userData, 'installations.json'), JSON.stringify(records))
+
+  const rootsForPatch = await recordedGsxRuntimeResRoots(userData, 'gsx-pro-zh-cn')
+  assert.deepEqual(rootsForPatch, [path.join('F:', 'Addon Manager')])
+
+  const rootsForOther = await recordedGsxRuntimeResRoots(userData, 'other-patch')
+  assert.deepEqual(rootsForOther, [path.join('F:', 'Elsewhere')])
+
+  await fs.rm(userData, { recursive: true, force: true })
+})
+
+test('falls back to the primary-derived root when the registry scan finds nothing', async () => {
+  const root = await temporaryDirectory('gsx-runtime-res-fallback-')
+  const addonManagerRoot = path.join(root, 'Addon Manager')
+  const primaryTarget = path.join(addonManagerRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  const resRoot = path.join(addonManagerRoot, 'couatl', 'GSX', 'res')
+  await fs.mkdir(path.join(resRoot, 'fonts'), { recursive: true })
+  await fs.writeFile(path.join(resRoot, 'btn_select.png'), 'button')
+
+  const derivedRoots = addonManagerRootsFromPrimaryPath(primaryTarget)
+  const detected = await detectGsxRuntimeResTarget({
+    runtimeRoots: derivedRoots.map((rootPath) => ({ rootPath, source: '插件目录反推' }))
+  })
+
+  assert.equal(detected.targetPath, resRoot)
   await fs.rm(root, { recursive: true, force: true })
 })

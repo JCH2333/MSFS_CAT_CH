@@ -579,8 +579,10 @@ test('installs and restores a GSX combined text and image patch across both targ
 
   const installer = new PatchInstaller({
     userDataDirectory: userData,
-    resolveAdditionalTarget: async (target) => {
+    resolveAdditionalTarget: async (target, context) => {
       assert.equal(target, 'gsx-runtime-res')
+      assert.equal(context.patch.id, 'gsx-pro-zh-cn')
+      assert.equal(path.resolve(context.primaryTarget), path.resolve(communityTarget))
       return runtimeResTarget
     }
   })

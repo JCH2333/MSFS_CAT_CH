@@ -173,8 +173,9 @@ async function registeredAddonManagerRoots() {
     try {
       const { stdout } = await execFileAsync('reg.exe', ['query', key, '/s'], {
         windowsHide: true,
-        timeout: 4000,
-        maxBuffer: 2 * 1024 * 1024
+        // 装机较多的机器上全树枚举可能超过数秒；超时会导致找不到 FSDT 根目录
+        timeout: 12000,
+        maxBuffer: 4 * 1024 * 1024
       })
       return parseAddonManagerRoots(stdout)
     } catch {
@@ -182,6 +183,42 @@ async function registeredAddonManagerRoots() {
     }
   }))
   return normalizeAudioRoots(results.flat())
+}
+
+// 由社区包主目标反推 Addon Manager 根目录：FSDT 标准布局为 <根>\MSFS\<包名>。
+function addonManagerRootsFromPrimaryPath(primaryTarget) {
+  if (typeof primaryTarget !== 'string' || !primaryTarget.trim()) return []
+  const match = /^(.+)[\\/]MSFS[\\/][^\\/]+$/i.exec(path.resolve(primaryTarget.trim()))
+  return match ? [match[1]] : []
+}
+
+// 由已记录的 gsx-runtime-res 目标反推根目录：<根>\couatl[64]\GSX\res。
+function addonManagerRootsFromRecordedResPath(resPath) {
+  if (typeof resPath !== 'string' || !resPath.trim()) return []
+  const match = /^(.+)[\\/]couatl(?:64)?[\\/]GSX[\\/]res$/i.exec(path.resolve(resPath.trim()))
+  return match ? [match[1]] : []
+}
+
+// 读取历史安装记录中该补丁用过的 GSX 图片资源目录（反推回根目录再复检）。
+async function recordedGsxRuntimeResRoots(userDataDirectory, patchId) {
+  if (!userDataDirectory) return []
+  try {
+    const raw = JSON.parse(await fs.readFile(path.join(userDataDirectory, 'installations.json'), 'utf8'))
+    const installations = Array.isArray(raw?.installations)
+      ? raw.installations
+      : Object.values(raw?.installations || {})
+    const roots = []
+    for (const record of installations) {
+      if (patchId && record?.patchId && record.patchId !== patchId) continue
+      for (const file of Array.isArray(record?.files) ? record.files : []) {
+        if (file?.target !== 'gsx-runtime-res' || typeof file?.targetPath !== 'string') continue
+        roots.push(...addonManagerRootsFromRecordedResPath(file.targetPath))
+      }
+    }
+    return [...new Set(roots)]
+  } catch {
+    return []
+  }
 }
 
 function gsxAudioCandidates(audioRoots) {
@@ -298,10 +335,13 @@ async function detectPatchTargets(patches, options = {}) {
 }
 
 module.exports = {
+  addonManagerRootsFromPrimaryPath,
+  addonManagerRootsFromRecordedResPath,
   detectGsxRuntimeResTarget,
   detectPatchTargets,
   normalizeTargetFolders,
   parseInstalledPackagesPath,
   parseAddonManagerRoots,
+  recordedGsxRuntimeResRoots,
   registeredAddonManagerRoots
 }

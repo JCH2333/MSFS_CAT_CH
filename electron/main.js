@@ -7,7 +7,7 @@ const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements
 const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence')
 const { getAgreementText } = require('./agreements-secure')
-const { detectGsxRuntimeResTarget, detectPatchTargets } = require('./installation-targets')
+const { detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
 const { fetchSponsorQr } = require('./support-qr')
@@ -241,11 +241,24 @@ app.whenReady().then(() => {
   installer = new PatchInstaller({
     userDataDirectory,
     onProgress: (payload) => send('patch:progress', payload),
-    resolveAdditionalTarget: async (target) => {
+    resolveAdditionalTarget: async (target, { patch, primaryTarget } = {}) => {
       if (target !== 'gsx-runtime-res') throw new Error(`不支持的补丁安装目标：${target}`)
+      // 1) 注册表探测（部分机器枚举超时或缺少卸载键，失败后继续回退）
       const detected = await detectGsxRuntimeResTarget()
-      if (!detected?.targetPath) throw new Error('未检测到 FSDreamTeam Addon Manager 的 GSX 图片资源目录')
-      return detected.targetPath
+      if (detected?.targetPath) return detected.targetPath
+      // 2) 由社区包主目标反推：<Addon Manager 根>\MSFS\<包名> → 根目录
+      const derivedRoots = addonManagerRootsFromPrimaryPath(primaryTarget)
+      if (derivedRoots.length > 0) {
+        const derived = await detectGsxRuntimeResTarget({ runtimeRoots: derivedRoots })
+        if (derived?.targetPath) return derived.targetPath
+      }
+      // 3) 上次安装记录里用过的图片资源目录（反推根目录后重新校验）
+      const recordedRoots = await recordedGsxRuntimeResRoots(userDataDirectory, patch?.id)
+      if (recordedRoots.length > 0) {
+        const recorded = await detectGsxRuntimeResTarget({ runtimeRoots: recordedRoots })
+        if (recorded?.targetPath) return recorded.targetPath
+      }
+      throw new Error('未检测到 FSDreamTeam Addon Manager 的 GSX 图片资源目录')
     }
   })
   configureUpdater()
