@@ -20,9 +20,12 @@ const status = reactive({
   stale: false,
   error: null
 })
-const operation = reactive({ busy: false, phase: '', percent: 0, message: '', error: null, applied: [] })
+const operation = reactive({ busy: false, phase: '', percent: 0, message: '', error: null, applied: [], received: 0, total: 0 })
 const errorMessage = ref('')
 const done = ref(false)
+const patchCare = ref(null)
+
+const emit = defineEmits(['updated', 'patch-installed'])
 
 const totalMegabytes = computed(() => {
   if (!status.totalBytes) return '—'
@@ -57,8 +60,11 @@ async function startUpdate() {
   operation.message = '准备更新…'
   operation.error = null
   operation.applied = []
+  operation.received = 0
+  operation.total = 0
   errorMessage.value = ''
   done.value = false
+  patchCare.value = null
   try {
     const result = await props.bridge.gsx.startUpdate()
     if (result?.state === 'current') {
@@ -71,6 +77,9 @@ async function startUpdate() {
       operation.message = 'GSX 已更新到最新版本'
       done.value = true
     }
+    patchCare.value = result?.patchCare || null
+    emit('updated')
+    if (patchCare.value?.reinstalled?.length) emit('patch-installed')
     await loadStatus()
   } catch (error) {
     operation.phase = 'error'
@@ -91,6 +100,8 @@ const unsubscribeProgress = props.bridge.gsx.onProgress((progress) => {
   operation.phase = progress.phase
   operation.percent = progress.percent || 0
   operation.message = progress.message || ''
+  if (Number.isFinite(progress.received)) operation.received = progress.received
+  if (Number.isFinite(progress.total)) operation.total = progress.total
   if (progress.phase === 'error') {
     operation.error = progress.error || progress.message
   }
@@ -177,17 +188,30 @@ onBeforeUnmount(unsubscribeProgress)
           </div>
         </section>
 
-        <!-- 更新进度 -->
+        <!-- 更新进度：总进度条（按字节加权） -->
         <section v-if="operation.busy || done || operation.phase === 'error'" class="gsx-panel gsx-progress" :data-state="operation.phase === 'error' ? 'error' : done ? 'done' : 'running'">
           <div class="gsx-progress-head">
             <strong>{{ operation.message || (done ? '更新完成' : '更新进度') }}</strong>
             <span class="gsx-progress-num">{{ progressPercent }}%</span>
           </div>
           <div class="gsx-track"><span :style="{ width: progressPercent + '%' }" /></div>
+          <p v-if="operation.total > 0 && (operation.busy || done)" class="gsx-progress-bytes">
+            {{ formatSize(operation.received) }} / {{ formatSize(operation.total) }}
+          </p>
           <p v-if="done" class="gsx-progress-note">
             <CheckCircle2 :size="13" />
-            完成后请重启一次模拟器；游戏内 GSX 界面将暂时回到英文，新版本汉化补丁发布后重新安装即可。
+            完成后请重启一次模拟器使更新生效。
           </p>
+          <div v-if="done && patchCare" class="gsx-patchcare">
+            <p v-if="patchCare.reinstalled?.length" class="gsx-patchcare-ok">
+              <CheckCircle2 :size="13" />
+              汉化补丁已自动重装：{{ patchCare.reinstalled.join('、') }}
+            </p>
+            <p v-if="patchCare.failed?.length" class="gsx-patchcare-warn">
+              <TriangleAlert :size="13" />
+              部分补丁自动重装失败（{{ patchCare.failed.join('；') }}），请到「汉化补丁」页手动重装。
+            </p>
+          </div>
         </section>
 
         <!-- 组件清单 -->
@@ -326,6 +350,11 @@ onBeforeUnmount(unsubscribeProgress)
   transition: width 220ms ease;
 }
 .gsx-progress-note { display: flex; align-items: center; gap: 7px; margin: 11px 0 0; color: var(--text-secondary); font-size: 11.5px; }
+.gsx-progress-bytes { margin: 8px 0 0; text-align: right; color: var(--text-muted); font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+.gsx-patchcare { display: grid; gap: 7px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--border); }
+.gsx-patchcare p { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 11.5px; }
+.gsx-patchcare-ok { color: var(--signal); }
+.gsx-patchcare-warn { color: var(--warning); }
 
 /* —— 说明 —— */
 .gsx-notes ul { margin: 0; padding-left: 16px; display: grid; gap: 7px; color: var(--text-muted); font-size: 11.5px; line-height: 1.65; }

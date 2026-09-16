@@ -30,6 +30,73 @@ function setUpdateStatus(payload) {
   send('updates:status', payload)
 }
 
+// GSX 更新会覆盖已部署的汉化补丁文件；文本/按钮补丁必然受影响，
+// 语音补丁只有当本次更新包含 GSX_sounds 组件时才受影响（差量更新会跳过未变化的组件）。
+const GSX_TEXT_PATCH_ID = 'gsx-pro-zh-cn'
+const GSX_VOICE_PATCH_ID = 'gsx-pro-zh-cn-voice'
+const GSX_VOICE_COMPONENT = 'GSX_sounds'
+
+async function runGsxUpdateFlow() {
+  if (!gsxUpdater) throw new Error('GSX 更新器未就绪')
+  await gsxUpdater.assertSimClosed()
+
+  const status = await gsxUpdater.getStatus()
+  if (!status.installed) throw new Error('未检测到 GSX 安装，无法更新')
+  const pendingComponents = new Set(status.pending.map((pkg) => pkg.component))
+  const affectedPatchIds = [GSX_TEXT_PATCH_ID]
+  if (pendingComponents.has(GSX_VOICE_COMPONENT)) affectedPatchIds.push(GSX_VOICE_PATCH_ID)
+
+  // 1) 还原受影响的汉化补丁（使用本地备份，不产生下载）
+  const installations = await installer.listInstallations()
+  const restored = []
+  const restoreSkipped = []
+  for (const patchId of affectedPatchIds) {
+    if (!installations[patchId]) {
+      restoreSkipped.push(patchId)
+      continue
+    }
+    send('gsx:progress', { phase: 'patch-restore', percent: 0, message: `正在还原汉化补丁（${patchId}），避免被 GSX 更新覆盖…` })
+    await installer.restore(patchId)
+    restored.push(patchId)
+  }
+
+  // 2) 执行 GSX 更新
+  const updateResult = await gsxUpdater.applyUpdate()
+  if (updateResult.state !== 'complete') {
+    return { ...updateResult, patchCare: { restored, reinstalled: [], failed: [], skipped: restoreSkipped } }
+  }
+
+  // 3) 自动重装受影响的汉化补丁（从服务器取最新已发布版本）
+  const reinstalled = []
+  const failed = []
+  send('gsx:progress', { phase: 'patch-reinstall', percent: 100, message: 'GSX 已更新，正在重装汉化补丁…' })
+  const { catalog: freshCatalog } = await catalog.refresh()
+  const patchEntries = affectedPatchIds
+    .map((patchId) => freshCatalog.patches.find((patch) => patch.id === patchId))
+    .filter(Boolean)
+  const targets = await detectPatchTargets(patchEntries, {
+    appData: app.getPath('appData'),
+    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')
+  })
+  for (const entry of patchEntries) {
+    const targetPath = targets[entry.id]?.targetPath
+    try {
+      if (entry.status !== 'published') throw new Error('服务器目录中暂无已发布版本')
+      if (!targetPath) throw new Error('未检测到安装目标')
+      send('gsx:progress', { phase: 'patch-reinstall', percent: 100, message: `正在重装汉化补丁（${entry.id} v${entry.version}）…` })
+      await installer.install(entry, targetPath)
+      reinstalled.push(entry.id)
+    } catch (error) {
+      failed.push(`${entry.id}: ${error.message}`)
+    }
+  }
+
+  return {
+    ...updateResult,
+    patchCare: { restored, reinstalled, failed, skipped: restoreSkipped }
+  }
+}
+
 function createWindow() {
   const windowIcon = process.env.VITE_DEV_SERVER_URL
     ? path.join(__dirname, '../public/logo.png')
@@ -206,7 +273,7 @@ function registerIpc() {
   ipcMain.handle('legal:get-agreement-text', () => getAgreementText())
 
   ipcMain.handle('gsx:status', () => gsxUpdater.getStatus())
-  ipcMain.handle('gsx:update:start', () => gsxUpdater.applyUpdate())
+  ipcMain.handle('gsx:update:start', () => runGsxUpdateFlow())
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)

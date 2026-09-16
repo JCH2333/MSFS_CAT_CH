@@ -315,22 +315,42 @@ class GsxUpdater {
     state.appliedComponents = state.appliedComponents || {}
     const applied = []
     const total = pending.length
+    const totalBytes = pending.reduce((sum, pkg) => sum + pkg.size, 0)
     let completed = 0
+    let bytesDone = 0
+
+    // 总进度按字节加权：跨组件累计，下载阶段按已接收字节推进，校验/部署阶段视为该组件完成
+    const emitOverall = (base, phase, componentFraction, message, extra = {}) => {
+      const clamped = Math.min(1, Math.max(0, componentFraction))
+      const received = Math.round(bytesDone + clamped * base.size)
+      this.emit({
+        ...base,
+        phase,
+        percent: totalBytes > 0 ? Math.min(100, Math.floor((received / totalBytes) * 100)) : 100,
+        received,
+        total: totalBytes,
+        completed,
+        totalComponents: total,
+        message,
+        ...extra
+      })
+    }
 
     for (const pkg of pending) {
-      const base = { component: pkg.component }
+      const base = { component: pkg.component, size: pkg.size }
+      const indexLabel = `（${completed + 1}/${total}）`
       const targetPath = await this.resolveTarget(install.addonRoot, pkg.deployTarget)
       const stagingRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'gsx-update-'))
       const journal = []
       try {
         const archivePath = path.join(stagingRoot, pkg.assetName)
-        this.emit({ ...base, phase: 'download', percent: 0, received: 0, total: pkg.size, message: `下载 ${pkg.component}` })
+        emitOverall(base, 'download', 0, `下载 ${pkg.component}${indexLabel}`)
         await this.downloadImpl(pkg.downloadUrl, archivePath, (progress) => {
-          const percent = progress.total ? Math.floor((progress.received / progress.total) * 100) : 0
-          this.emit({ ...base, phase: 'download', percent, received: progress.received, total: progress.total })
+          const fraction = progress.total ? progress.received / progress.total : 0
+          emitOverall(base, 'download', fraction, `下载 ${pkg.component}${indexLabel}`)
         })
 
-        this.emit({ ...base, phase: 'verify', percent: 100, message: `校验 ${pkg.component}` })
+        emitOverall(base, 'verify', 1, `校验 ${pkg.component}${indexLabel}`)
         const actualSha256 = await sha256(archivePath)
         if (actualSha256 !== pkg.sha256) {
           throw new Error(`${pkg.component} 校验失败：SHA-256 与镜像清单不符`)
@@ -342,7 +362,7 @@ class GsxUpdater {
 
         const backupDirectory = path.join(this.backupRoot, pkg.component, String(Date.now()))
         const stagedFiles = await walkFiles(extractDirectory)
-        this.emit({ ...base, phase: 'install', percent: 100, message: `部署 ${pkg.component}（${stagedFiles.length} 个文件）` })
+        emitOverall(base, 'install', 1, `部署 ${pkg.component}${indexLabel}（${stagedFiles.length} 个文件）`)
         for (const stagedFile of stagedFiles) {
           const relativePath = path.relative(extractDirectory, stagedFile)
           if (path.isAbsolute(relativePath) || relativePath.startsWith('..')) {
@@ -372,13 +392,16 @@ class GsxUpdater {
         await this.writeOfficialSidecar(pkg.component, pkg.etag)
         applied.push({ component: pkg.component, version: pkg.version, files: journal.length })
         completed += 1
+        bytesDone += pkg.size
         this.emit({
           ...base,
           phase: 'component-complete',
-          percent: 100,
+          percent: totalBytes > 0 ? Math.min(100, Math.floor((bytesDone / totalBytes) * 100)) : 100,
+          received: bytesDone,
+          total: totalBytes,
           message: `${pkg.component} 完成（${completed}/${total}）`,
           completed,
-          total
+          totalComponents: total
         })
       } catch (error) {
         await this.rollback(journal)
@@ -395,7 +418,7 @@ class GsxUpdater {
       }
     }
 
-    this.emit({ phase: 'complete', percent: 100, applied, message: 'GSX 更新完成' })
+    this.emit({ phase: 'complete', percent: 100, received: totalBytes, total: totalBytes, applied, message: 'GSX 更新完成' })
     return { state: 'complete', applied }
   }
 

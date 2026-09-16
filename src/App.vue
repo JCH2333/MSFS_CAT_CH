@@ -13,6 +13,9 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
+import { compareVersions } from '../electron/versioning.js'
+import PatchInstallSuccessDialog from './components/PatchInstallSuccessDialog.vue'
+import GsxVersionGuardDialog from './components/GsxVersionGuardDialog.vue'
 import {
   DUAL_SIM_SLOTS,
   collectInstallTargets,
@@ -93,6 +96,10 @@ const updateStatus = reactive({ state: 'idle', info: null, progress: null, messa
 const loadingCatalog = ref(false)
 const agreementAccepted = ref(hasAcceptedAgreements(localStorage.getItem('msfs-cat-ch-agreements')))
 const showAgreement = ref(!agreementAccepted.value)
+// 补丁安装成功提示（含游戏内 hotfix 警告）与 GSX 版本过低拦截弹窗
+const showPatchInstalledNotice = ref(false)
+const showGsxVersionGuard = ref(false)
+const gsxVersionGuardInfo = reactive({ localVersion: '', addonVersion: '' })
 // 协议正文（密文打包方案）：弹窗打开时经主进程联网取钥解密取得，仅保存在内存
 const agreementSections = ref(null)
 const agreementTextsFailed = ref(false)
@@ -336,7 +343,27 @@ function openAuthorPage() {
   bridge.external.open(AUTHOR_URL)
 }
 
+// GSX 系补丁对插件版本有硬性要求：本机 GSX 低于补丁适配版本时拦截安装，引导用户先更新 GSX
+async function ensureGsxVersionForPatch(patch) {
+  if (!patch?.id?.startsWith('gsx-pro-zh-cn') || !patch.addonVersion) return true
+  try {
+    const gsxStatus = await bridge.gsx.status()
+    if (!gsxStatus.installed || !gsxStatus.localVersion) return true
+    if (compareVersions(gsxStatus.localVersion, patch.addonVersion) >= 0) return true
+    gsxVersionGuardInfo.localVersion = gsxStatus.localVersion
+    gsxVersionGuardInfo.addonVersion = patch.addonVersion
+    showGsxVersionGuard.value = true
+    return false
+  } catch {
+    return true // 状态获取失败时不阻塞安装，交由目标探测兜底
+  }
+}
+
 async function installPatch(patch) {
+  if (!(await ensureGsxVersionForPatch(patch))) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: 'GSX 版本低于补丁适配版本，请先在「GSX 更新」页更新' }
+    return
+  }
   const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
   if (!installTargets.length) {
     operations[patch.id] = {
@@ -354,6 +381,7 @@ async function installPatch(patch) {
   try {
     await bridge.patches.install(createInstallationRequest(patch), installTargets)
     await loadInstallations()
+    showPatchInstalledNotice.value = true
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
     return
@@ -362,6 +390,10 @@ async function installPatch(patch) {
 }
 
 async function importPatch(patch) {
+  if (!(await ensureGsxVersionForPatch(patch))) {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: 'GSX 版本低于补丁适配版本，请先在「GSX 更新」页更新' }
+    return
+  }
   const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
   if (!installTargets.length) {
     operations[patch.id] = {
@@ -382,6 +414,7 @@ async function importPatch(patch) {
   try {
     await bridge.patches.installFromFile(createInstallationRequest(patch), installTargets, sourceArchivePath)
     await loadInstallations()
+    showPatchInstalledNotice.value = true
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
     return
@@ -503,6 +536,8 @@ onBeforeUnmount(() => {
             v-else-if="activeView === 'gsx-update'"
             key="gsx-update"
             :bridge="bridge"
+            @updated="loadInstallations"
+            @patch-installed="showPatchInstalledNotice = true"
           />
           <FeedbackView
             v-else-if="activeView === 'feedback'"
@@ -551,6 +586,14 @@ onBeforeUnmount(() => {
     />
     <FreeNoticeDialog v-if="showFreeNotice" @continue="acknowledgeFreeNotice" @author="openAuthorPage" @support="activeView = 'support'" />
     <RequiredUpdateDialog v-if="updateRequired" :update-status="updateStatus" />
+    <PatchInstallSuccessDialog v-if="showPatchInstalledNotice" @close="showPatchInstalledNotice = false" />
+    <GsxVersionGuardDialog
+      v-if="showGsxVersionGuard"
+      :local-version="gsxVersionGuardInfo.localVersion"
+      :addon-version="gsxVersionGuardInfo.addonVersion"
+      @goto="() => { showGsxVersionGuard = false; activeView = 'gsx-update' }"
+      @close="showGsxVersionGuard = false"
+    />
     <AnnouncementPopupDialog
       v-if="activePopupAnnouncement"
       :announcement="activePopupAnnouncement"

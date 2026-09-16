@@ -157,12 +157,14 @@ test('GsxUpdater.applyUpdate downloads, verifies, backs up and records state', a
   await createZip(sourceDirectory, archivePath)
   const checksum = await sha256(archivePath)
 
+  const progressEvents = []
   const updater = new GsxUpdater({
     userDataDirectory: userData,
     officialEtagDirectory: etagDir,
     processLister: async () => '',
     detectInstall: async () => ({ installed: true, addonRoot, version: '4.0.21', source: 'test' }),
     download: async (_url, destination) => fs.copyFile(archivePath, destination),
+    onProgress: (payload) => progressEvents.push(payload),
     fetchImpl: async () => ({
       ok: true,
       json: async () => ({ schemaVersion: 1, latestVersion: '4.0.23', packages: [manifestPackage({ sha256: checksum })] })
@@ -173,6 +175,18 @@ test('GsxUpdater.applyUpdate downloads, verifies, backs up and records state', a
   assert.equal(result.state, 'complete')
   assert.equal(result.applied[0].component, 'GSX')
   assert.equal(result.applied[0].files, 2)
+
+  // 总进度按字节加权：最终 100%，payload 携带整体 received/total
+  const doneEvent = progressEvents.find((event) => event.phase === 'component-complete')
+  assert.equal(doneEvent.percent, 100)
+  assert.equal(doneEvent.received, 1024)
+  assert.equal(doneEvent.total, 1024)
+  const downloadEvents = progressEvents.filter((event) => event.phase === 'download')
+  assert.ok(downloadEvents.length > 0)
+  for (const event of downloadEvents) {
+    assert.ok(event.percent >= 0 && event.percent <= 100)
+    assert.equal(event.total, 1024)
+  }
   assert.equal(await fs.readFile(path.join(targetDir, 'existing.pye'), 'utf8'), 'updated')
   assert.equal(await fs.readFile(path.join(targetDir, 'res', 'new.png'), 'utf8'), 'new-file')
 
