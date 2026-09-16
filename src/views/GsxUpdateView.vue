@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { CheckCircle2, CloudDownload, Gauge, LoaderCircle, Plane, RefreshCw, ShieldCheck, TriangleAlert } from '@lucide/vue'
+import { ArrowRight, CheckCircle2, CloudDownload, LoaderCircle, Plane, RefreshCw, ShieldCheck, TriangleAlert } from '@lucide/vue'
 
 const props = defineProps({
   bridge: { type: Object, required: true }
@@ -101,130 +101,242 @@ onBeforeUnmount(unsubscribeProgress)
 </script>
 
 <template>
-  <section class="view-shell">
+  <section class="view-shell gsx-shell">
     <header class="view-header">
       <div>
         <p class="eyebrow">GSX UPDATE</p>
         <h1>GSX 更新</h1>
-        <p class="header-note">通过国内服务器下载 FSDreamTeam 官方更新包，无需访问国外网络。</p>
+        <p class="gsx-subtitle">通过国内服务器下载 FSDreamTeam 官方更新包，无需访问国外网络。</p>
       </div>
       <div class="header-actions">
-        <button class="button button-secondary" type="button" :disabled="status.loading || operation.busy" @click="loadStatus">
-          <RefreshCw :size="15" :class="{ spin: status.loading }" />
+        <button class="gsx-ghost" type="button" :disabled="status.loading || operation.busy" @click="loadStatus">
+          <RefreshCw :size="14" :class="{ spin: status.loading }" />
           刷新状态
         </button>
       </div>
     </header>
 
-    <div v-if="status.loading && !status.loaded" class="catalog-loading">正在检测本机 GSX 安装…</div>
+    <div v-if="status.loading && !status.loaded" class="gsx-loading">正在检测本机 GSX 安装…</div>
 
     <template v-else>
       <!-- 未安装 -->
-      <div v-if="!status.installed && !errorMessage" class="empty-state">
-        <Plane :size="30" />
+      <div v-if="!status.installed && !errorMessage" class="gsx-empty">
+        <Plane :size="28" />
         <strong>未检测到 GSX 本体</strong>
         <p>本功能仅提供已安装 GSX 用户的版本更新。首次安装请使用 FSDreamTeam 官方 Universal Installer，安装完成后回到本页即可在线更新。</p>
       </div>
 
-      <div v-if="errorMessage && !status.installed" class="inline-alert" role="alert">
-        <TriangleAlert :size="15" />
+      <div v-if="errorMessage && !status.installed" class="gsx-alert" role="alert">
+        <TriangleAlert :size="14" />
         <span>{{ errorMessage }}</span>
       </div>
 
       <template v-if="status.installed">
-        <!-- 版本状态卡 -->
-        <article class="patch-card gsx-status-card">
-          <div class="gsx-status-main">
-            <div class="gsx-status-icon" :data-tone="status.updateAvailable ? 'warning' : 'success'">
-              <Gauge v-if="!status.updateAvailable" :size="24" />
-              <CloudDownload v-else :size="24" />
+        <!-- 状态横幅 -->
+        <section class="gsx-hero" :data-tone="status.updateAvailable ? 'pending' : 'current'">
+          <div class="gsx-hero-main">
+            <div class="gsx-hero-glyph">
+              <CheckCircle2 v-if="!status.updateAvailable" :size="26" />
+              <CloudDownload v-else :size="26" />
             </div>
-            <div>
-              <p class="eyebrow">INSTALLED VERSION</p>
-              <h2 class="gsx-version-line">
-                GSX Pro
+            <div class="gsx-hero-title">
+              <span class="gsx-hero-name">GSX Pro</span>
+              <span class="gsx-version-flow">
                 <code>v{{ status.localVersion }}</code>
-                <span v-if="!status.updateAvailable" class="status-badge" data-tone="success">已是最新</span>
-                <span v-else class="status-badge" data-tone="warning">可更新到 v{{ status.latestVersion }}</span>
-              </h2>
+                <template v-if="status.updateAvailable">
+                  <ArrowRight :size="15" class="gsx-flow-arrow" />
+                  <code class="gsx-version-next">v{{ status.latestVersion }}</code>
+                </template>
+                <span v-else class="gsx-chip gsx-chip-ok">已是最新</span>
+              </span>
+            </div>
+            <div class="gsx-hero-action">
+              <button
+                v-if="status.updateAvailable && !status.stale"
+                class="gsx-primary"
+                type="button"
+                :disabled="operation.busy"
+                @click="startUpdate"
+              >
+                <LoaderCircle v-if="operation.busy" :size="15" class="spin" />
+                <CloudDownload v-else :size="15" />
+                {{ operation.busy ? '正在更新…' : `更新 GSX · ${totalMegabytes}` }}
+              </button>
+              <span v-else-if="status.stale" class="gsx-chip gsx-chip-warn">
+                <TriangleAlert :size="13" />
+                服务器暂不可达，展示缓存清单
+              </span>
             </div>
           </div>
-          <p v-if="status.stale" class="gsx-cache-note">
-            <TriangleAlert :size="14" />
-            服务器暂时无法连接，当前显示的是本地缓存清单，更新按钮暂不可用。
-          </p>
-          <button
-            v-if="status.updateAvailable && !status.stale"
-            class="button button-primary"
-            type="button"
-            :disabled="operation.busy"
-            @click="startUpdate"
-          >
-            <LoaderCircle v-if="operation.busy" :size="16" class="spin" />
-            <CloudDownload v-else :size="16" />
-            {{ operation.busy ? '正在更新…' : `更新 GSX（约 ${totalMegabytes}）` }}
-          </button>
-        </article>
-
-        <!-- 待更新组件清单 -->
-        <article v-if="status.updateAvailable" class="patch-card">
-          <h3 class="gsx-section-title">本次更新内容（{{ status.pending.length }} 个组件，共 {{ totalMegabytes }}）</h3>
-          <ul class="gsx-component-list">
-            <li v-for="pkg in status.pending" :key="pkg.component">
-              <code>{{ pkg.component }}</code>
-              <span>v{{ pkg.version }}</span>
-              <small>{{ formatSize(pkg.size) }}</small>
-            </li>
-          </ul>
-        </article>
+          <div class="gsx-hero-meta">
+            <span>待更新组件 <b>{{ status.pending.length }}</b></span>
+            <span class="gsx-meta-dot" />
+            <span>下载体积 <b>{{ totalMegabytes }}</b></span>
+            <span class="gsx-meta-dot" />
+            <span>镜像源 <b>{{ status.stale ? '本地缓存' : '云端已同步' }}</b></span>
+          </div>
+        </section>
 
         <!-- 更新进度 -->
-        <article v-if="operation.busy || done || operation.phase === 'error'" class="patch-card">
-          <div class="operation-progress">
-            <div class="gsx-progress-head">
-              <strong>{{ operation.message || (done ? '更新完成' : '更新进度') }}</strong>
-              <span>{{ progressPercent }}%</span>
-            </div>
-            <div class="progress-track"><span :style="{ width: progressPercent + '%' }" /></div>
-            <p v-if="done" class="gsx-done-note">
-              <CheckCircle2 :size="14" />
-              更新完成后请重启一次模拟器；游戏内 GSX 界面将暂时回到英文，等待对应版本的汉化补丁发布。
-            </p>
+        <section v-if="operation.busy || done || operation.phase === 'error'" class="gsx-panel gsx-progress" :data-state="operation.phase === 'error' ? 'error' : done ? 'done' : 'running'">
+          <div class="gsx-progress-head">
+            <strong>{{ operation.message || (done ? '更新完成' : '更新进度') }}</strong>
+            <span class="gsx-progress-num">{{ progressPercent }}%</span>
           </div>
-        </article>
+          <div class="gsx-track"><span :style="{ width: progressPercent + '%' }" /></div>
+          <p v-if="done" class="gsx-progress-note">
+            <CheckCircle2 :size="13" />
+            完成后请重启一次模拟器；游戏内 GSX 界面将暂时回到英文，新版本汉化补丁发布后重新安装即可。
+          </p>
+        </section>
 
-        <!-- 安全与合规说明 -->
-        <article class="patch-card gsx-notes">
-          <h3 class="gsx-section-title"><ShieldCheck :size="15" /> 更新说明</h3>
+        <!-- 组件清单 -->
+        <section v-if="status.updateAvailable" class="gsx-panel">
+          <header class="gsx-panel-head">
+            <h3>本次更新内容</h3>
+            <span>{{ status.pending.length }} 个组件 · 共 {{ totalMegabytes }}</span>
+          </header>
+          <ul class="gsx-components">
+            <li v-for="(pkg, index) in status.pending" :key="pkg.component" :style="{ animationDelay: index * 45 + 'ms' }">
+              <span class="gsx-component-index">{{ String(index + 1).padStart(2, '0') }}</span>
+              <code class="gsx-component-name" :title="pkg.deployTarget">{{ pkg.component }}</code>
+              <span class="gsx-component-version">v{{ pkg.version }}</span>
+              <span class="gsx-component-size">{{ formatSize(pkg.size) }}</span>
+            </li>
+          </ul>
+        </section>
+
+        <!-- 更新说明 -->
+        <section class="gsx-panel gsx-notes">
+          <header class="gsx-panel-head">
+            <h3><ShieldCheck :size="14" /> 更新说明</h3>
+          </header>
           <ul>
             <li>GSX 为付费插件，本页面仅供<b>已购买正版</b>的用户加速下载官方更新包；更新包为 FSDreamTeam 官方文件的逐字节镜像，经 SHA-256 校验后部署。</li>
             <li>更新会覆盖官方文件：已安装的 GSX 汉化补丁会被暂时还原为英文界面，新版本补丁适配发布后重新安装即可。</li>
             <li>更新前请完全退出微软模拟飞行；更新过程保持电源与网络连接。</li>
             <li>更新包较大（语音包约 229 MB），首次建议在良好网络环境下进行。</li>
           </ul>
-        </article>
+        </section>
       </template>
     </template>
   </section>
 </template>
 
 <style scoped>
-.gsx-status-card { display: flex; flex-direction: column; gap: 14px; }
-.gsx-status-main { display: flex; align-items: center; gap: 16px; }
-.gsx-status-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(148, 163, 184, 0.14); }
-.gsx-status-icon[data-tone='success'] { color: #4ade80; }
-.gsx-status-icon[data-tone='warning'] { color: #fbbf24; }
-.gsx-version-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 0; font-size: 18px; }
-.gsx-version-line code { font-family: ui-monospace, Consolas, monospace; font-size: 15px; opacity: 0.85; }
-.gsx-cache-note { display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0.85; margin: 0; }
-.gsx-section-title { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 0 0 12px; }
-.gsx-component-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.gsx-component-list li { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; background: rgba(148, 163, 184, 0.08); font-size: 13px; }
-.gsx-component-list code { font-family: ui-monospace, Consolas, monospace; }
-.gsx-component-list small { margin-left: auto; opacity: 0.7; }
-.gsx-progress-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
-.gsx-done-note { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 12px 0 0; opacity: 0.9; }
-.gsx-notes ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 13px; opacity: 0.85; }
+.gsx-shell { width: min(860px, 100%); padding: 34px 32px 44px; }
+
+.gsx-subtitle { margin: 8px 0 0; color: var(--text-secondary); font-size: 12px; }
+.gsx-ghost {
+  min-height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px;
+  border: 1px solid var(--glass-border); border-radius: 8px; background: transparent;
+  color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: border-color 140ms ease, color 140ms ease;
+}
+.gsx-ghost:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text-primary, #e8eadf); }
+.gsx-ghost:disabled { opacity: 0.55; cursor: default; }
+
+.gsx-loading { padding: 42px 0; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+.gsx-empty, .gsx-alert { margin-bottom: 14px; }
+.gsx-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 28px;
+  border: 1px dashed var(--glass-border); border-radius: var(--radius); text-align: center;
+}
+.gsx-empty svg { color: var(--text-muted); }
+.gsx-empty p { margin: 0; max-width: 460px; color: var(--text-secondary); font-size: 12px; line-height: 1.7; }
+.gsx-alert {
+  display: flex; align-items: center; gap: 8px; padding: 11px 14px;
+  border: 1px solid rgba(227, 178, 83, 0.3); border-radius: 8px; background: rgba(227, 178, 83, 0.08);
+  color: var(--warning); font-size: 12px;
+}
+
+/* —— 状态横幅 —— */
+.gsx-hero {
+  padding: 20px 22px 16px; margin-bottom: 14px;
+  border: 1px solid var(--glass-border); border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(98, 214, 163, 0.07), rgba(98, 214, 163, 0.015) 46%, transparent), var(--surface);
+  backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-soft);
+  animation: gsx-rise 240ms ease both;
+}
+.gsx-hero[data-tone='pending'] { border-color: rgba(98, 214, 163, 0.32); }
+.gsx-hero-main { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.gsx-hero-glyph {
+  width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center;
+  border-radius: 12px; background: rgba(98, 214, 163, 0.1); color: var(--signal);
+}
+.gsx-hero-title { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.gsx-hero-name { font: 600 17px/1 "Bahnschrift", "Microsoft YaHei UI", sans-serif; letter-spacing: 0.02em; }
+.gsx-version-flow { display: inline-flex; align-items: center; gap: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--text-secondary); }
+.gsx-version-flow code { padding: 2px 8px; border: 1px solid var(--glass-border); border-radius: 6px; background: rgba(255, 255, 255, 0.03); }
+.gsx-version-next { border-color: rgba(98, 214, 163, 0.42) !important; color: var(--signal); }
+.gsx-flow-arrow { color: var(--text-muted); }
+.gsx-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; }
+.gsx-chip-ok { border: 1px solid rgba(98, 214, 163, 0.32); background: rgba(98, 214, 163, 0.08); color: var(--signal); }
+.gsx-chip-warn { border: 1px solid rgba(227, 178, 83, 0.3); background: rgba(227, 178, 83, 0.08); color: var(--warning); }
+.gsx-hero-action { margin-left: auto; }
+.gsx-primary {
+  min-height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 22px;
+  border: 1px solid rgba(98, 214, 163, 0.5); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(98, 214, 163, 0.22), rgba(98, 214, 163, 0.12));
+  color: var(--signal); font: 600 13px/1 "Microsoft YaHei UI", sans-serif; cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease; box-shadow: 0 4px 18px rgba(98, 214, 163, 0.12);
+}
+.gsx-primary:hover:not(:disabled) { filter: brightness(1.14); transform: translateY(-1px); }
+.gsx-primary:disabled { opacity: 0.6; cursor: default; transform: none; }
+.gsx-hero-meta {
+  display: flex; align-items: center; gap: 10px; margin-top: 15px; padding-top: 12px;
+  border-top: 1px solid var(--border); color: var(--text-muted); font-size: 11.5px;
+}
+.gsx-hero-meta b { color: var(--text-secondary); font-weight: 600; }
+.gsx-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-muted); opacity: 0.6; }
+
+/* —— 面板通用 —— */
+.gsx-panel {
+  padding: 16px 20px; margin-bottom: 14px;
+  border: 1px solid var(--glass-border); border-radius: var(--radius);
+  background: var(--surface); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-soft);
+  animation: gsx-rise 240ms ease both;
+}
+.gsx-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.gsx-panel-head h3 { display: inline-flex; align-items: center; gap: 7px; margin: 0; font: 600 13.5px/1 "Microsoft YaHei UI", sans-serif; }
+.gsx-panel-head span { color: var(--text-muted); font-size: 11.5px; }
+
+/* —— 组件清单 —— */
+.gsx-components { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gsx-components li {
+  display: flex; align-items: center; gap: 12px; padding: 9px 13px;
+  border: 1px solid transparent; border-radius: 8px; background: rgba(255, 255, 255, 0.025);
+  font-size: 12px; animation: gsx-rise 240ms ease both; transition: border-color 140ms ease, background 140ms ease;
+}
+.gsx-components li:hover { border-color: var(--glass-border); background: rgba(255, 255, 255, 0.045); }
+.gsx-component-index { color: var(--text-muted); font: 600 10px/1 ui-monospace, Consolas, monospace; }
+.gsx-component-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.gsx-component-version { color: var(--text-secondary); font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+.gsx-component-size { min-width: 62px; text-align: right; color: var(--text-muted); font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+
+/* —— 进度 —— */
+.gsx-progress[data-state='running'] { border-color: rgba(98, 214, 163, 0.32); }
+.gsx-progress[data-state='error'] { border-color: rgba(224, 106, 106, 0.4); }
+.gsx-progress[data-state='done'] { border-color: rgba(98, 214, 163, 0.26); }
+.gsx-progress-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-size: 12.5px; }
+.gsx-progress-num { font: 600 13px/1 "Bahnschrift", sans-serif; color: var(--signal); }
+.gsx-track { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.gsx-track span {
+  display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, rgba(98, 214, 163, 0.65), var(--signal));
+  transition: width 220ms ease;
+}
+.gsx-progress-note { display: flex; align-items: center; gap: 7px; margin: 11px 0 0; color: var(--text-secondary); font-size: 11.5px; }
+
+/* —— 说明 —— */
+.gsx-notes ul { margin: 0; padding-left: 16px; display: grid; gap: 7px; color: var(--text-muted); font-size: 11.5px; line-height: 1.65; }
+.gsx-notes b { color: var(--text-secondary); }
+
 .spin { animation: gsx-spin 1s linear infinite; }
 @keyframes gsx-spin { to { transform: rotate(360deg); } }
+@keyframes gsx-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 760px) {
+  .gsx-hero-action { margin-left: 0; width: 100%; }
+  .gsx-primary { width: 100%; justify-content: center; }
+}
 </style>
