@@ -251,3 +251,96 @@ test('GsxUpdater refuses to run while the simulator is running', async () => {
   })
   await assert.rejects(() => updater.applyUpdate(), /模拟器或 GSX 引擎正在运行/)
 })
+
+test('GsxUpdater skips community-package components whose target package is absent', async () => {
+  const userData = await temporaryDirectory('gsx-updater-skip-')
+  const addonRoot = await temporaryDirectory('gsx-addon-skip-')
+  // 仅存在 gsx-pro 社区包；World 包目录不存在（用户未购买/未安装）
+  const proTarget = path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  await fs.mkdir(path.join(proTarget, 'html_ui'), { recursive: true })
+  await fs.writeFile(path.join(proTarget, 'manifest.json'), JSON.stringify({ package_version: '4.0.21' }))
+
+  const payloadDirs = {}
+  for (const name of ['pro', 'world']) {
+    const dir = path.join(await temporaryDirectory(`gsx-payload-${name}-`), name)
+    await fs.mkdir(dir, { recursive: true })
+    await fs.writeFile(path.join(dir, 'file.txt'), name)
+    payloadDirs[name] = dir
+  }
+  const makeArchive = async (dir) => {
+    const archive = path.join(await temporaryDirectory('gsx-archive-skip-'), `${path.basename(path.dirname(dir))}.zip`)
+    await createZip(dir, archive)
+    return archive
+  }
+  const proArchive = await makeArchive(payloadDirs.pro)
+  const worldArchive = await makeArchive(payloadDirs.world)
+  const worldSha = await sha256(worldArchive)
+
+  const updater = new GsxUpdater({
+    userDataDirectory: userData,
+    officialEtagDirectory: await temporaryDirectory('gsx-etags-skip-'),
+    processLister: async () => '',
+    detectInstall: async () => ({ installed: true, addonRoot, version: '4.0.21', source: 'test' }),
+    download: async (url, destination) => {
+      const source = String(url).includes('world') ? worldArchive : proArchive
+      return fs.copyFile(source, destination)
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        schemaVersion: 1,
+        latestVersion: '4.0.23',
+        packages: [
+          manifestPackage({
+            component: 'fsdreamteam-gsx-pro-textures',
+            sha256: await sha256(proArchive),
+            deployTarget: 'MSFS/fsdreamteam-gsx-pro',
+            assetName: 'fsdreamteam-gsx-pro-textures.zip',
+            downloadUrl: buildServerUrl('/api/gsx/package/1')
+          }),
+          manifestPackage({
+            component: 'fsdreamteam-gsx-world-of-jetways-textures',
+            sha256: worldSha,
+            deployTarget: 'MSFS/fsdreamteam-gsx-world-of-jetways',
+            assetName: 'fsdreamteam-gsx-world-of-jetways-textures.zip',
+            downloadUrl: buildServerUrl('/api/gsx/package/2')
+          })
+        ]
+      })
+    })
+  })
+
+  const result = await updater.applyUpdate()
+  assert.equal(result.state, 'complete')
+  assert.equal(result.applied.length, 1)
+  assert.equal(result.applied[0].component, 'fsdreamteam-gsx-pro-textures')
+  assert.equal(result.skipped.length, 1)
+  assert.equal(result.skipped[0].component, 'fsdreamteam-gsx-world-of-jetways-textures')
+  const worldDirExists = await fs.stat(path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-world-of-jetways')).then(() => true).catch(() => false)
+  assert.ok(!worldDirExists)
+  const state = JSON.parse(await fs.readFile(path.join(userData, 'gsx-state.json'), 'utf8'))
+  assert.ok(!state.appliedComponents['fsdreamteam-gsx-world-of-jetways-textures'])
+})
+
+test('GsxUpdater blocks updates when base-package fundamentals are missing', async () => {
+  const userData = await temporaryDirectory('gsx-updater-old-')
+  const addonRoot = await temporaryDirectory('gsx-addon-old-')
+  const packagePath = path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  await fs.mkdir(packagePath, { recursive: true })
+  await fs.writeFile(path.join(packagePath, 'manifest.json'), JSON.stringify({ package_version: '4.0.10' }))
+  // 缺少 modules/fsdt-msfs-bridge.wasm 与 InGamePanels —— 基础安装过旧/损坏
+
+  const updater = new GsxUpdater({
+    userDataDirectory: userData,
+    officialEtagDirectory: await temporaryDirectory('gsx-etags-old-'),
+    processLister: async () => '',
+    detectInstall: async () => ({ installed: true, addonRoot, packagePath, version: '4.0.10', source: 'test' }),
+    download: async () => { throw new Error('must not download') },
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({ schemaVersion: 1, latestVersion: '4.0.23', packages: [manifestPackage()] })
+    })
+  })
+
+  await assert.rejects(() => updater.applyUpdate(), /基础安装不完整/)
+})

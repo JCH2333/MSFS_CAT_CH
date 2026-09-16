@@ -24,6 +24,7 @@ const operation = reactive({ busy: false, phase: '', percent: 0, message: '', er
 const errorMessage = ref('')
 const done = ref(false)
 const patchCare = ref(null)
+const skippedComponents = ref([])
 
 const emit = defineEmits(['updated', 'patch-installed'])
 
@@ -65,6 +66,7 @@ async function startUpdate() {
   errorMessage.value = ''
   done.value = false
   patchCare.value = null
+  skippedComponents.value = []
   try {
     const result = await props.bridge.gsx.startUpdate()
     if (result?.state === 'current') {
@@ -78,6 +80,7 @@ async function startUpdate() {
       done.value = true
     }
     patchCare.value = result?.patchCare || null
+    skippedComponents.value = result?.skipped || []
     emit('updated')
     if (patchCare.value?.reinstalled?.length) emit('patch-installed')
     await loadStatus()
@@ -202,6 +205,12 @@ onBeforeUnmount(unsubscribeProgress)
             <CheckCircle2 :size="13" />
             完成后请重启一次模拟器使更新生效。
           </p>
+          <div v-if="done && skippedComponents.length" class="gsx-patchcare">
+            <p v-for="item in skippedComponents" :key="item.component" class="gsx-patchcare-warn">
+              <TriangleAlert :size="13" />
+              跳过 {{ item.component }}：{{ item.reason }}
+            </p>
+          </div>
           <div v-if="done && patchCare" class="gsx-patchcare">
             <p v-if="patchCare.reinstalled?.length" class="gsx-patchcare-ok">
               <CheckCircle2 :size="13" />
@@ -239,6 +248,7 @@ onBeforeUnmount(unsubscribeProgress)
             <li>GSX 为付费插件，本页面仅供<b>已购买正版</b>的用户加速下载官方更新包；更新包为 FSDreamTeam 官方文件的逐字节镜像，经 SHA-256 校验后部署。</li>
             <li>更新会覆盖官方文件：已安装的 GSX 汉化补丁会被暂时还原为英文界面，新版本补丁适配发布后重新安装即可。</li>
             <li>更新前请完全退出微软模拟飞行；更新过程保持电源与网络连接。</li>
+            <li>更新采用与官方热更通道一致的覆盖方式；如你的 GSX 长期未更新或基础安装不完整，请先用官方 Universal Installer 完整安装后再使用本功能。</li>
             <li>更新包较大（语音包约 229 MB），首次建议在良好网络环境下进行。</li>
           </ul>
         </section>

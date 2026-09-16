@@ -31,6 +31,13 @@ const COMPONENT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/
 const ASSET_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/
 const DEPLOY_TARGET_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,239}$/
 
+// 只随官方完整安装分发、镜像热更不覆盖的基础文件。缺失 = 基础安装过旧或损坏，
+// 覆盖式更新无法补齐，应引导用户先用官方 Universal Installer 完整安装。
+const BASE_PACKAGE_FILES = [
+  'modules/fsdt-msfs-bridge.wasm',
+  'InGamePanels/fsdreamteam-ingamepanels-gsx.spb'
+]
+
 function normalizeEtag(value) {
   return String(value || '').trim().replace(/^"+|"+$/g, '')
 }
@@ -307,13 +314,24 @@ class GsxUpdater {
     await this.assertSimClosed()
     const install = await this.detectInstall()
     if (!install.installed) throw new Error('未检测到 GSX 安装，无法更新')
+    // 基础件守卫：wasm 桥与面板 spb 只随官方完整安装分发，镜像热更不覆盖它们。
+    // 缺失说明基础安装过旧或损坏，覆盖式更新无法补齐，需先走官方完整安装。
+    if (install.packagePath) {
+      for (const fundamental of BASE_PACKAGE_FILES) {
+        const exists = await fs.stat(path.join(install.packagePath, fundamental)).then((s) => s.isFile()).catch(() => false)
+        if (!exists) {
+          throw new Error(`GSX 基础安装不完整（缺少 ${fundamental}）。请先用官方 Universal Installer 完整安装或修复 GSX，再使用本更新功能`)
+        }
+      }
+    }
     const mirror = await this.loadMirrorManifest()
     const pending = await this.computePending(mirror.manifest.packages)
-    if (pending.length === 0) return { state: 'current', applied: [] }
+    if (pending.length === 0) return { state: 'current', applied: [], skipped: [] }
 
     const state = await readJsonState(this.statePath)
     state.appliedComponents = state.appliedComponents || {}
     const applied = []
+    const skipped = []
     const total = pending.length
     const totalBytes = pending.reduce((sum, pkg) => sum + pkg.size, 0)
     let completed = 0
@@ -340,6 +358,29 @@ class GsxUpdater {
       const base = { component: pkg.component, size: pkg.size }
       const indexLabel = `（${completed + 1}/${total}）`
       const targetPath = await this.resolveTarget(install.addonRoot, pkg.deployTarget)
+
+      // 社区包组件要求目标插件包已安装（例如未购买 GSX World 时不存在该包）。
+      // 直接解压会凭空创建残缺目录，必须跳过并如实上报。
+      if (pkg.deployTarget.startsWith('MSFS/')) {
+        const pkgManifestExists = await fs.stat(path.join(targetPath, 'manifest.json')).then((s) => s.isFile()).catch(() => false)
+        if (!pkgManifestExists) {
+          skipped.push({ component: pkg.component, reason: '未安装对应的插件包' })
+          bytesDone += pkg.size
+          completed += 1
+          this.emit({
+            ...base,
+            phase: 'component-skipped',
+            percent: totalBytes > 0 ? Math.min(100, Math.floor((bytesDone / totalBytes) * 100)) : 100,
+            received: bytesDone,
+            total: totalBytes,
+            message: `${pkg.component} 跳过（${skipped[skipped.length - 1].reason}）`,
+            completed,
+            totalComponents: total
+          })
+          continue
+        }
+      }
+
       const stagingRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'gsx-update-'))
       const journal = []
       try {
@@ -419,7 +460,7 @@ class GsxUpdater {
     }
 
     this.emit({ phase: 'complete', percent: 100, received: totalBytes, total: totalBytes, applied, message: 'GSX 更新完成' })
-    return { state: 'complete', applied }
+    return { state: 'complete', applied, skipped }
   }
 
   async writeOfficialSidecar(component, etag) {
