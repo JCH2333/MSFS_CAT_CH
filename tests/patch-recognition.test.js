@@ -43,6 +43,28 @@ test('passes the server-configured multi-sim slots into recognition descriptors'
   assert.deepEqual(createInstallationRequest(patch).dualSim, dualSim)
 })
 
+test('multi-sim markers survive structured cloning when the catalog is reactive', async () => {
+  // 回归（2.1.1 目录页 "An object could not be cloned."）：目录存于 reactive 状态时
+  // patch.dualSim 是 Vue Proxy，绝不能原样进入 IPC 参数。
+  const { createRecognitionDescriptors, createInstallationRequest } = await import('../src/lib/patch-recognition.mjs')
+  const { reactive } = require('vue')
+  const patch = reactive({
+    id: 'ini350-efb-zh-cn',
+    name: 'INI A350 EFB 简体中文',
+    version: '0.1.1',
+    targetKind: 'addon',
+    dualSim: { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }, { slot: 'msfs2020', communityFolder: 'Community' }] },
+    fingerprint: [],
+    package: { downloadUrl: 'https://example.test/b.zip', sha256: 'e'.repeat(64), contentRoot: '' }
+  })
+
+  const [descriptor] = createRecognitionDescriptors([patch])
+  const cloned = structuredClone(descriptor)
+  assert.deepEqual(cloned.dualSim, { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }, { slot: 'msfs2020', communityFolder: 'Community' }] })
+  assert.notEqual(descriptor.dualSim, patch.dualSim, '不得透传目录里的 dualSim 引用')
+  structuredClone(createInstallationRequest(patch))
+})
+
 test('applies the builtin multi-sim fallback to ini patches from catalogs without the dualSim field', async () => {
   const { createRecognitionDescriptors } = await import('../src/lib/patch-recognition.mjs')
   const [a380] = createRecognitionDescriptors([

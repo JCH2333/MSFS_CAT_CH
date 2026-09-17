@@ -1,11 +1,9 @@
-import { isDualSimPatch } from './dual-sim.mjs'
+import { describeDualSim, isDualSimPatch } from './dual-sim.mjs'
 
-// 识别/安装请求与目标检测共用同一套多模拟器判定（服务端 dualSim 字段 > 内置回退表），
-// 保证对未下发 dualSim 的旧目录仍能做多槽位社区安装。
-function describeDualSim(patch) {
-  if (patch?.dualSim) return patch.dualSim
-  return isDualSimPatch(patch) ? { slots: [] } : null
-}
+// 识别/安装请求与目标检测共用 dual-sim.mjs 的 describeDualSim（服务端 dualSim 字段 >
+// 内置回退表），保证对未下发 dualSim 的旧目录仍能做多槽位社区安装。
+// 注意：不得在此处复制实现或透传 patch.dualSim 本体——目录存于 reactive 状态时它是
+// Vue Proxy，越过 IPC 会抛 "An object could not be cloned."（2.1.1 目录页回归根因）。
 
 export function createRecognitionDescriptors(patches) {
   if (!Array.isArray(patches)) return []

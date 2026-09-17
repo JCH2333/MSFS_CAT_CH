@@ -22,10 +22,22 @@ export function isDualSimPatch(patch) {
   return Boolean(patch?.dualSim) || BUILTIN_MULTI_SIM_PATCH_IDS.has(patch?.id)
 }
 
-// 交给主进程的多模拟器标记：透传服务端配置（{slots:[...]}）；
-// 旧目录无该字段时按内置回退表开启默认双槽位
+// 交给主进程的多模拟器标记：把服务端配置重建为纯字符串对象。
+// 绝不能透传 patch.dualSim 本体——目录存于 reactive 状态时它是 Vue Proxy，
+// 越过 IPC 的结构化克隆边界会抛 "An object could not be cloned."（2.1.1 目录页回归的根因）。
+// 旧目录无该字段时按内置回退表开启默认双槽位。
 export function describeDualSim(patch) {
-  if (patch?.dualSim) return patch.dualSim
+  if (patch?.dualSim) {
+    const slots = Array.isArray(patch.dualSim.slots) ? patch.dualSim.slots : []
+    return {
+      slots: slots
+      .map((entry) => ({
+        slot: typeof entry?.slot === 'string' ? entry.slot.trim().toLowerCase() : '',
+        communityFolder: typeof entry?.communityFolder === 'string' ? entry.communityFolder.trim() : ''
+      }))
+      .filter((entry) => entry.slot)
+    }
+  }
   if (BUILTIN_MULTI_SIM_PATCH_IDS.has(patch?.id)) return { slots: [] }
   return null
 }
