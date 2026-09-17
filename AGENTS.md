@@ -55,6 +55,19 @@ Treat downloaded Patch Packages and catalog data as untrusted input.
 - Preserve the compact desktop-tool UI and its existing responsive behavior.
 - Add or update focused tests when behavior changes, especially for download validation and filesystem operations.
 
+## Release And Server Ops Pitfalls
+
+Lessons from the 2.1.1 release (2026-09-17). Keep additions terse.
+
+- Audit `git status` before `git add -A`: it sweeps untracked local working dirs (`微软模拟飞行插件汉化项目/`, `.zcode/`, scratch tool dirs) into a release commit. Keep such dirs gitignored; stage release files explicitly.
+- Over SSH, `pkill -f <pattern>` matches the session's own command line and kills it (exit 255). Kill by PID or anchor the pattern (`pgrep -af '^bash bin/watch.sh'`).
+- The Aliyun server reaches `api.github.com` reliably but `objects.githubusercontent.com` (asset CDN) only intermittently. Server-side GSX update detection uses GitHub API asset digests (`tools/gsx-watch/`), never per-asset HEAD ETags.
+- Maven exists only at `C:/Users/Administrator/.m2/wrapper/dists/apache-maven-3.9.11/a2d47e15/bin/mvn`. Build `MSFS_CAT_CH_SERVER` from its `server/` dir with `-s mvn-settings.xml -DskipTests` (`contextLoads` fails on prod-only config such as `app.assets.qr-key`).
+- An OTA release needs both halves: assets (`latest.yml`, exe, `.blockmap`) in the `/opt/msfs-pch/storage/ota/` root for the nginx feed AND registered via `POST /api/admin/ota/version/{id}/file`; publishing rejects versions with no registered files.
+- `POST /api/ota/check` accepts only `currentVersion`, `channel`, `platform`, `currentBuild`; any extra JSON field fails Jackson parsing (500).
+- Git Bash `curl` renders UTF-8 Chinese responses as GBK mojibake; verify through Node `fetch` before assuming data corruption. Announcement bodies and OTA changelogs must be submitted as UTF-8 JSON built in Node.
+- Admin announcements are created as `DRAFT` and go live only via `POST /api/admin/announcements/{id}/publish`; publishing a popup announcement auto-clears other popup announcements.
+
 ## Verification
 
 Run these checks before handing off code changes:
