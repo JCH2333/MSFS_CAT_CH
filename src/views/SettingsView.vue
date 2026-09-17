@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { CheckCircle2, ExternalLink, FolderSearch, MapPin, RefreshCw, ScrollText, Undo2, UserRound } from '@lucide/vue'
-import { DUAL_SIM_SLOTS, isDualSimPatch, manualSlotPaths, resolveSlotTarget } from '../lib/dual-sim.mjs'
+import { isDualSimPatch, manualSlotPaths, multiSimSlotsFor, resolveSlotTarget } from '../lib/dual-sim.mjs'
 import { manualTargetHint, slotManualHint } from '../lib/target-hints.mjs'
 
 const props = defineProps({
@@ -106,7 +106,7 @@ function hasManualSlotPath(patch, slotId) {
             <MapPin :size="17" />
           </div>
           <template v-if="isDualSimPatch(patch)">
-            <div v-for="slotMeta in DUAL_SIM_SLOTS" :key="slotMeta.id" class="target-slot-row">
+            <div v-for="slotMeta in multiSimSlotsFor(patch)" :key="slotMeta.id" class="target-slot-row">
               <div class="target-slot-info">
                 <span class="target-slot-label">{{ slotMeta.label }}</span>
                 <p class="target-settings-path" :title="slotTargetPath(patch, slotMeta.id) || slotMeta.hint">

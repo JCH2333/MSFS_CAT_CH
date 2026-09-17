@@ -44,17 +44,8 @@ function normalizeReconcileTargetPaths(value) {
     .map(([slot, raw]) => ({ slot: slot.toLowerCase(), targetPath: path.resolve(raw.trim()) }))
 }
 
-function dualSimMarkerFolder(patch) {
-  const marker = patch?.dualSim?.markerFolder
-  return typeof marker === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(marker.trim())
-    ? marker.trim()
-    : null
-}
-
-function folderNameMatchesMarker(entryName, markerFolder) {
-  const name = entryName.toLowerCase()
-  const marker = markerFolder.toLowerCase()
-  return name === marker || name.startsWith(`${marker}-`)
+function isMultiSimPatch(patch) {
+  return Boolean(patch?.dualSim)
 }
 
 function ensureSafeId(value) {
@@ -92,21 +83,13 @@ async function validateInstallationTarget(patch, target) {
     return
   }
 
-  // 双版本补丁（如 A350 汉化）：目标必须是包含 A350 本体包的社区文件夹，
-  // 或至少已有本补丁的安装目录（覆盖重装/更新场景），避免再装错位置
-  const markerFolder = dualSimMarkerFolder(patch)
-  if (!markerFolder) return
-  const entries = await fsp.readdir(target, { withFileTypes: true }).catch(() => null)
-  if (!entries) {
-    throw new Error(`安装目录不存在或不可访问：${target}`)
-  }
-  const patchFolders = Array.isArray(patch.targetFolders)
-    ? patch.targetFolders.filter((folder) => typeof folder === 'string').map((folder) => folder.toLowerCase())
-    : []
-  const markerHit = entries.some((entry) => entry.isDirectory()
-    && (folderNameMatchesMarker(entry.name, markerFolder) || patchFolders.includes(entry.name.toLowerCase())))
-  if (!markerHit) {
-    throw new Error(`所选目录中未找到 ${markerFolder}：请选择包含 iniBuilds A350 的社区文件夹（Community 或 Community2024）`)
+  // 多模拟器补丁：目标即社区根目录本身（补丁包目录前缀在 ZIP 内），
+  // 不校验机模目录；目录存在性由调用方保证
+  if (isMultiSimPatch(patch)) {
+    const entries = await fsp.readdir(target, { withFileTypes: true }).catch(() => null)
+    if (!entries) {
+      throw new Error(`安装目录不存在或不可访问：${target}`)
+    }
   }
 }
 

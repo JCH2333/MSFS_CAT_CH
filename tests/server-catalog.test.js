@@ -49,6 +49,67 @@ test('validates a published package and keeps its server download URL', () => {
   assert.deepEqual(result.patches[0].releaseNotes, ['全新 2.0 版本'])
 })
 
+test('keeps the server-provided dual-sim marker for the A380 patch', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'inia380-efb-zh-cn',
+    name: 'INIA380 EFB 简体中文',
+    summary: 'INI A380 EFB 界面简体中文汉化',
+    version: '0.1.6',
+    addonVersion: '1.0.0',
+    status: 'published',
+    targetKind: 'addon',
+    targetFolders: ['zzz-a380-efb-zh-patch'],
+    dualSim: { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }] },
+    fingerprint: [{ relativePath: 'zzz-a380-efb-zh-patch/layout.json', sha256: 'c'.repeat(64) }],
+    package: {
+      releaseTag: 'patch-inia380-efb-zh-cn-v0.1.6',
+      assetName: 'msfs-cat-ch-inia380-efb-zh-cn-v0.1.6.zip',
+      sha256: 'd'.repeat(64),
+      size: 30917445,
+      downloadUrl: buildServerUrl('/api/patches/package/7')
+    }
+  }))
+
+  assert.deepEqual(result.patches[0].dualSim, { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }] })
+  assert.deepEqual(result.patches[0].targetFolders, ['zzz-a380-efb-zh-patch'])
+  assert.equal(result.patches[0].targetKind, 'addon')
+  assert.equal(result.patches[0].package.downloadUrl, buildServerUrl('/api/patches/package/7'))
+})
+
+test('normalizes dual-sim slots with casing, whitespace and duplicate entries', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'ini350-efb-zh-cn',
+    name: 'INI A350 EFB 简体中文',
+    version: '0.1.1',
+    status: 'published',
+    dualSim: { slots: [{ slot: 'MSFS2024' }, { slot: 'msfs2020', communityFolder: ' Community ' }, { slot: 'msfs2020' }], ignored: true },
+    package: {
+      releaseTag: 'patch-ini350-efb-zh-cn-v0.1.1',
+      assetName: 'msfs-cat-ch-ini350-efb-zh-cn-v0.1.1.zip',
+      sha256: 'e'.repeat(64),
+      size: 100
+    }
+  }))
+
+  assert.deepEqual(result.patches[0].dualSim, { slots: [{ slot: 'msfs2024' }, { slot: 'msfs2020', communityFolder: 'Community' }] })
+})
+
+test('rejects a dual-sim slot folder with path separators', () => {
+  assert.throws(() => validateCatalog(catalogWith({
+    id: 'ini350-efb-zh-cn',
+    name: 'INI A350 EFB 简体中文',
+    version: '0.1.1',
+    status: 'published',
+    dualSim: { slots: [{ slot: 'msfs2024', communityFolder: '../escape' }] },
+    package: {
+      releaseTag: 'patch-ini350-efb-zh-cn-v0.1.1',
+      assetName: 'msfs-cat-ch-ini350-efb-zh-cn-v0.1.1.zip',
+      sha256: 'a'.repeat(64),
+      size: 100
+    }
+  })), /communityFolder 格式无效/)
+})
+
 test('normalizes a package without an optional download URL to an empty string', () => {
   const result = validateCatalog(catalogWith({
     id: 'gsx-pro-zh-cn',
@@ -158,7 +219,7 @@ test('keeps the GSX voice package target kind for safe audio installation', () =
   assert.equal(result.patches[0].targetKind, 'gsx-audio')
 })
 
-test('shows only the supported GSX patch when a cached catalog contains retired patches', () => {
+test('keeps every server catalog entry — display is fully server-controlled', () => {
   const gsx = {
     id: 'gsx-pro-zh-cn',
     name: 'GSX Pro',
@@ -179,7 +240,9 @@ test('shows only the supported GSX patch when a cached catalog contains retired 
     updatedAt: '2026-09-13T00:00:00Z',
     patches: [gsx, retired]
   })
-  assert.deepEqual(result.patches.map((patch) => patch.id), ['gsx-pro-zh-cn'])
+  assert.deepEqual(result.patches.map((patch) => patch.id), ['gsx-pro-zh-cn', 'fsrealistic-plus-zh-cn'])
+  assert.deepEqual(result.patches.map((patch) => patch.status), ['planned', 'withdrawn'])
+  assert.equal(result.patches[1].package, null)
 })
 
 test('keeps legacy cached catalogs readable when add-on version metadata is absent', () => {

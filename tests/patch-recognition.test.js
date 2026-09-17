@@ -25,21 +25,34 @@ test('creates cloneable patch recognition descriptors from reactive-like catalog
   assert.deepEqual(structuredClone(descriptors), descriptors)
 })
 
-test('carries the dual-sim marker for the A350 patch into recognition descriptors', async () => {
+test('passes the server-configured multi-sim slots into recognition descriptors', async () => {
   const { createRecognitionDescriptors, createInstallationRequest } = await import('../src/lib/patch-recognition.mjs')
+  const dualSim = { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }] }
   const patch = {
-    id: 'ini350-efb-zh-cn',
-    name: 'INI A350 EFB 简体中文',
-    version: '0.1.1',
+    id: 'inia380-efb-zh-cn',
+    name: 'INI A380 EFB 简体中文',
+    version: '0.1.6',
     targetKind: 'addon',
-    dualSim: { markerFolder: 'inibuilds-aircraft-a350' },
-    fingerprint: [{ relativePath: 'zzz-a350-efb-zh-patch/manifest.json', sha256: 'c'.repeat(64) }],
+    dualSim,
+    fingerprint: [{ relativePath: 'zzz-a380-efb-zh-patch/layout.json', sha256: 'c'.repeat(64) }],
     package: { downloadUrl: 'https://example.test/a.zip', sha256: 'd'.repeat(64), contentRoot: '' }
   }
 
   const [descriptor] = createRecognitionDescriptors([patch])
-  assert.deepEqual(descriptor.dualSim, { markerFolder: 'inibuilds-aircraft-a350' })
-  assert.deepEqual(createInstallationRequest(patch).dualSim, { markerFolder: 'inibuilds-aircraft-a350' })
+  assert.deepEqual(descriptor.dualSim, dualSim)
+  assert.deepEqual(createInstallationRequest(patch).dualSim, dualSim)
+})
+
+test('applies the builtin multi-sim fallback to ini patches from catalogs without the dualSim field', async () => {
+  const { createRecognitionDescriptors } = await import('../src/lib/patch-recognition.mjs')
+  const [a380] = createRecognitionDescriptors([
+    { id: 'inia380-efb-zh-cn', name: 'INIA380', version: '0.1.6', targetKind: 'addon' }
+  ])
+  assert.deepEqual(a380.dualSim, { slots: [] })
+  const [other] = createRecognitionDescriptors([
+    { id: 'some-other-patch', name: 'Other', version: '1.0.0', targetKind: 'addon' }
+  ])
+  assert.equal(other.dualSim, null)
 })
 
 test('creates a cloneable installation request from a reactive-like catalog object', async () => {

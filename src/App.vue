@@ -17,15 +17,15 @@ import { compareVersions } from '../electron/versioning.js'
 import PatchInstallSuccessDialog from './components/PatchInstallSuccessDialog.vue'
 import GsxVersionGuardDialog from './components/GsxVersionGuardDialog.vue'
 import {
-  DUAL_SIM_SLOTS,
   collectInstallTargets,
   describeDualSim,
   isDualSimPatch,
   manualSlotPaths,
+  multiSimSlotsFor,
   resolveSlotTarget
 } from './lib/dual-sim.mjs'
 import { manualTargetHint } from './lib/target-hints.mjs'
-import { AGREEMENT_ACCEPTANCE_VALUE, AGREEMENT_REVISION, AGREEMENT_SECTIONS, AUTHOR_URL, hasAcceptedAgreements } from './lib/agreements.mjs'
+import { AGREEMENT_REVISION, AGREEMENT_SECTIONS, AUTHOR_URL, acceptanceValue, parseAcceptedAgreementRevision } from './lib/agreements.mjs'
 import { PENDING_STORAGE_KEY, createPendingRecord, parsePendingRecord, pendingRecordToReportPayload, serializePendingRecord } from './lib/legal-evidence.mjs'
 
 const ANNOUNCEMENT_POPUP_HISTORY_LIMIT = 50
@@ -71,7 +71,8 @@ const developmentBridge = {
   legal: {
     reportAcceptance: async () => ({ ok: false, reason: 'development' }),
     ensureDeviceId: async () => null,
-    getAgreementText: async () => ({ ok: false, error: 'development' })
+    getAgreementText: async () => ({ ok: false, error: 'development' }),
+    checkAgreementUpdate: async () => ({ ok: false, error: 'development' })
   },
   announcements: {
     list: async () => ({ ok: true, announcements: [] }),
@@ -94,8 +95,13 @@ const detectedTargets = reactive({})
 const operations = reactive({})
 const updateStatus = reactive({ state: 'idle', info: null, progress: null, message: '' })
 const loadingCatalog = ref(false)
-const agreementAccepted = ref(hasAcceptedAgreements(localStorage.getItem('msfs-cat-ch-agreements')))
-const showAgreement = ref(!agreementAccepted.value)
+// 同意状态自 2.1.1 起记录修订号（accepted-<revision>）：首次安装与跨版本升级时
+// 以内置修订版弹窗；此后服务器推送更新的修订版（主进程验签后下发）同样强制重新同意。
+const storedAcceptedRevision = parseAcceptedAgreementRevision(localStorage.getItem('msfs-cat-ch-agreements'))
+const agreementAccepted = ref(storedAcceptedRevision !== null)
+const showAgreement = ref(!agreementAccepted.value || storedAcceptedRevision !== AGREEMENT_REVISION)
+// 服务器推送的更新修订版（{ revision, sections }，正文已在主进程完成签名与哈希校验）
+const remoteAgreement = ref(null)
 // 补丁安装成功提示（含游戏内 hotfix 警告）与 GSX 版本过低拦截弹窗
 const showPatchInstalledNotice = ref(false)
 const showGsxVersionGuard = ref(false)
@@ -103,6 +109,8 @@ const gsxVersionGuardInfo = reactive({ localVersion: '', addonVersion: '' })
 // 协议正文（密文打包方案）：弹窗打开时经主进程联网取钥解密取得，仅保存在内存
 const agreementSections = ref(null)
 const agreementTextsFailed = ref(false)
+const activeAgreementSections = computed(() => remoteAgreement.value?.sections || agreementSections.value)
+const activeAgreementRevision = computed(() => remoteAgreement.value?.revision || AGREEMENT_REVISION)
 const freeNoticeAccepted = ref(localStorage.getItem('msfs-cat-ch-free-notice') === 'acknowledged-v1')
 const showFreeNotice = ref(agreementAccepted.value && !freeNoticeAccepted.value)
 const updateRequired = computed(() => ['available', 'downloading', 'downloaded'].includes(updateStatus.state))
@@ -117,6 +125,7 @@ const hasUnreadAnnouncements = computed(() => announcements.value.some((announce
 const pendingPopupAnnouncements = computed(() => popupAnnouncements.value.filter((announcement) => !shownAnnouncementPopupIds.value.includes(announcement.id)))
 const activePopupAnnouncement = computed(() => {
   if (!agreementAccepted.value || !freeNoticeAccepted.value) return null
+  if (showAgreement.value) return null // 协议重新同意期间不弹公告
   if (updateRequired.value) return null
   return pendingPopupAnnouncements.value[0] || null
 })
@@ -166,7 +175,7 @@ async function reconcileInstallations(patches = catalogState.catalog?.patches ||
   const targetPaths = Object.fromEntries(descriptors.map((patch) => [
     patch.id,
     isDualSimPatch(patch)
-      ? Object.fromEntries(DUAL_SIM_SLOTS
+      ? Object.fromEntries(multiSimSlotsFor(patch)
         .map(({ id }) => [id, resolveSlotTargetFor(patch, id)])
         .filter(([, value]) => value))
       : targets[patch.id] || installations[patch.id]?.targetPath || detectedTargets[patch.id]?.targetPath || null
@@ -193,7 +202,7 @@ async function refreshCatalog() {
 
 async function chooseTarget(patch, slot = null) {
   const slotMeta = isDualSimPatch(patch)
-    ? DUAL_SIM_SLOTS.find(({ id }) => id === (slot || 'msfs2024')) || null
+    ? multiSimSlotsFor(patch).find(({ id }) => id === (slot || multiSimSlotsFor(patch)[0]?.id)) || null
     : null
   const selected = await bridge.patches.chooseTarget({
     title: slotMeta ? slotMeta.hint : manualTargetHint(patch),
@@ -245,22 +254,44 @@ async function loadAgreementTexts() {
 }
 
 watch(showAgreement, (open) => {
-  if (open) void loadAgreementTexts()
+  if (open && !remoteAgreement.value) void loadAgreementTexts()
 }, { immediate: true })
 
+// 服务器推送的协议更新检查：启动后延迟执行，避免与启动期的目录/更新请求争抢。
+// 有新修订版时（正文已在主进程完成签名验证与哈希校验）强制重新同意；
+// 网络失败保持现状继续可用，不阻塞使用。
+async function checkForAgreementUpdate() {
+  const accepted = parseAcceptedAgreementRevision(localStorage.getItem('msfs-cat-ch-agreements'))
+  if (!accepted) return // 首次同意尚未完成，先完成内置修订版的同意
+  try {
+    const result = await bridge.legal.checkAgreementUpdate({ acceptedRevision: accepted })
+    if (result?.ok && !result.upToDate) {
+      const sections = mergeAgreementSections(result.agreements || [])
+      if (!sections) return
+      remoteAgreement.value = { revision: result.revision, sections }
+      agreementTextsFailed.value = false
+      showAgreement.value = true
+    }
+  } catch {
+    // 服务器不可达时保持已同意状态
+  }
+}
+
 function acceptAgreements() {
-  const sections = agreementSections.value
+  const sections = activeAgreementSections.value
+  const revision = activeAgreementRevision.value
   // 未取得完整协议全文（解密失败/离线）时绝不允许同意
   if (!sections || sections.length !== AGREEMENT_SECTIONS.length) return
   const previous = localStorage.getItem('msfs-cat-ch-agreements')
-  localStorage.setItem('msfs-cat-ch-agreements', AGREEMENT_ACCEPTANCE_VALUE)
+  localStorage.setItem('msfs-cat-ch-agreements', acceptanceValue(revision))
   agreementAccepted.value = true
   showAgreement.value = false
+  remoteAgreement.value = null
   showFreeNotice.value = true
-  if (hasAcceptedAgreements(previous)) return // 同一修订版内重复确认，无需再次存证
+  if (previous === acceptanceValue(revision)) return // 同一修订版内重复确认，无需再次存证
   // 协议同意存证：先落本地待补报记录，再匿名上报服务器（fire-and-forget）
   const record = createPendingRecord({
-    revision: AGREEMENT_REVISION,
+    revision,
     userAgreement: sections.find((section) => section.id === 'user')?.body || '',
     disclaimer: sections.find((section) => section.id === 'notice')?.body || ''
   })
@@ -371,7 +402,7 @@ async function installPatch(patch) {
       phase: 'error',
       percent: 0,
       message: isDualSimPatch(patch)
-        ? '未找到 MSFS 2020/2024 的 A350 社区目录，请在设置中手动选择'
+        ? '未检测到 MSFS 2020/2024 的社区目录，请在设置中手动选择'
         : '请先在设置中选择安装目录'
     }
     return
@@ -401,7 +432,7 @@ async function importPatch(patch) {
       phase: 'error',
       percent: 0,
       message: isDualSimPatch(patch)
-        ? '未找到 MSFS 2020/2024 的 A350 社区目录，请在设置中手动选择'
+        ? '未检测到 MSFS 2020/2024 的社区目录，请在设置中手动选择'
         : '请先在设置中选择安装目录'
     }
     return
@@ -462,6 +493,7 @@ onMounted(async () => {
   await refreshCatalog()
   void loadAnnouncements()
   void retryPendingAgreementEvidence() // 离线时未报成的协议同意存证自动补报
+  setTimeout(() => { void checkForAgreementUpdate() }, 4000) // 延迟检查服务器推送的协议更新
 })
 
 onBeforeUnmount(() => {
@@ -576,8 +608,9 @@ onBeforeUnmount(() => {
     </div>
     <AgreementDialog
       v-if="showAgreement"
-      :required="!agreementAccepted"
-      :sections="agreementSections"
+      :required="!agreementAccepted || !!remoteAgreement"
+      :revision="activeAgreementRevision"
+      :sections="activeAgreementSections"
       :load-failed="agreementTextsFailed"
       @retry="loadAgreementTexts"
       @accept="acceptAgreements"

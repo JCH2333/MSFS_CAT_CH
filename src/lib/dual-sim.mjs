@@ -1,31 +1,42 @@
-// iniBuilds A350 汉化双模拟器安装模型：
-// 同一补丁在 MSFS 2024 与 MSFS 2020 的社区文件夹各有一个安装目标（槽位），
-// 一键安装对两个槽位同时进行，缺失的槽位直接跳过。
+// iniBuilds 机模汉化多模拟器安装模型：
+// 补丁安装到每个已安装模拟器的社区文件夹根目录（ZIP 内自带补丁包目录前缀），
+// 一键安装对两个槽位同时进行，缺失的模拟器直接跳过。
+// 多模拟器安装由服务端目录的 dualSim 字段开启；内置表仅用于兼容未携带该字段的旧目录。
 
-export const A350_MARKER_FOLDER = 'inibuilds-aircraft-a350'
-
-export const DUAL_SIM_PATCH_IDS = new Set(['ini350-efb-zh-cn'])
+export const BUILTIN_MULTI_SIM_PATCH_IDS = new Set(['ini350-efb-zh-cn', 'inia380-efb-zh-cn'])
 
 export const DUAL_SIM_SLOTS = [
   {
     id: 'msfs2024',
     label: 'MSFS 2024',
-    hint: '请选择 MSFS 2024 的社区文件夹（Community 或 Community2024，其中应能看到 inibuilds-aircraft-a350 文件夹）'
+    hint: '请选择 MSFS 2024 的社区文件夹（Community 或 Community2024）'
   },
   {
     id: 'msfs2020',
     label: 'MSFS 2020',
-    hint: '请选择 MSFS 2020 的社区文件夹（Community，其中应能看到 inibuilds-aircraft-a350 文件夹）'
+    hint: '请选择 MSFS 2020 的社区文件夹（Community）'
   }
 ]
 
 export function isDualSimPatch(patch) {
-  return DUAL_SIM_PATCH_IDS.has(patch?.id)
+  return Boolean(patch?.dualSim) || BUILTIN_MULTI_SIM_PATCH_IDS.has(patch?.id)
 }
 
-// 交给主进程的定位标记：检测与安装校验都以"A350 本体包目录"为准
+// 交给主进程的多模拟器标记：透传服务端配置（{slots:[...]}）；
+// 旧目录无该字段时按内置回退表开启默认双槽位
 export function describeDualSim(patch) {
-  return isDualSimPatch(patch) ? { markerFolder: A350_MARKER_FOLDER } : null
+  if (patch?.dualSim) return patch.dualSim
+  if (BUILTIN_MULTI_SIM_PATCH_IDS.has(patch?.id)) return { slots: [] }
+  return null
+}
+
+// 按服务端配置解析该补丁的模拟器槽位（slots 为空或缺省时默认双槽位）
+export function multiSimSlotsFor(patch) {
+  const configured = Array.isArray(patch?.dualSim?.slots) ? patch.dualSim.slots : []
+  const ids = [...new Set(configured
+    .map((entry) => (typeof entry?.slot === 'string' ? entry.slot.trim().toLowerCase() : ''))
+    .filter((id) => DUAL_SIM_SLOTS.some((option) => option.id === id)))]
+  return ids.length ? DUAL_SIM_SLOTS.filter((option) => ids.includes(option.id)) : DUAL_SIM_SLOTS
 }
 
 function slotEntry(slots, slotId) {
@@ -67,7 +78,7 @@ export function collectInstallTargets(state, patch) {
       || null
     return legacy ? [{ slot: null, path: legacy }] : []
   }
-  return DUAL_SIM_SLOTS
+  return multiSimSlotsFor(patch)
     .map(({ id }) => ({ slot: id, path: resolveSlotTarget(state, patch, id) }))
     .filter((entry) => entry.path)
 }

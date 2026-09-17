@@ -1,6 +1,10 @@
+import { isDualSimPatch } from './dual-sim.mjs'
+
+// 识别/安装请求与目标检测共用同一套多模拟器判定（服务端 dualSim 字段 > 内置回退表），
+// 保证对未下发 dualSim 的旧目录仍能做多槽位社区安装。
 function describeDualSim(patch) {
-  const marker = patch?.dualSim?.markerFolder
-  return typeof marker === 'string' && marker.trim() ? { markerFolder: marker.trim() } : null
+  if (patch?.dualSim) return patch.dualSim
+  return isDualSimPatch(patch) ? { slots: [] } : null
 }
 
 export function createRecognitionDescriptors(patches) {

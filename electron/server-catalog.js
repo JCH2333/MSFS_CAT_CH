@@ -6,7 +6,6 @@ const { isSemanticVersion } = require('./versioning')
 const CATALOG_MANIFEST_PATH = '/api/catalog/manifest.json'
 const CATALOG_URL = buildServerUrl(CATALOG_MANIFEST_PATH)
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
-const DISPLAYED_PATCH_IDS = new Set(['gsx-pro-zh-cn', 'gsx-pro-zh-cn-voice', 'ini350-efb-zh-cn'])
 const TARGET_KINDS = new Set(['addon', 'gsx-audio', 'gsx-combined'])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
 const CATALOG_TIMEOUT_MS = 5000
@@ -105,6 +104,34 @@ function validateFingerprint(input, patchId) {
   })
 }
 
+const MULTI_SIM_SLOTS = new Set(['msfs2024', 'msfs2020'])
+
+function validateDualSim(value, patchId) {
+  if (value === undefined || value === null) return null
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`补丁 ${patchId} dualSim 必须是对象`)
+  }
+  const rawSlots = Array.isArray(value.slots) ? value.slots : []
+  const slots = []
+  const seen = new Set()
+  for (const entry of rawSlots) {
+    const slot = typeof entry?.slot === 'string' ? entry.slot.trim().toLowerCase() : ''
+    if (!MULTI_SIM_SLOTS.has(slot) || seen.has(slot)) continue
+    seen.add(slot)
+    const normalized = { slot }
+    const folder = typeof entry?.communityFolder === 'string' ? entry.communityFolder.trim() : ''
+    if (folder) {
+      if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(folder)) {
+        throw new Error(`补丁 ${patchId} dualSim.slots[${slots.length}].communityFolder 格式无效`)
+      }
+      normalized.communityFolder = folder
+    }
+    slots.push(normalized)
+  }
+  // slots 为空表示客户端按默认双槽位处理
+  return { slots }
+}
+
 function validateCatalog(input) {
   if (!input || typeof input !== 'object') {
     throw new Error('补丁目录不是有效对象')
@@ -160,13 +187,14 @@ function validateCatalog(input) {
         ? [...new Set(patch.targetFolders.filter((folder) => typeof folder === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(folder.trim())).map((folder) => folder.trim()))]
         : [],
       targetKind: TARGET_KINDS.has(patch.targetKind) ? patch.targetKind : 'addon',
+      dualSim: validateDualSim(patch.dualSim, id),
       releaseNotes: Array.isArray(patch.releaseNotes)
         ? patch.releaseNotes.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
         : [],
       fingerprint: validateFingerprint(patch.fingerprint, id),
       package: status === 'published' ? validatePackage(patch.package, id) : null
     }
-  }).filter((patch) => DISPLAYED_PATCH_IDS.has(patch.id))
+  })
 
   return {
     schemaVersion: 1,
@@ -234,7 +262,6 @@ module.exports = {
   CATALOG_MANIFEST_PATH,
   CATALOG_TIMEOUT_MS,
   CATALOG_URL,
-  DISPLAYED_PATCH_IDS,
   ServerCatalog,
   validateCatalog
 }

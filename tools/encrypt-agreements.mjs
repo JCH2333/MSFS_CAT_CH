@@ -11,10 +11,15 @@
 //    PINNED_AGREEMENT_TEXT_SHA256，否则立即报错退出（防止口径漂移）；
 // 2. 用 AES-256-GCM 加密 JSON 明文 [{id:'user',body},{id:'notice',body}]，
 //    auth tag（128 bit）拼在密文尾部；
-// 3. 写出 electron/resources/agreements-enc.json：
-//    { revision, algorithm:'aes-256-gcm', nonce:b64, payload:b64, sha256 }
+// 3. 用开发机 .local-keys/agreements-signing.json 的 ed25519 私钥对
+//    `legal-agreement-v1:<revision>:<sha256>` 签名；该私钥绝不入库，
+//    客户端用 electron/agreements-secure.js 内嵌公钥验签（服务器推送机制，
+//    使今后协议换版无需发布新客户端）；
+// 4. 写出 electron/resources/agreements-enc.json：
+//    { revision, algorithm:'aes-256-gcm', nonce:b64, payload:b64, sha256,
+//      signatureAlgorithm:'ed25519', signature:b64 }
 //    （密文不含密钥，可随仓库提交并进入安装包）；
-// 4. 把密钥以 `TEXT_KEY=<base64>` 行打印到 stdout（进度信息走 stderr），
+// 5. 把密钥以 `TEXT_KEY=<base64>` 行打印到 stdout（进度信息走 stderr），
 //    供写入分发服务器 application.yml 的 app.legal.text-keys；密钥只存服务器，
 //    绝不进入客户端仓库。
 //
@@ -22,8 +27,8 @@
 // 保证旧客户端不被破坏、新客户端开箱可用。
 
 import process from 'node:process'
-import { createCipheriv, createHash, randomBytes } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { createCipheriv, createHash, createPrivateKey, createPublicKey, generateKeyPairSync, randomBytes, sign } from 'node:crypto'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AGREEMENT_REVISION } from '../src/lib/agreements.mjs'
@@ -34,9 +39,13 @@ const NONCE_BYTES = 12
 const ALGORITHM = 'aes-256-gcm'
 const BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/
 const REVISION_PATTERN = /^[A-Za-z0-9._-]{1,64}$/
+const SIGNATURE_ALGORITHM = 'ed25519'
+const SIGNATURE_MESSAGE_PREFIX = 'legal-agreement-v1'
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url))
 const OUTPUT_PATH = path.join(TOOL_DIR, '..', 'electron', 'resources', 'agreements-enc.json')
+const CLIENT_SECURE_PATH = path.join(TOOL_DIR, '..', 'electron', 'agreements-secure.js')
+const SIGNING_KEY_PATH = path.join(TOOL_DIR, '..', '.local-keys', 'agreements-signing.json')
 
 function info(message) {
   process.stderr.write(`${message}\n`)
@@ -59,6 +68,59 @@ function decodeStrictBase64(value) {
   if (typeof value !== 'string' || value === '' || value.length % 4 !== 0) return null
   if (!BASE64_PATTERN.test(value)) return null
   return Buffer.from(value, 'base64')
+}
+
+// 加载（或首次生成）作者协议签名密钥对；私钥只存 .local-keys/（已 gitignore）。
+async function loadSigningKeys() {
+  let stored = null
+  try {
+    stored = JSON.parse(await readFile(SIGNING_KEY_PATH, 'utf8'))
+  } catch {
+    // 首次运行生成新密钥对
+  }
+  if (stored?.algorithm === SIGNATURE_ALGORITHM && stored?.privateKeyPem && stored?.publicKeyPem) {
+    info('使用既有协议签名密钥（.local-keys/agreements-signing.json）。')
+    return stored
+  }
+  const { publicKey, privateKey } = generateKeyPairSync(SIGNATURE_ALGORITHM)
+  stored = {
+    algorithm: SIGNATURE_ALGORITHM,
+    publicKeyPem: publicKey.export({ type: 'spki', format: 'pem' }).trim(),
+    privateKeyPem: privateKey.export({ type: 'pkcs8', format: 'pem' }).trim(),
+    createdAt: new Date().toISOString()
+  }
+  await mkdir(path.dirname(SIGNING_KEY_PATH), { recursive: true })
+  await writeFile(SIGNING_KEY_PATH, `${JSON.stringify(stored, null, 2)}\n`, { mode: 0o600 })
+  info(`已生成新的协议签名密钥对，私钥写入 ${SIGNING_KEY_PATH}（请确认其处于 gitignore 保护内）。`)
+  return stored
+}
+
+// 强制校验客户端内嵌公钥与本工具使用的公钥一致，防止双方漂移导致验签全部失败。
+async function assertClientPublicKeyMatches(publicKeyPem) {
+  let source
+  try {
+    source = await readFile(CLIENT_SECURE_PATH, 'utf8')
+  } catch {
+    fail(`无法读取 ${CLIENT_SECURE_PATH}`)
+  }
+  const match = source.match(/const AGREEMENT_SIGNING_PUBLIC_KEY = \[\r?\n((?:.*\r?\n)+?)\].join\('\\n'\)/)
+  if (!match) fail('electron/agreements-secure.js 缺少 AGREEMENT_SIGNING_PUBLIC_KEY 常量')
+  const embedded = match[1]
+    .split('\n')
+    .map((line) => line.trim().replace(/^'|',?$/g, ''))
+    .filter((line) => line.length > 0)
+    .join('\n')
+  const normalized = `${embedded}\n`
+  const expected = `${publicKeyPem}\n`
+  if (normalized !== expected) {
+    fail([
+      '客户端内嵌签名公钥与签名私钥不配对。',
+      `客户端公钥指纹: ${createHash('sha256').update(normalized, 'utf8').digest('hex').slice(0, 16)}`,
+      `签名公钥指纹:   ${createHash('sha256').update(expected, 'utf8').digest('hex').slice(0, 16)}`,
+      '请把 .local-keys/agreements-signing.json 的 publicKeyPem 同步进 electron/agreements-secure.js。'
+    ].join('\n'))
+  }
+  info('客户端内嵌签名公钥与签名私钥配对一致。')
 }
 
 const keyArgument = parseKeyArgument(process.argv)
@@ -94,8 +156,12 @@ if (digest !== PINNED_AGREEMENT_TEXT_SHA256) {
     '若为有意的正文换版：递增 AGREEMENT_REVISION，并同步更新 tools/agreements-texts.mjs、',
     'tools/encrypt-agreements.mjs（本文件）、electron/agreements-secure.js 三处 pinned SHA-256，',
     '重新生成密文、更换服务器密钥并发布新客户端。'
-  ].join(''))
+  ].join('\n'))
 }
+
+const signingKeys = await loadSigningKeys()
+await assertClientPublicKeyMatches(signingKeys.publicKeyPem)
+const signature = sign(null, Buffer.from(`${SIGNATURE_MESSAGE_PREFIX}:${AGREEMENT_REVISION}:${digest}`, 'utf8'), createPrivateKey(signingKeys.privateKeyPem))
 
 const nonce = randomBytes(NONCE_BYTES)
 const cipher = createCipheriv(ALGORITHM, key, nonce)
@@ -107,7 +173,9 @@ const bundle = {
   algorithm: ALGORITHM,
   nonce: nonce.toString('base64'),
   payload: payload.toString('base64'),
-  sha256: digest
+  sha256: digest,
+  signatureAlgorithm: SIGNATURE_ALGORITHM,
+  signature: signature.toString('base64')
 }
 
 await mkdir(path.dirname(OUTPUT_PATH), { recursive: true })

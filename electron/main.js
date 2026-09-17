@@ -6,7 +6,7 @@ const { ServerCatalog } = require('./server-catalog')
 const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements')
 const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence')
-const { getAgreementText } = require('./agreements-secure')
+const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure')
 const { detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
@@ -271,6 +271,8 @@ function registerIpc() {
   })
   // 协议正文安全加载：主进程联网取钥解密内嵌密文，明文只经 IPC 交给渲染层弹窗
   ipcMain.handle('legal:get-agreement-text', () => getAgreementText())
+  // 服务器推送的协议更新检查：比对已同意修订版与服务器最新修订版（含作者签名验证）
+  ipcMain.handle('legal:check-agreement-update', (_event, payload) => checkAgreementUpdate(payload || {}))
 
   ipcMain.handle('gsx:status', () => gsxUpdater.getStatus())
   ipcMain.handle('gsx:update:start', () => runGsxUpdateFlow())

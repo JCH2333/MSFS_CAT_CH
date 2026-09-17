@@ -111,19 +111,19 @@ test('detects the GSX runtime image directory from an Addon Manager installation
   await fs.rm(root, { recursive: true, force: true })
 })
 
-test('detects dual-sim A350 community targets for MSFS 2024 and 2020', async () => {
+test('detects multi-sim community targets for MSFS 2024 and 2020 without any marker folders', async () => {
   const root = await temporaryDirectory('a350-dual-targets-')
   const root2024 = path.join(root, 'packages-2024')
   const root2020 = path.join(root, 'packages-2020')
-  await fs.mkdir(path.join(root2024, 'Community2024', 'inibuilds-aircraft-a350'), { recursive: true })
-  await fs.mkdir(path.join(root2020, 'Community', 'inibuilds-aircraft-a350'), { recursive: true })
+  await fs.mkdir(path.join(root2024, 'Community2024'), { recursive: true })
+  await fs.mkdir(path.join(root2020, 'Community'), { recursive: true })
 
   const targets = await detectPatchTargets([
     {
       id: 'ini350-efb-zh-cn',
       targetKind: 'addon',
       targetFolders: ['zzz-a350-efb-zh-patch'],
-      dualSim: { markerFolder: 'inibuilds-aircraft-a350' }
+      dualSim: {}
     }
   ], {
     packageRoots: [
@@ -142,12 +142,14 @@ test('detects dual-sim A350 community targets for MSFS 2024 and 2020', async () 
   await fs.rm(root, { recursive: true, force: true })
 })
 
-test('dual-sim detection skips a missing simulator instead of failing', async () => {
+test('multi-sim detection falls back to the package root when no community folder exists', async () => {
   const root = await temporaryDirectory('a350-single-target-')
   const root2024 = path.join(root, 'packages-2024')
   const root2020 = path.join(root, 'packages-2020')
-  await fs.mkdir(path.join(root2024, 'Community', 'inibuilds-aircraft-a350'), { recursive: true })
-  await fs.mkdir(path.join(root2020, 'Community', 'some-other-addon'), { recursive: true })
+  await fs.mkdir(path.join(root2024, 'Community'), { recursive: true })
+  // 2020 包根存在但既没有 Community 也没有 Community2024：
+  // 按社区层兜底约定，包根本身作为该槽位的社区目录
+  await fs.mkdir(path.join(root2020), { recursive: true })
 
   const targets = await detectPatchTargets([
     { id: 'ini350-efb-zh-cn', targetKind: 'addon', dualSim: { markerFolder: 'inibuilds-aircraft-a350' } }
@@ -159,26 +161,41 @@ test('dual-sim detection skips a missing simulator instead of failing', async ()
   })
 
   const target = targets['ini350-efb-zh-cn']
-  assert.equal(target.slots.length, 1)
+  assert.equal(target.slots.length, 2)
   assert.equal(target.slots[0].slot, 'msfs2024')
   assert.equal(target.slots[0].targetPath, path.join(root2024, 'Community'))
+  assert.equal(target.slots[1].slot, 'msfs2020')
+  assert.equal(target.slots[1].targetPath, root2020)
   await fs.rm(root, { recursive: true, force: true })
 })
 
-test('dual-sim detection prefers the exact A350 base package over livery-style folders', async () => {
-  const root = await temporaryDirectory('a350-exact-marker-')
-  const packageRoot = path.join(root, 'packages')
-  await fs.mkdir(path.join(packageRoot, 'Community2024', 'inibuilds-aircraft-a350-900-4K'), { recursive: true })
-  await fs.mkdir(path.join(packageRoot, 'Community', 'inibuilds-aircraft-a350'), { recursive: true })
+test('honors the server-configured slot list and community folder for the A380 patch', async () => {
+  const root = await temporaryDirectory('a380-configured-slots-')
+  const root2024 = path.join(root, 'packages-2024')
+  const root2020 = path.join(root, 'packages-2020')
+  // 2024 包根同时存在 Community2024 与 Community：配置指定 Community 时必须优先 Community
+  await fs.mkdir(path.join(root2024, 'Community2024'), { recursive: true })
+  await fs.mkdir(path.join(root2024, 'Community', 'some-other-addon'), { recursive: true })
+  await fs.mkdir(path.join(root2020, 'Community'), { recursive: true })
 
   const targets = await detectPatchTargets([
-    { id: 'ini350-efb-zh-cn', targetKind: 'addon', dualSim: { markerFolder: 'inibuilds-aircraft-a350' } }
+    {
+      id: 'inia380-efb-zh-cn',
+      targetKind: 'addon',
+      dualSim: { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }] }
+    }
   ], {
-    packageRoots: [{ packageRoot, source: 'Steam / MSFS 2024' }]
+    packageRoots: [
+      { packageRoot: root2020, source: 'Steam / MSFS 2020' },
+      { packageRoot: root2024, source: 'Steam / MSFS 2024' }
+    ]
   })
 
-  const target = targets['ini350-efb-zh-cn']
-  assert.equal(target.slots[0].targetPath, path.join(packageRoot, 'Community'))
+  const target = targets['inia380-efb-zh-cn']
+  // ini380 没有社区版 MSFS 2020：服务端只配置了 2024 槽位，2020 即使存在也被跳过
+  assert.equal(target.slots.length, 1)
+  assert.equal(target.slots[0].slot, 'msfs2024')
+  assert.equal(target.slots[0].targetPath, path.join(root2024, 'Community'))
   await fs.rm(root, { recursive: true, force: true })
 })
 

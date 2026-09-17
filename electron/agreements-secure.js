@@ -24,7 +24,20 @@ const REVISION_PATTERN = /^[A-Za-z0-9._-]{1,64}$/
 // 协议全文的 pinned SHA-256（legal-evidence 存证口径：两份全文按 user→notice
 // 顺序单换行拼接后 UTF-8 SHA-256）。协议换版时必须与 tools/agreements-texts.mjs、
 // tools/encrypt-agreements.mjs 同步更换，三方一致由 tests/agreements-secure.test.js 守护。
-const AGREEMENT_TEXT_SHA256 = '4c2dbfac00109f6baa966463e7cb66d666857db61e8e5e75bfa5afe12e24b5e7'
+// 该 pinned 值仅约束随安装包分发的内置密文包；服务器推送的更新修订版由作者
+// ed25519 签名约束（见 AGREEMENT_SIGNING_PUBLIC_KEY 与 verifyBundleSignature）。
+const AGREEMENT_TEXT_SHA256 = '8800950befa1331745521fee69eb32f456d726c5d91f6a72af34aa380f7a2200'
+
+// 作者协议签名公钥（ed25519，SPKI PEM）。私钥只存开发机 .local-keys/（不入库），
+// 构建工具 tools/encrypt-agreements.mjs 用私钥对每个修订版签名，客户端用本公钥验证。
+// 有了这把公钥，今后协议换版只更新服务器归档与密文包，客户端无需发版即可强制重新同意；
+// 传输通道即使是 HTTP，伪造的协议正文也无法通过验签。
+const AGREEMENT_SIGNING_PUBLIC_KEY = [
+  '-----BEGIN PUBLIC KEY-----',
+  'MCowBQYDK2VwAyEA3JDAMPd3OjC70fpuVp+Nb3cWSjwX0YMxGoBenOJ7os0=',
+  '-----END PUBLIC KEY-----',
+  ''
+].join('\n')
 
 // 解密明文的 JSON 结构约定：[{id:'user',body},{id:'notice',body}]，顺序与存证口径一致
 const AGREEMENT_IDS = ['user', 'notice']
@@ -171,18 +184,133 @@ function clearAgreementTextCache() {
   cachedAgreements = null
 }
 
+// ---------- 服务器推送的更新修订版（2.1.1 起） ----------
+//
+// 设计：内置密文包只覆盖安装时刻的修订版；此后协议换版只更新服务器
+// （GET /api/legal/latest-revision 声明最新修订版与全文哈希，GET /api/legal/bundle/<revision>
+// 下发签名密文包，密钥仍走 /api/legal/text-key/<revision>）。客户端启动后比对
+// 已同意修订版与服务器最新修订版，不一致时拉取新正文并强制重新同意。
+// 信任锚是 AGREEMENT_SIGNING_PUBLIC_KEY：签名覆盖 revision 与全文 SHA-256，
+// HTTP 传输被劫持也无法伪造协议正文；验签失败一律拒绝，绝不展示未签名正文。
+
+const LATEST_REVISION_ENDPOINT_PATH = '/api/legal/latest-revision'
+const BUNDLE_ENDPOINT_PATH = '/api/legal/bundle'
+const SIGNATURE_ALGORITHM = 'ed25519'
+const SIGNATURE_MESSAGE_PREFIX = 'legal-agreement-v1'
+
+// 验证服务器密文包的作者签名；结构非法、缺签名或验签失败一律 false。
+function verifyBundleSignature(bundle, publicKey = AGREEMENT_SIGNING_PUBLIC_KEY) {
+  try {
+    if (!bundle || typeof bundle !== 'object') return false
+    if (typeof bundle.revision !== 'string' || !REVISION_PATTERN.test(bundle.revision)) return false
+    if (typeof bundle.sha256 !== 'string' || !SHA256_HEX_PATTERN.test(bundle.sha256)) return false
+    if (bundle.signatureAlgorithm !== SIGNATURE_ALGORITHM) return false
+    const signature = decodeBase64Field(bundle.signature)
+    if (!signature) return false
+    const message = Buffer.from(`${SIGNATURE_MESSAGE_PREFIX}:${bundle.revision}:${bundle.sha256}`, 'utf8')
+    return crypto.verify(null, message, publicKey, signature)
+  } catch {
+    return false
+  }
+}
+
+// 服务器密文包 = 内置包同样的结构校验 + 必须通过作者签名验证。
+// signingPublicKey 仅供测试注入；生产路径一律使用内嵌公钥。
+function validateSignedBundle(bundle, signingPublicKey = AGREEMENT_SIGNING_PUBLIC_KEY) {
+  const parsed = validateEncryptedBundle(bundle)
+  if (!parsed || !verifyBundleSignature(bundle, signingPublicKey)) return null
+  return parsed
+}
+
+async function fetchServerJson(fetchImpl, path) {
+  let response
+  try {
+    response = await fetchImpl(buildServerUrl(path))
+  } catch {
+    return { error: 'network-error' }
+  }
+  if (!response || response.status !== 200) return { error: `http-${response?.status ?? 'unknown'}` }
+  try {
+    return { body: await response.json() }
+  } catch {
+    return { error: 'bad-json' }
+  }
+}
+
+// 拉取并校验指定修订版的远程正文：签名 → 密钥 → 解密 → 三方哈希一致。
+async function loadRemoteAgreementText({ revision, expectedSha256, signingPublicKey, fetchImpl = globalThis.fetch } = {}) {
+  try {
+    if (typeof fetchImpl !== 'function') return { ok: false, error: 'fetch-unavailable' }
+    if (typeof revision !== 'string' || !REVISION_PATTERN.test(revision)) return { ok: false, error: 'bad-revision' }
+    if (typeof expectedSha256 !== 'string' || !SHA256_HEX_PATTERN.test(expectedSha256)) return { ok: false, error: 'bad-expected-hash' }
+
+    const bundleResult = await fetchServerJson(fetchImpl, `${BUNDLE_ENDPOINT_PATH}/${encodeURIComponent(revision)}`)
+    if (bundleResult.error) return { ok: false, error: bundleResult.error }
+    const parsed = validateSignedBundle(bundleResult.body, signingPublicKey)
+    if (!parsed) return { ok: false, error: 'bad-bundle' }
+    if (parsed.revision !== revision || parsed.sha256 !== expectedSha256) return { ok: false, error: 'revision-mismatch' }
+
+    const keyResult = await fetchServerJson(fetchImpl, `${TEXT_KEY_ENDPOINT_BASE}/${encodeURIComponent(revision)}`)
+    if (keyResult.error) return { ok: false, error: keyResult.error }
+    const keyBody = keyResult.body
+    if (!keyBody || typeof keyBody !== 'object' || keyBody.code !== 200) return { ok: false, error: 'bad-code' }
+    const key = decodeBase64Field(keyBody?.data?.key)
+    if (!key || key.length !== KEY_BYTES) return { ok: false, error: 'bad-key' }
+
+    const decrypted = decryptBundle(parsed, key, expectedSha256)
+    if (!decrypted.ok) return decrypted
+    return { ok: true, revision, agreements: decrypted.agreements, textSha256: expectedSha256 }
+  } catch {
+    return { ok: false, error: 'unexpected-error' }
+  }
+}
+
+/**
+ * 比对已同意修订版与服务器最新修订版；不一致时拉取新正文。
+ * 返回 { ok:true, upToDate:true, revision } 或
+ * { ok:true, upToDate:false, revision, agreements, textSha256 } 或 { ok:false, error }。
+ * 网络失败一律 ok:false，由调用方保持现状继续可用（离线不阻塞）。
+ */
+async function checkAgreementUpdate({ acceptedRevision, signingPublicKey, fetchImpl = globalThis.fetch } = {}) {
+  try {
+    if (typeof fetchImpl !== 'function') return { ok: false, error: 'fetch-unavailable' }
+    if (acceptedRevision != null && (typeof acceptedRevision !== 'string' || !REVISION_PATTERN.test(acceptedRevision))) {
+      return { ok: false, error: 'bad-accepted-revision' }
+    }
+    const latest = await fetchServerJson(fetchImpl, LATEST_REVISION_ENDPOINT_PATH)
+    if (latest.error) return { ok: false, error: latest.error }
+    const body = latest.body
+    if (!body || typeof body !== 'object' || body.code !== 200) return { ok: false, error: 'bad-code' }
+    const revision = body?.data?.revision
+    const agreementSha256 = body?.data?.agreementSha256
+    if (typeof revision !== 'string' || !REVISION_PATTERN.test(revision)) return { ok: false, error: 'bad-revision' }
+    if (acceptedRevision === revision) return { ok: true, upToDate: true, revision }
+    const text = await loadRemoteAgreementText({ revision, expectedSha256: agreementSha256, signingPublicKey, fetchImpl })
+    if (!text.ok) return { ok: false, error: text.error }
+    return { ok: true, upToDate: false, revision, agreements: text.agreements, textSha256: text.textSha256 }
+  } catch {
+    return { ok: false, error: 'unexpected-error' }
+  }
+}
+
 module.exports = {
   AGREEMENT_IDS,
+  AGREEMENT_SIGNING_PUBLIC_KEY,
   AGREEMENT_TEXT_SHA256,
   ALGORITHM,
   AUTH_TAG_BYTES,
   KEY_BYTES,
+  LATEST_REVISION_ENDPOINT_PATH,
   NONCE_BYTES,
+  SIGNATURE_ALGORITHM,
+  SIGNATURE_MESSAGE_PREFIX,
   TEXT_KEY_ENDPOINT_BASE,
+  checkAgreementUpdate,
   clearAgreementTextCache,
   decodeBase64Field,
   getAgreementText,
   joinAgreementHash,
   loadEmbeddedBundle,
-  validateEncryptedBundle
+  validateEncryptedBundle,
+  verifyBundleSignature
 }

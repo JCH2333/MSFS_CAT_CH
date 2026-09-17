@@ -1,0 +1,11 @@
+# GSX 更新看门狗 SMTP 配置（复制为同目录 mail.ini 并填写；mail.ini 勿提交仓库）
+# QQ 邮箱：设置 → 账户 → 开启 SMTP 服务 → 生成授权码，host 用 smtp.qq.com
+# 163 邮箱：设置 → POP3/SMTP → 开启并获取授权码，host 用 smtp.163.com
+# 端口 465 走 SSL（推荐，阿里云默认放行），587 走 STARTTLS
+[smtp]
+host = smtp.qq.com
+port = 465
+user = 请填写发件邮箱
+password = 请填写SMTP授权码
+from = 请填写发件邮箱
+to = 请填写收件邮箱

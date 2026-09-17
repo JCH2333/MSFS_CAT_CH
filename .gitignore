@@ -72,3 +72,11 @@ tools/gsx-image-localizer/output/
 tools/gsx-image-localizer/cache/
 tools/gsx-image-localizer/__pycache__/
 /分流包示例/
+
+# 本地签名密钥（协议服务端推送机制的作者私钥，绝不提交）
+.local-keys/
+
+# 本地工作目录与本地会话文件（不入库）
+/微软模拟飞行插件汉化项目/
+/.zcode/
+/tools/a380-efb/

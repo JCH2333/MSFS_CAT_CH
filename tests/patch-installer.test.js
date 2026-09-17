@@ -704,20 +704,17 @@ test('normalizes multi-target install paths and drops duplicate directories', ()
   assert.deepEqual(list[2], { slot: null, targetPath: path.resolve('C:/c') })
 })
 
-test('rejects a dual-sim target folder that does not contain the A350 base package', async () => {
+test('accepts any existing community folder as a multi-sim target without checking the aircraft', async () => {
   const root = await temporaryDirectory('a350-target-validation-')
-  const good = path.join(root, 'Community2024')
-  const bad = path.join(root, 'somewhere-else')
-  await fs.mkdir(path.join(good, 'inibuilds-aircraft-a350'), { recursive: true })
-  await fs.mkdir(bad, { recursive: true })
+  const community = path.join(root, 'Community2024')
+  const arbitrary = path.join(root, 'somewhere-else')
+  await fs.mkdir(community, { recursive: true })
+  await fs.mkdir(arbitrary, { recursive: true })
 
-  const patch = { targetKind: 'addon', targetFolders: ['zzz-a350-efb-zh-patch'], dualSim: { markerFolder: 'inibuilds-aircraft-a350' } }
-  await assert.rejects(validateInstallationTarget(patch, bad), /inibuilds-aircraft-a350/)
-  await assert.doesNotReject(validateInstallationTarget(patch, good))
-  // 飞机被移走但本补丁目录仍在（重装/更新场景）时同样放行
-  const patchOnly = path.join(root, 'patch-only')
-  await fs.mkdir(path.join(patchOnly, 'zzz-a350-efb-zh-patch'), { recursive: true })
-  await assert.doesNotReject(validateInstallationTarget(patch, patchOnly))
+  const patch = { targetKind: 'addon', targetFolders: ['zzz-a350-efb-zh-patch'], dualSim: { mode: 'community' } }
+  // 多模拟器补丁不再检测机模目录：任意已存在的目录都可作为社区根目录目标
+  await assert.doesNotReject(validateInstallationTarget(patch, community))
+  await assert.doesNotReject(validateInstallationTarget(patch, arbitrary))
   await fs.rm(root, { recursive: true, force: true })
 })
 

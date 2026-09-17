@@ -58,45 +58,47 @@ function classifySimSlot(source) {
   return SIM_SLOT_RULES.find(({ pattern }) => pattern.test(source || ''))?.slot || null
 }
 
-function dualSimMarkerFolder(patch) {
-  const marker = patch?.dualSim?.markerFolder
-  return typeof marker === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(marker.trim())
-    ? marker.trim()
-    : null
+function dualSimEnabled(patch) {
+  return Boolean(patch?.dualSim)
 }
 
-function entryNameMatchesMarker(entryName, markerFolder) {
-  const name = entryName.toLowerCase()
-  const marker = markerFolder.toLowerCase()
-  // 精确命中本体包（inibuilds-aircraft-a350）；前缀命中覆盖涂装包命名（inibuilds-aircraft-a350-900-…）
-  return name === marker || name.startsWith(`${marker}-`)
+// 各槽位的惯例社区目录名（配置目录缺失时按此顺序回退，最后回退到包根本身）
+const SLOT_COMMUNITY_FALLBACKS = {
+  msfs2024: ['Community2024', 'Community'],
+  msfs2020: ['Community']
 }
 
-async function findMarkerCommunityRoot(root, markerFolder) {
-  let fallback = null
-  for (const communityRoot of communityRoots(root.packageRoot)) {
-    if (!await isDirectory(communityRoot)) continue
-    let entries
-    try {
-      entries = await fs.readdir(communityRoot, { withFileTypes: true })
-    } catch {
-      continue
-    }
-    let exact = false
-    let prefixed = false
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-      if (!entryNameMatchesMarker(entry.name, markerFolder)) continue
-      if (entry.name.toLowerCase() === markerFolder.toLowerCase()) {
-        exact = true
-        break
-      }
-      prefixed = true
-    }
-    if (exact) return { targetPath: communityRoot, source: root.source }
-    if (prefixed && !fallback) fallback = { targetPath: communityRoot, source: root.source }
+// 服务端 dualSim.slots 配置：[{slot, communityFolder?}]；空/缺省 = 默认双槽位
+function configuredMultiSimSlots(patch) {
+  const raw = Array.isArray(patch?.dualSim?.slots) ? patch.dualSim.slots : []
+  const seen = new Set()
+  const slots = []
+  for (const entry of raw) {
+    const slot = typeof entry?.slot === 'string' ? entry.slot.trim().toLowerCase() : ''
+    if (!Object.prototype.hasOwnProperty.call(SLOT_COMMUNITY_FALLBACKS, slot) || seen.has(slot)) continue
+    seen.add(slot)
+    const folder = typeof entry?.communityFolder === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(entry.communityFolder.trim())
+      ? entry.communityFolder.trim()
+      : null
+    slots.push({ slot, communityFolder: folder })
   }
-  return fallback
+  if (!slots.length) {
+    slots.push({ slot: 'msfs2024', communityFolder: null }, { slot: 'msfs2020', communityFolder: null })
+  }
+  return slots
+}
+
+async function findConfiguredCommunityRoot(root, slot, communityFolder) {
+  const candidates = []
+  if (communityFolder) candidates.push(path.join(root.packageRoot, communityFolder))
+  for (const name of SLOT_COMMUNITY_FALLBACKS[slot] || []) {
+    candidates.push(path.join(root.packageRoot, name))
+  }
+  candidates.push(path.resolve(root.packageRoot))
+  for (const candidate of candidates) {
+    if (await isDirectory(candidate)) return { targetPath: candidate, source: root.source }
+  }
+  return null
 }
 
 async function configuredRoots({ appData, localAppData, configLocations }) {
@@ -288,18 +290,17 @@ async function detectPatchTargets(patches, options = {}) {
       continue
     }
 
-    // 双版本补丁（如 iniBuilds A350 汉化）：按模拟器槽位分别定位含标记包的社区目录
-    const markerFolder = dualSimMarkerFolder(patch)
-    if (patch?.id && markerFolder) {
+    // 多模拟器补丁（iniBuilds 机模汉化）：按服务端配置的槽位与社区子文件夹定位，
+    // 不再检测机模目录——补丁包直接放入社区根目录（ZIP 内自带包目录前缀）
+    if (patch?.id && dualSimEnabled(patch)) {
       const slots = []
-      const seenSlots = new Set()
-      for (const root of roots) {
-        const slot = classifySimSlot(root?.source)
-        if (!slot || seenSlots.has(slot)) continue
-        const found = await findMarkerCommunityRoot(root, markerFolder)
-        if (!found) continue
-        seenSlots.add(slot)
-        slots.push({ slot, ...found })
+      for (const configured of configuredMultiSimSlots(patch)) {
+        for (const root of roots) {
+          if (classifySimSlot(root?.source) !== configured.slot) continue
+          const found = await findConfiguredCommunityRoot(root, configured.slot, configured.communityFolder)
+          if (found) slots.push({ slot: configured.slot, ...found })
+          break
+        }
       }
       slots.sort((a, b) => (SLOT_ORDER[a.slot] ?? 9) - (SLOT_ORDER[b.slot] ?? 9))
       if (slots.length) {

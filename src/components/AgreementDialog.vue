@@ -8,7 +8,9 @@ import { AGREEMENT_REVISION, AUTHOR_NAME } from '../lib/agreements.mjs'
 const props = defineProps({
   required: { type: Boolean, default: false },
   sections: { type: Array, default: null },
-  loadFailed: { type: Boolean, default: false }
+  loadFailed: { type: Boolean, default: false },
+  // 服务器推送的更新修订版会传入其修订号；缺省回退到内置修订号
+  revision: { type: String, default: '' }
 })
 defineEmits(['accept', 'decline', 'close', 'retry'])
 
@@ -34,7 +36,7 @@ watch(visibleSections, (sections) => {
         <div><p class="eyebrow">FREE SOFTWARE NOTICE</p><h2 id="agreement-title">使用前请阅读</h2></div>
         <AlertTriangle :size="22" />
       </div>
-      <p class="agreement-lead">本软件完全免费。作者：{{ AUTHOR_NAME }}。协议修订号：{{ AGREEMENT_REVISION }}。请完整阅读并确认两份文件后继续。</p>
+      <p class="agreement-lead">本软件完全免费。作者：{{ AUTHOR_NAME }}。协议修订号：{{ revision || AGREEMENT_REVISION }}。请完整阅读并确认两份文件后继续。</p>
 
       <div v-if="!sections" class="agreement-loading" :class="{ failed: loadFailed }" role="status">
         <template v-if="!loadFailed">
