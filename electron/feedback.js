@@ -79,6 +79,11 @@ async function submitFeedback(payload, { fetchImpl = globalThis.fetch } = {}) {
     return { ok: false, message: '当前环境无法提交反馈' }
   }
 
+  // 可选运行日志（主进程自动附带）：服务端 256KB 上限，超出截尾保留后半
+  const logText = typeof payload?.logText === 'string' && payload.logText.trim()
+    ? payload.logText.slice(-262144)
+    : null
+
   let response
   try {
     response = await fetchImpl(buildServerUrl(FEEDBACK_ENDPOINT_PATH), {
@@ -87,7 +92,8 @@ async function submitFeedback(payload, { fetchImpl = globalThis.fetch } = {}) {
       body: JSON.stringify({
         content: validated.content,
         username: validated.username,
-        images: validated.images
+        images: validated.images,
+        ...(logText ? { logText } : {})
       })
     })
   } catch {

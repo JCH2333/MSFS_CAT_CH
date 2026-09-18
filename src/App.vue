@@ -104,6 +104,8 @@ const showAgreement = ref(!agreementAccepted.value || storedAcceptedRevision !==
 const remoteAgreement = ref(null)
 // 补丁安装成功提示（含游戏内 hotfix 警告）与 GSX 版本不匹配拦截弹窗
 const showPatchInstalledNotice = ref(false)
+// 启动期安装状态链（目录探测/识别/完整性校验）进行中：补丁操作按钮置灰
+const installationStateLoading = ref(false)
 const showGsxVersionGuard = ref(false)
 const gsxVersionGuardInfo = reactive({ localVersion: '', addonVersion: '', variant: 'older' })
 // 协议正文（密文打包方案）：弹窗打开时经主进程联网取钥解密取得，仅保存在内存
@@ -204,12 +206,15 @@ async function refreshCatalog() {
 // 并对 2600+ 语音文件做哈希，串行可达 4 秒以上。后台执行，完成前补丁卡片先呈现，
 // 校验徽章稍后补上；初始化失败不打断界面（安装时的目标探测会再次执行）。
 async function loadInstallationState() {
+  installationStateLoading.value = true
   try {
     await detectTargets(catalogState.catalog?.patches)
     await reconcileInstallations(catalogState.catalog?.patches)
     await loadInstallations()
   } catch {
     // 后台初始化失败保持现状
+  } finally {
+    installationStateLoading.value = false
   }
 }
 
@@ -582,6 +587,7 @@ onBeforeUnmount(() => {
             :detected-targets="detectedTargets"
             :operations="operations"
             :loading="loadingCatalog"
+            :initializing="installationStateLoading"
             @refresh="refreshCatalog"
             @install="installPatch"
             @import="importPatch"

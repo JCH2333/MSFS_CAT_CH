@@ -10,7 +10,9 @@ const props = defineProps({
   progress: { type: Object, default: null },
   detectedTarget: { type: Object, default: null },
   targetReady: { type: Boolean, default: false },
-  busy: { type: Boolean, default: false }
+  busy: { type: Boolean, default: false },
+  // 启动期的目录扫描/完整性校验期间为 true：禁用全部操作按钮，防止状态未就绪时误触
+  initializing: { type: Boolean, default: false }
 })
 
 defineEmits(['install', 'import', 'restore', 'author'])
@@ -100,15 +102,15 @@ const packageSize = computed(() => {
         <span>{{ verificationLabel }} · {{ new Date(installation.installedAt).toLocaleDateString('zh-CN') }}</span>
       </div>
       <div class="action-buttons">
-        <button v-if="installation && installation.source !== 'detected'" class="button button-secondary" type="button" :disabled="busy" @click="$emit('restore', patch)">
+        <button v-if="installation && installation.source !== 'detected'" class="button button-secondary" type="button" :disabled="busy || initializing" @click="$emit('restore', patch)">
           <RotateCcw :size="17" />
           {{ patch.targetKind === 'gsx-audio' ? '还原原始语音' : isGsxCombined ? '还原文字与图片' : '还原' }}
         </button>
-        <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || !published" @click="$emit('install', patch)">
+        <button v-if="needsInstall" class="button button-primary" type="button" :disabled="busy || initializing || !published" @click="$emit('install', patch)">
           <Download :size="17" />
-          {{ installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
+          {{ initializing && !installationCheck ? '正在检查…' : installationCheck?.state !== 'intact' && installation ? '重新安装补丁' : installation ? '更新补丁' : targetReady ? '安装补丁' : '前往设置' }}
         </button>
-        <button v-if="patch.targetKind === 'gsx-audio' && needsInstall" class="button button-secondary" type="button" :disabled="busy || !published" @click="$emit('import', patch)">
+        <button v-if="patch.targetKind === 'gsx-audio' && needsInstall" class="button button-secondary" type="button" :disabled="busy || initializing || !published" @click="$emit('import', patch)">
           <FolderUp :size="17" />
           导入离线包
         </button>

@@ -11,7 +11,9 @@ const props = defineProps({
   targets: { type: Object, required: true },
   detectedTargets: { type: Object, required: true },
   operations: { type: Object, required: true },
-  loading: { type: Boolean, default: false }
+  loading: { type: Boolean, default: false },
+  // 启动期目录扫描/完整性校验进行中：禁用补丁操作按钮
+  initializing: { type: Boolean, default: false }
 })
 
 defineEmits(['refresh', 'install', 'import', 'restore', 'verify', 'author'])
@@ -70,6 +72,7 @@ function patchHasTarget(patch) {
         :detected-target="detectedTargets[patch.id] || null"
         :progress="operations[patch.id] || null"
         :busy="operations[patch.id]?.busy || false"
+        :initializing="initializing"
         @install="$emit('install', patch)"
         @import="$emit('import', patch)"
         @restore="$emit('restore', patch)"

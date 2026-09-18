@@ -7,6 +7,7 @@ const { fetchAnnouncements, fetchPopupAnnouncements } = require('./announcements
 const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPayload } = require('./feedback')
 const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence')
 const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure')
+const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
 const { detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
@@ -15,6 +16,9 @@ const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequir
 
 let mainWindow = null
 let catalog = null
+// 运行日志（安装目录 MSFS_CAT_CH.log）；restoreConsole 还原被镜像的 console
+let logger = null
+let restoreConsole = null
 let installer = null
 let gsxUpdater = null
 let latestUpdateStatus = { state: 'idle' }
@@ -161,7 +165,10 @@ async function startRequiredSoftwareUpdate() {
   }
   try {
     const status = await startRequiredUpdate({ updater: autoUpdater, feed: serverSoftwareFeed(), currentVersion: app.getVersion() })
-    if (status.state === 'current') setUpdateStatus(status)
+    if (status.state === 'current') {
+      setUpdateStatus(status)
+      logger?.line('INFO', 'update', '软件更新检查：已是最新（直连快速预检）')
+    }
     return status
   } catch (error) {
     const status = error instanceof UpdateCheckTimeoutError
@@ -187,9 +194,17 @@ function registerIpc() {
   })
   ipcMain.on('window:close', () => mainWindow?.close())
 
-  ipcMain.handle('catalog:refresh', () => catalog.refresh())
+  ipcMain.handle('catalog:refresh', async () => {
+    const result = await catalog.refresh()
+    logger?.line('INFO', 'catalog', `同步完成：source=${result.source} stale=${result.stale} patches=${result.catalog?.patches?.length ?? 0}${result.error ? ` error=${result.error}` : ''}`)
+    return result
+  })
   ipcMain.handle('patch:list-installations', () => installer.listInstallations())
-  ipcMain.handle('patch:verify-installations', () => installer.verifyInstallations())
+  ipcMain.handle('patch:verify-installations', async () => {
+    const result = await installer.verifyInstallations()
+    logger?.line('INFO', 'patch', '完整性校验：' + Object.entries(result).map(([id, check]) => `${id}=${check.state}(${check.checkedFiles})`).join(', '))
+    return result
+  })
   ipcMain.handle('patch:reconcile-installations', (_event, { patches, targetPaths }) => installer.reconcileInstallations(patches, targetPaths))
   ipcMain.handle('patch:detect-targets', async (_event, patches) => detectPatchTargets(patches, {
     appData: app.getPath('appData'),
@@ -216,7 +231,11 @@ function registerIpc() {
   })
   ipcMain.handle('patch:install', (_event, { patch, targetPath }) => installer.install(patch, targetPath))
   ipcMain.handle('patch:install-from-file', (_event, { patch, targetPath, sourceArchivePath }) => installer.installFromFile(patch, targetPath, sourceArchivePath))
-  ipcMain.handle('patch:restore', (_event, patchId) => installer.restore(patchId))
+  ipcMain.handle('patch:restore', async (_event, patchId) => {
+    const result = await installer.restore(patchId)
+    logger?.line('INFO', 'patch', `还原 ${patchId}: restored=${result.restored} conflicts=${result.conflicts?.length ?? 0}`)
+    return result
+  })
 
   ipcMain.handle('updates:check', () => startRequiredSoftwareUpdate())
   ipcMain.handle('updates:status', () => latestUpdateStatus)
@@ -251,10 +270,15 @@ function registerIpc() {
   ipcMain.handle('feedback:submit', async (_event, payload) => {
     const validated = validateFeedbackPayload(payload)
     if (!validated.ok) return validated
+    // 自动静默附带运行日志尾部（≤256KB）；日志不可用时正常提交
+    const logText = logger ? await logger.readTail() : ''
+    if (logText) logger.line('INFO', 'feedback', `提交反馈，附带运行日志 ${Buffer.byteLength(logText, 'utf8')} 字节`)
+    else logger?.line('WARN', 'feedback', '提交反馈：运行日志不可读，未附带')
     return submitFeedback({
       content: validated.content,
       username: validated.username,
-      images: validated.images
+      images: validated.images,
+      logText
     })
   })
   ipcMain.handle('feedback:query', async (_event, code) => {
@@ -272,9 +296,17 @@ function registerIpc() {
   // 协议正文安全加载：主进程联网取钥解密内嵌密文，明文只经 IPC 交给渲染层弹窗
   ipcMain.handle('legal:get-agreement-text', () => getAgreementText())
   // 服务器推送的协议更新检查：比对已同意修订版与服务器最新修订版（含作者签名验证）
-  ipcMain.handle('legal:check-agreement-update', (_event, payload) => checkAgreementUpdate(payload || {}))
+  ipcMain.handle('legal:check-agreement-update', async (_event, payload) => {
+    const result = await checkAgreementUpdate(payload || {})
+    logger?.line('INFO', 'legal', `协议更新检查：ok=${result?.ok} upToDate=${result?.upToDate} revision=${result?.revision || '-'}${result?.ok ? '' : ` error=${result?.error}`}`)
+    return result
+  })
 
-  ipcMain.handle('gsx:status', () => gsxUpdater.getStatus())
+  ipcMain.handle('gsx:status', async () => {
+    const status = await gsxUpdater.getStatus()
+    logger?.line('INFO', 'gsx', `installed=${status.installed} localVersion=${status.localVersion} latest=${status.latestVersion} updateAvailable=${status.updateAvailable} pending=${status.pending?.length ?? 0} versionMarkerStale=${status.versionMarkerStale === true} source=${status.source}`)
+    return status
+  })
   ipcMain.handle('gsx:update:start', () => runGsxUpdateFlow())
 
   ipcMain.handle('external:open', async (_event, input) => {
@@ -300,16 +332,41 @@ function registerIpc() {
   })
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   const userDataDirectory = app.getPath('userData')
+  // 运行日志：安装目录下单一 log 文件，跨启动追加累计，256KB 上限淘汰最早日志。
+  // 安装目录不可写（极少见）时回退 userData。dev 运行写 userData。
+  const logFilePath = app.isPackaged
+    ? path.join(path.dirname(app.getPath('exe')), 'MSFS_CAT_CH.log')
+    : path.join(userDataDirectory, 'MSFS_CAT_CH.log')
+  logger = new AppLogger({ filePath: logFilePath })
+  const logReady = await logger.init({
+    header: `===== MSFS_CAT_CH v${app.getVersion()} | ${process.platform} | packaged=${app.isPackaged} | 会话开始 =====`
+  })
+  restoreConsole = mirrorConsoleToLogger(logger)
+  process.on('unhandledRejection', (reason) => {
+    logger.line('ERROR', 'unhandledRejection', String(reason instanceof Error ? reason.stack || reason.message : reason))
+  })
+  logger.line('INFO', 'app', `启动：v${app.getVersion()} | 日志${logReady ? '就绪' : '不可用（静默降级）'}：${logFilePath}`)
+
   catalog = new ServerCatalog({ cacheDirectory: path.join(userDataDirectory, 'cache') })
   gsxUpdater = new GsxUpdater({
     userDataDirectory,
-    onProgress: (payload) => send('gsx:progress', payload)
+    onProgress: (payload) => {
+      send('gsx:progress', payload)
+      if (logger && ['complete', 'error', 'component-complete', 'component-skipped'].includes(payload?.phase)) {
+        logger.line(payload.phase === 'error' ? 'ERROR' : 'INFO', 'gsx', `${payload.phase}: ${payload.message || ''}`)
+      }
+    }
   })
   installer = new PatchInstaller({
     userDataDirectory,
-    onProgress: (payload) => send('patch:progress', payload),
+    onProgress: (payload) => {
+      send('patch:progress', payload)
+      if (logger && ['complete', 'error', 'component-complete'].includes(payload?.phase)) {
+        logger.line(payload.phase === 'error' ? 'ERROR' : 'INFO', 'patch', `${payload.patchId || ''} ${payload.phase}: ${payload.message || ''}`)
+      }
+    },
     resolveAdditionalTarget: async (target, { patch, primaryTarget } = {}) => {
       if (target !== 'gsx-runtime-res') throw new Error(`不支持的补丁安装目标：${target}`)
       // 1) 注册表探测（部分机器枚举超时或缺少卸载键，失败后继续回退）
