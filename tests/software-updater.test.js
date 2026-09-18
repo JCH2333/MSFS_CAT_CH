@@ -44,13 +44,13 @@ test('builds a generic server feed only when a server URL is configured', () => 
   })
 })
 
-test('checks the distribution server feed with the system proxy and reports current', async () => {
+test('checks the distribution server feed over a direct connection and reports current', async () => {
   const updater = createUpdater(async () => ({ isUpdateAvailable: false, updateInfo: { version: '2.0.0' } }))
 
   const status = await checkForUpdates({ updater, timeoutMs: 20 })
 
   assert.deepEqual(updater.calls.feeds, [{ provider: 'generic', url: SERVER_SOFTWARE_FEED_URL }])
-  assert.deepEqual(updater.calls.proxies, [{ mode: 'system' }])
+  assert.deepEqual(updater.calls.proxies, [{ mode: 'direct' }])
   assert.deepEqual(status, { state: 'current', info: { version: '2.0.0' } })
 })
 
@@ -91,7 +91,7 @@ test('resets a timed-out server check, closes connections, and raises UpdateChec
   }
   assert.equal(updater.calls.closeAllConnections, 1)
   assert.equal(updater.checkForUpdatesPromise, null)
-  assert.deepEqual(updater.calls.proxies, [{ mode: 'system' }])
+  assert.deepEqual(updater.calls.proxies, [{ mode: 'direct' }])
 })
 
 test('rethrows non-timeout server errors without closing connections', async () => {
@@ -143,4 +143,52 @@ test('keeps the required update flow on current without downloading', async () =
 
 test('retains the 15 second update check timeout', () => {
   assert.equal(UPDATE_CHECK_TIMEOUT_MS, 15000)
+})
+
+test('quick current check short-circuits startup without touching the updater', async () => {
+  const fetchCalls = []
+  const updater = createUpdater(async () => { throw new Error('updater must not run when already current') })
+  updater.downloadUpdate = async () => { throw new Error('must not download') }
+
+  const status = await startRequiredUpdate({
+    updater,
+    currentVersion: '2.1.3',
+    fetchImpl: async (url) => {
+      fetchCalls.push(url)
+      return { ok: true, text: async () => 'version: 2.1.3\npath: MSFS_CAT_CH-Setup-2.1.3.exe' }
+    }
+  })
+
+  assert.deepEqual(fetchCalls, [SERVER_SOFTWARE_FEED_URL + 'latest.yml'])
+  assert.equal(updater.calls.feeds.length, 0, '无更新时不得启动 electron-updater 检查')
+  assert.deepEqual(status, { state: 'current', info: null })
+})
+
+test('falls back to the full updater flow when the quick check finds an update', async () => {
+  const updater = createUpdater(async () => ({ isUpdateAvailable: true, updateInfo: { version: '2.2.0' } }))
+  let downloaded = 0
+  updater.downloadUpdate = async () => { downloaded += 1 }
+
+  const status = await startRequiredUpdate({
+    updater,
+    currentVersion: '2.1.3',
+    fetchImpl: async () => ({ ok: true, text: async () => 'version: 2.2.0' })
+  })
+
+  assert.equal(updater.calls.feeds.length, 1)
+  assert.equal(downloaded, 1)
+  assert.equal(status.state, 'downloading')
+})
+
+test('falls back to the updater check when the quick check cannot reach the server', async () => {
+  const updater = createUpdater(async () => ({ isUpdateAvailable: false, updateInfo: { version: '2.1.3' } }))
+
+  const status = await startRequiredUpdate({
+    updater,
+    currentVersion: '2.1.3',
+    fetchImpl: async () => { throw new Error('offline') }
+  })
+
+  assert.equal(updater.calls.feeds.length, 1, '预检失败必须回退完整检查')
+  assert.equal(status.state, 'current')
 })

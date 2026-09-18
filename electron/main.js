@@ -160,7 +160,7 @@ async function startRequiredSoftwareUpdate() {
     return status
   }
   try {
-    const status = await startRequiredUpdate({ updater: autoUpdater, feed: serverSoftwareFeed() })
+    const status = await startRequiredUpdate({ updater: autoUpdater, feed: serverSoftwareFeed(), currentVersion: app.getVersion() })
     if (status.state === 'current') setUpdateStatus(status)
     return status
   } catch (error) {
