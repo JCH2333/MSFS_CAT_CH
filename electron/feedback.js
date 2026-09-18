@@ -83,6 +83,9 @@ async function submitFeedback(payload, { fetchImpl = globalThis.fetch } = {}) {
   const logText = typeof payload?.logText === 'string' && payload.logText.trim()
     ? payload.logText.slice(-262144)
     : null
+  const gameLogText = typeof payload?.gameLogText === 'string' && payload.gameLogText.trim()
+    ? payload.gameLogText.slice(-262144)
+    : null
 
   let response
   try {
@@ -93,7 +96,8 @@ async function submitFeedback(payload, { fetchImpl = globalThis.fetch } = {}) {
         content: validated.content,
         username: validated.username,
         images: validated.images,
-        ...(logText ? { logText } : {})
+        ...(logText ? { logText } : {}),
+        ...(gameLogText ? { gameLogText } : {})
       })
     })
   } catch {

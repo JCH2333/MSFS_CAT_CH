@@ -126,7 +126,18 @@ function createMsfsLogBridge({
     }
   }
 
-  return { exePath, logsDir, run, status, start, stop, setEnabled, latestFiles, readTextTail }
+  // 最近一次生成的游戏日志文本（崩溃档案比会话日志新时优先崩溃档案）
+  async function readLatestGameLog(maxBytes = 256 * 1024) {
+    const files = await latestFiles()
+    const newest = files.crash && files.session
+      ? (files.crash.mtimeMs >= files.session.mtimeMs ? files.crash : files.session)
+      : (files.crash || files.session)
+    if (!newest) return { text: '', path: '', kind: '' }
+    const text = await readTextTail(newest.path, maxBytes)
+    return { text, path: newest.path, kind: newest === files.crash ? 'crash' : 'session' }
+  }
+
+  return { exePath, logsDir, run, status, start, stop, setEnabled, latestFiles, readTextTail, readLatestGameLog }
 }
 
 module.exports = { DEFAULT_LOGS_DIR, createMsfsLogBridge }

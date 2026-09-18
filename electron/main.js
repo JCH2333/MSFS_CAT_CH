@@ -324,15 +324,19 @@ function registerIpc() {
   ipcMain.handle('feedback:submit', async (_event, payload) => {
     const validated = validateFeedbackPayload(payload)
     if (!validated.ok) return validated
-    // 自动静默附带运行日志尾部（≤256KB）；日志不可用时正常提交
+    // 自动静默附带运行日志尾部（≤256KB）：软件本体日志 + 最近一次生成的游戏日志；
+    // 任一不可用时跳过该项，正常提交
     const logText = logger ? await logger.readTail() : ''
-    if (logText) logger.line('INFO', 'feedback', `提交反馈，附带运行日志 ${Buffer.byteLength(logText, 'utf8')} 字节`)
-    else logger?.line('WARN', 'feedback', '提交反馈：运行日志不可读，未附带')
+    const gameLog = msfsLogBridge ? await msfsLogBridge.readLatestGameLog() : { text: '' }
+    const sizes = [logText, gameLog.text].map((t) => Buffer.byteLength(t || '', 'utf8'))
+    logger?.line('INFO', 'feedback', `提交反馈：本体日志 ${sizes[0]} 字节，游戏日志 ${sizes[1]} 字节`)
+    if (!logText && !gameLog.text) logger?.line('WARN', 'feedback', '提交反馈：两类运行日志均不可读，未附带')
     return submitFeedback({
       content: validated.content,
       username: validated.username,
       images: validated.images,
-      logText
+      logText,
+      gameLogText: gameLog.text
     })
   })
   ipcMain.handle('feedback:query', async (_event, code) => {
