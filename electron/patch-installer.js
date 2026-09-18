@@ -459,17 +459,25 @@ class PatchInstaller {
     const modifiedFiles = []
     const files = Array.isArray(installation?.files) ? installation.files : []
 
-    for (const file of files) {
-      try {
-        const targetPath = file.targetPath || installation.targetPath
-        const destination = ensureWithin(targetPath, path.join(targetPath, file.relativePath))
-        const stats = await fsp.stat(destination).catch(() => null)
-        if (!stats?.isFile()) missingFiles.push(file.relativePath)
-        else if (await sha256(destination) !== file.installedHash) modifiedFiles.push(file.relativePath)
-      } catch {
-        missingFiles.push(file.relativePath)
+    // 并发校验：语音包 2600+ 文件串行哈希要 2 秒以上，8 路并发约 0.4 秒
+    const queue = files.map((file, index) => ({ file, index }))
+    const checkWorker = async () => {
+      for (;;) {
+        const next = queue.shift()
+        if (!next) return
+        const { file } = next
+        try {
+          const targetPath = file.targetPath || installation.targetPath
+          const destination = ensureWithin(targetPath, path.join(targetPath, file.relativePath))
+          const stats = await fsp.stat(destination).catch(() => null)
+          if (!stats?.isFile()) missingFiles.push(file.relativePath)
+          else if (await sha256(destination) !== file.installedHash) modifiedFiles.push(file.relativePath)
+        } catch {
+          missingFiles.push(file.relativePath)
+        }
       }
     }
+    await Promise.all(Array.from({ length: Math.min(8, files.length || 1) }, () => checkWorker()))
 
     const changed = missingFiles.length > 0 || modifiedFiles.length > 0
     return {

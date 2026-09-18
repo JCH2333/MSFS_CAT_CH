@@ -187,16 +187,29 @@ async function refreshCatalog() {
   loadingCatalog.value = true
   catalogState.error = null
   try {
+    // 只等目录本身（约 0.3s）：同步状态立即就绪；安装状态链在后台继续，
+    // 不阻塞"已同步"状态与补丁卡片的呈现。
     Object.assign(catalogState, await bridge.catalog.refresh())
-    await detectTargets(catalogState.catalog?.patches)
-    await reconcileInstallations(catalogState.catalog?.patches)
-    await loadInstallations()
+    void loadInstallationState()
   } catch (error) {
     catalogState.source = 'error'
     catalogState.error = error.message
     catalogState.catalog = { patches: [] }
   } finally {
     loadingCatalog.value = false
+  }
+}
+
+// 安装状态链（目录探测 → 识别已装 → 校验完整性）：纯本机文件操作，但要扫目录
+// 并对 2600+ 语音文件做哈希，串行可达 4 秒以上。后台执行，完成前补丁卡片先呈现，
+// 校验徽章稍后补上；初始化失败不打断界面（安装时的目标探测会再次执行）。
+async function loadInstallationState() {
+  try {
+    await detectTargets(catalogState.catalog?.patches)
+    await reconcileInstallations(catalogState.catalog?.patches)
+    await loadInstallations()
+  } catch {
+    // 后台初始化失败保持现状
   }
 }
 
