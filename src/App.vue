@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { Bell, CloudDownload, Heart, MessageSquareText, Package, Settings } from '@lucide/vue'
+import { Bell, CloudDownload, Heart, MessageSquareText, Package, ScrollText, Settings } from '@lucide/vue'
 import TitleBar from './components/TitleBar.vue'
 import CatalogView from './views/CatalogView.vue'
 import FeedbackView from './views/FeedbackView.vue'
@@ -8,6 +8,7 @@ import AnnouncementsView from './views/AnnouncementsView.vue'
 import AnnouncementPopupDialog from './components/AnnouncementPopupDialog.vue'
 import SupportView from './views/SupportView.vue'
 import GsxUpdateView from './views/GsxUpdateView.vue'
+import LogView from './views/LogView.vue'
 import SettingsView from './views/SettingsView.vue'
 import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
@@ -73,6 +74,13 @@ const developmentBridge = {
     ensureDeviceId: async () => null,
     getAgreementText: async () => ({ ok: false, error: 'development' }),
     checkAgreementUpdate: async () => ({ ok: false, error: 'development' })
+  },
+  msfslog: {
+    status: async () => ({ ok: false, daemon_alive: false, game_alive: false }),
+    setRecording: async () => ({ daemon_alive: false, game_alive: false }),
+    latest: async () => ({ kind: '', path: '', name: '', content: '', summary: null }),
+    readAppLog: async () => ({ path: '', content: '' }),
+    open: async () => ({ ok: false })
   },
   announcements: {
     list: async () => ({ ok: true, announcements: [] }),
@@ -441,7 +449,8 @@ async function installPatch(patch) {
   try {
     await bridge.patches.install(createInstallationRequest(patch), installTargets)
     await loadInstallations()
-    showPatchInstalledNotice.value = true
+    // hotfix 防误操作提示仅与 GSX 本体相关：只对 GSX 两个补丁显示
+    showPatchInstalledNotice.value = patch.id?.startsWith('gsx-pro-zh-cn')
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
     return
@@ -475,7 +484,8 @@ async function importPatch(patch) {
   try {
     await bridge.patches.installFromFile(createInstallationRequest(patch), installTargets, sourceArchivePath)
     await loadInstallations()
-    showPatchInstalledNotice.value = true
+    // hotfix 防误操作提示仅与 GSX 本体相关：只对 GSX 两个补丁显示
+    showPatchInstalledNotice.value = patch.id?.startsWith('gsx-pro-zh-cn')
   } catch (error) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: error.message }
     return
@@ -559,6 +569,10 @@ onBeforeUnmount(() => {
             <MessageSquareText :size="19" />
             <span>问题反馈</span>
           </button>
+          <button type="button" :class="{ active: activeView === 'logs' }" @click="activeView = 'logs'">
+            <ScrollText :size="19" />
+            <span>日志</span>
+          </button>
           <button type="button" :class="{ active: activeView === 'support' }" @click="activeView = 'support'">
             <Heart :size="19" />
             <span>赞助</span>
@@ -606,6 +620,10 @@ onBeforeUnmount(() => {
             v-else-if="activeView === 'feedback'"
             key="feedback"
             :bridge="bridge"
+          />
+          <LogView
+            v-else-if="activeView === 'logs'"
+            key="logs"
           />
           <AnnouncementsView
             v-else-if="activeView === 'announcements'"

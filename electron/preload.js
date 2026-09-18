@@ -59,6 +59,13 @@ contextBridge.exposeInMainWorld('gsxTool', {
     getAgreementText: () => ipcRenderer.invoke('legal:get-agreement-text'),
     checkAgreementUpdate: (payload) => ipcRenderer.invoke('legal:check-agreement-update', payload)
   },
+  msfslog: {
+    status: () => ipcRenderer.invoke('msfslog:status'),
+    setRecording: (enabled) => ipcRenderer.invoke('msfslog:set-recording', enabled),
+    latest: () => ipcRenderer.invoke('msfslog:latest'),
+    readAppLog: () => ipcRenderer.invoke('app:log:read'),
+    open: (kind) => ipcRenderer.invoke('log:open', kind)
+  },
   external: {
     open: (url) => ipcRenderer.invoke('external:open', url)
   }

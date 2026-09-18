@@ -81,5 +81,7 @@ tools/gsx-image-localizer/__pycache__/
 /.zcode/
 /tools/a380-efb/
 /tools/a340-efb/
-/tools/fenix-a320/
+/tools/a220-efb/
+/tools/md11-efb/
 /tools/pmdg-efb/
+/tools/fenix-a320/

@@ -8,6 +8,7 @@ const { loadFeedbackImages, queryFeedback, submitFeedback, validateFeedbackPaylo
 const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence')
 const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure')
 const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
+const { createMsfsLogBridge } = require('./msfslog')
 const { detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
@@ -19,6 +20,8 @@ let catalog = null
 // 运行日志（安装目录 MSFS_CAT_CH.log）；restoreConsole 还原被镜像的 console
 let logger = null
 let restoreConsole = null
+let logFilePath = null
+let msfsLogBridge = null
 let installer = null
 let gsxUpdater = null
 let latestUpdateStatus = { state: 'idle' }
@@ -258,6 +261,57 @@ function registerIpc() {
 
   ipcMain.handle('support:qr', () => fetchSponsorQr())
 
+  // msfslog 游戏日志工具：状态 / 开关 / 最近日志读取 / 系统打开
+  ipcMain.handle('msfslog:status', async () => {
+    const status = await msfsLogBridge.status()
+    logger?.line('INFO', 'msfslog', `状态：daemon=${status.daemon_alive === true} game=${status.game_alive === true}`)
+    return status
+  })
+  ipcMain.handle('msfslog:set-recording', async (_event, enabled) => {
+    const status = await msfsLogBridge.setEnabled(Boolean(enabled))
+    logger?.line('INFO', 'msfslog', `记录游戏日志 ${Boolean(enabled) ? '开启' : '关闭'}：daemon=${status.daemon_alive === true} game=${status.game_alive === true}`)
+    return status
+  })
+  ipcMain.handle('msfslog:latest', async () => {
+    const files = await msfsLogBridge.latestFiles()
+    const newest = files.crash && files.session
+      ? (files.crash.mtimeMs >= files.session.mtimeMs ? files.crash : files.session)
+      : (files.crash || files.session)
+    let summary = null
+    if (files.summary) {
+      const summaryText = await msfsLogBridge.readTextTail(files.summary.path, 128 * 1024)
+      try { summary = JSON.parse(summaryText) } catch { summary = null }
+    }
+    const content = newest ? await msfsLogBridge.readTextTail(newest.path) : ''
+    return {
+      kind: newest === files.crash && newest ? 'crash' : (newest ? 'session' : ''),
+      path: newest?.path || '',
+      name: newest?.name || '',
+      content,
+      summary
+    }
+  })
+  ipcMain.handle('app:log:read', async () => {
+    return { path: logFilePath, content: await logger.readTail(192 * 1024) }
+  })
+  ipcMain.handle('log:open', async (_event, kind) => {
+    let target = null
+    if (kind === 'game') {
+      const files = await msfsLogBridge.latestFiles()
+      target = (files.crash && files.session
+        ? (files.crash.mtimeMs >= files.session.mtimeMs ? files.crash.path : files.session.path)
+        : (files.crash?.path || files.session?.path)) || msfsLogBridge.logsDir
+    } else if (kind === 'app') {
+      target = logFilePath || msfsLogBridge.logsDir
+    } else if (kind === 'folder') {
+      target = msfsLogBridge.logsDir
+    }
+    if (!target) return { ok: false, error: '日志文件尚未生成' }
+    const failure = await shell.openPath(target)
+    logger?.line('INFO', 'logs', `打开 ${kind}: ${target}${failure ? ` 失败：${failure}` : ''}`)
+    return { ok: !failure, error: failure || null }
+  })
+
   ipcMain.handle('feedback:choose-images', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: '选择反馈截图',
@@ -340,6 +394,12 @@ app.whenReady().then(async () => {
     ? path.join(path.dirname(app.getPath('exe')), 'MSFS_CAT_CH.log')
     : path.join(userDataDirectory, 'MSFS_CAT_CH.log')
   logger = new AppLogger({ filePath: logFilePath })
+  // msfslog 游戏日志工具：打包时来自 extraResources；开发时用相邻的日志工具项目
+  const msfsLogExe = app.isPackaged
+    ? path.join(process.resourcesPath, 'msfslog', 'msfslog.exe')
+    : path.resolve(app.getAppPath(), '..', '日志工具', 'build', 'msfslog.exe')
+  msfsLogBridge = createMsfsLogBridge({ exePath: msfsLogExe })
+  logger?.line('INFO', 'msfslog', `日志工具：${msfsLogExe}`)
   const logReady = await logger.init({
     header: `===== MSFS_CAT_CH v${app.getVersion()} | ${process.platform} | packaged=${app.isPackaged} | 会话开始 =====`
   })
