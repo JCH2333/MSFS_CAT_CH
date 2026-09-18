@@ -161,6 +161,10 @@ onBeforeUnmount(unsubscribeProgress)
                   <ArrowRight :size="15" class="gsx-flow-arrow" />
                   <code class="gsx-version-next">v{{ status.latestVersion }}</code>
                 </template>
+                <span v-else-if="status.versionMarkerStale" class="gsx-chip gsx-chip-warn">
+                  <TriangleAlert :size="13" />
+                  版本标记异常
+                </span>
                 <span v-else class="gsx-chip gsx-chip-ok">已是最新</span>
               </span>
             </div>
@@ -189,6 +193,17 @@ onBeforeUnmount(unsubscribeProgress)
             <span class="gsx-meta-dot" />
             <span>镜像源 <b>{{ status.stale ? '本地缓存' : '云端已同步' }}</b></span>
           </div>
+        </section>
+
+        <!-- 幽灵版本：内容已是最新但版本标记落后，通常为旧版补丁覆盖 manifest 所致 -->
+        <section v-if="status.versionMarkerStale" class="gsx-panel gsx-marker-stale">
+          <strong><TriangleAlert :size="15" /> 检测到 GSX 版本标记异常</strong>
+          <p>
+            本机版本标记显示 v{{ status.localVersion }}，低于镜像源的 v{{ status.latestVersion }}，
+            但全部组件已与官方同步——版本标记文件大概率被旧版汉化补丁覆盖。
+            请在「汉化补丁」页对已安装的 GSX 汉化补丁执行「还原文字与图片」，
+            还原后版本标记会恢复正常，再安装最新补丁即可。
+          </p>
         </section>
 
         <!-- 更新进度：总进度条（按字节加权） -->
@@ -332,6 +347,9 @@ onBeforeUnmount(unsubscribeProgress)
   background: var(--surface); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-soft);
   animation: gsx-rise 240ms ease both;
 }
+.gsx-marker-stale { border-color: rgba(227, 178, 83, 0.35); }
+.gsx-marker-stale strong { display: inline-flex; align-items: center; gap: 6px; color: var(--warning); font-size: 13px; }
+.gsx-marker-stale p { margin: 8px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.7; }
 .gsx-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .gsx-panel-head h3 { display: inline-flex; align-items: center; gap: 7px; margin: 0; font: 600 13.5px/1 "Microsoft YaHei UI", sans-serif; }
 .gsx-panel-head span { color: var(--text-muted); font-size: 11.5px; }

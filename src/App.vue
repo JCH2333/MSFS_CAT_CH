@@ -13,7 +13,7 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
-import { compareVersions } from '../electron/versioning.js'
+import { assessGsxPatchVersion } from './lib/gsx-version-guard.mjs'
 import PatchInstallSuccessDialog from './components/PatchInstallSuccessDialog.vue'
 import GsxVersionGuardDialog from './components/GsxVersionGuardDialog.vue'
 import {
@@ -102,10 +102,10 @@ const agreementAccepted = ref(storedAcceptedRevision !== null)
 const showAgreement = ref(!agreementAccepted.value || storedAcceptedRevision !== AGREEMENT_REVISION)
 // 服务器推送的更新修订版（{ revision, sections }，正文已在主进程完成签名与哈希校验）
 const remoteAgreement = ref(null)
-// 补丁安装成功提示（含游戏内 hotfix 警告）与 GSX 版本过低拦截弹窗
+// 补丁安装成功提示（含游戏内 hotfix 警告）与 GSX 版本不匹配拦截弹窗
 const showPatchInstalledNotice = ref(false)
 const showGsxVersionGuard = ref(false)
-const gsxVersionGuardInfo = reactive({ localVersion: '', addonVersion: '' })
+const gsxVersionGuardInfo = reactive({ localVersion: '', addonVersion: '', variant: 'older' })
 // 协议正文（密文打包方案）：弹窗打开时经主进程联网取钥解密取得，仅保存在内存
 const agreementSections = ref(null)
 const agreementTextsFailed = ref(false)
@@ -374,25 +374,36 @@ function openAuthorPage() {
   bridge.external.open(AUTHOR_URL)
 }
 
-// GSX 系补丁对插件版本有硬性要求：本机 GSX 低于补丁适配版本时拦截安装，引导用户先更新 GSX
+// GSX 系补丁对插件版本有硬性要求：本机 GSX 与补丁适配版本不一致时双向拦截。
+// 低于是常规情况（先更新 GSX）；高于则禁止安装——旧补丁会覆盖新版本的版本标记
+// 与面板文件（2026-09 "幽灵 4.0.21" 事故）。返回 'ok' | 'gsx-older' | 'gsx-newer'。
+function gsxGuardMessage(verdict) {
+  return verdict === 'gsx-newer'
+    ? 'GSX 版本高于补丁适配版本，请等待发布适配新版的补丁'
+    : 'GSX 版本低于补丁适配版本，请先在「GSX 更新」页更新'
+}
+
 async function ensureGsxVersionForPatch(patch) {
-  if (!patch?.id?.startsWith('gsx-pro-zh-cn') || !patch.addonVersion) return true
+  if (!patch?.id?.startsWith('gsx-pro-zh-cn') || !patch.addonVersion) return 'ok'
   try {
     const gsxStatus = await bridge.gsx.status()
-    if (!gsxStatus.installed || !gsxStatus.localVersion) return true
-    if (compareVersions(gsxStatus.localVersion, patch.addonVersion) >= 0) return true
+    if (!gsxStatus.installed || !gsxStatus.localVersion) return 'ok'
+    const verdict = assessGsxPatchVersion(gsxStatus.localVersion, patch.addonVersion)
+    if (verdict === 'ok') return 'ok'
     gsxVersionGuardInfo.localVersion = gsxStatus.localVersion
     gsxVersionGuardInfo.addonVersion = patch.addonVersion
+    gsxVersionGuardInfo.variant = verdict
     showGsxVersionGuard.value = true
-    return false
+    return verdict
   } catch {
-    return true // 状态获取失败时不阻塞安装，交由目标探测兜底
+    return 'ok' // 状态获取失败时不阻塞安装，交由目标探测兜底
   }
 }
 
 async function installPatch(patch) {
-  if (!(await ensureGsxVersionForPatch(patch))) {
-    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: 'GSX 版本低于补丁适配版本，请先在「GSX 更新」页更新' }
+  const verdict = await ensureGsxVersionForPatch(patch)
+  if (verdict !== 'ok') {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: gsxGuardMessage(verdict) }
     return
   }
   const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
@@ -421,8 +432,9 @@ async function installPatch(patch) {
 }
 
 async function importPatch(patch) {
-  if (!(await ensureGsxVersionForPatch(patch))) {
-    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: 'GSX 版本低于补丁适配版本，请先在「GSX 更新」页更新' }
+  const verdict = await ensureGsxVersionForPatch(patch)
+  if (verdict !== 'ok') {
+    operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: gsxGuardMessage(verdict) }
     return
   }
   const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
@@ -624,6 +636,7 @@ onBeforeUnmount(() => {
       v-if="showGsxVersionGuard"
       :local-version="gsxVersionGuardInfo.localVersion"
       :addon-version="gsxVersionGuardInfo.addonVersion"
+      :variant="gsxVersionGuardInfo.variant"
       @goto="() => { showGsxVersionGuard = false; activeView = 'gsx-update' }"
       @close="showGsxVersionGuard = false"
     />

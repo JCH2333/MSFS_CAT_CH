@@ -866,3 +866,62 @@ test('recognizes an externally installed dual-sim patch only where fingerprints 
   assert.equal(installation.files[0].slot, 'msfs2024')
   await fs.rm(root, { recursive: true, force: true })
 })
+
+test('keeps a newer on-disk manifest when the patch bundles an older one', async () => {
+  // 版本标记守卫（2026-09 幽灵 4.0.21 事故）：旧补丁不得倒退新版本标记
+  const root = await temporaryDirectory('gsx-installer-manifest-guard-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'manifest.json'), JSON.stringify({ package_version: '4.0.23' }))
+  await fs.writeFile(path.join(target, 'panel.js'), 'original')
+  await fs.mkdir(source, { recursive: true })
+  await fs.writeFile(path.join(source, 'manifest.json'), JSON.stringify({ package_version: '4.0.21' }))
+  await fs.writeFile(path.join(source, 'panel.js'), 'localized')
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (_url, destination) => fs.copyFile(archive, destination)
+  })
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  await installer.install(patch, target)
+
+  assert.equal(JSON.parse(await fs.readFile(path.join(target, 'manifest.json'), 'utf8')).package_version, '4.0.23')
+  assert.equal(await fs.readFile(path.join(target, 'panel.js'), 'utf8'), 'localized')
+  const installation = (await installer.listInstallations())['test-patch']
+  assert.equal(installation.files.some((file) => file.relativePath.toLowerCase() === 'manifest.json'), false)
+
+  // 还原只处理安装记录内的文件，不触碰保留的版本标记
+  await installer.restore('test-patch')
+  assert.equal(JSON.parse(await fs.readFile(path.join(target, 'manifest.json'), 'utf8')).package_version, '4.0.23')
+  assert.equal(await fs.readFile(path.join(target, 'panel.js'), 'utf8'), 'original')
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('still replaces an older on-disk manifest with the patch-bundled newer one', async () => {
+  const root = await temporaryDirectory('gsx-installer-manifest-update-')
+  const target = path.join(root, 'target')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'patch.zip')
+  await fs.mkdir(target, { recursive: true })
+  await fs.writeFile(path.join(target, 'manifest.json'), JSON.stringify({ package_version: '4.0.21' }))
+  await fs.mkdir(source, { recursive: true })
+  await fs.writeFile(path.join(source, 'manifest.json'), JSON.stringify({ package_version: '4.0.23' }))
+  await createZip(source, archive)
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async (_url, destination) => fs.copyFile(archive, destination)
+  })
+  const patch = packageFor('1.0.0', archive, await sha256(archive))
+  await installer.install(patch, target)
+
+  assert.equal(JSON.parse(await fs.readFile(path.join(target, 'manifest.json'), 'utf8')).package_version, '4.0.23')
+  const installation = (await installer.listInstallations())['test-patch']
+  assert.equal(installation.files.some((file) => file.relativePath.toLowerCase() === 'manifest.json'), true)
+  await fs.rm(root, { recursive: true, force: true })
+})

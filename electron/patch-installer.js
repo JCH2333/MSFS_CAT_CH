@@ -6,11 +6,42 @@ const os = require('node:os')
 const path = require('node:path')
 const extractZip = require('extract-zip')
 const { SERVER_HOSTNAME, buildServerUrl, serverOriginProtocol } = require('./distribution-server')
+const { compareVersions, isSemanticVersion } = require('./versioning')
 
 const ALLOWED_DOWNLOAD_HOSTS = new Set([SERVER_HOSTNAME])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
 const INSTALL_SLOT_PATTERN = /^[a-z0-9][a-z0-9-]{0,20}$/
 const SERVER_PATCH_DOWNLOAD_PATH = '/api/patches/download/'
+
+// 读取社区包 manifest 的 package_version（兼容 packageVersion 别名）；缺失或非法返回 null
+async function readPackageVersion(file) {
+  try {
+    const parsed = JSON.parse(await fsp.readFile(file, 'utf8'))
+    const version = typeof parsed.package_version === 'string'
+      ? parsed.package_version
+      : (typeof parsed.packageVersion === 'string' ? parsed.packageVersion : null)
+    return version && isSemanticVersion(version) ? version : null
+  } catch {
+    return null
+  }
+}
+
+// 版本标记守卫：磁盘 manifest 比补丁捆绑的更新时跳过覆盖，防止旧补丁把插件版本
+// 标记倒退（2026-09 "幽灵 4.0.21" 事故：v1.2.8 在 GSX 4.0.23 上覆盖 manifest，
+// 客户端误报 GSX 4.0.21，更新页与补丁页互相死锁）。读不到或版本不可比时不拦截，
+// 维持既有行为。
+async function shouldSkipOlderManifestOverlay(sourceFile, destination) {
+  try {
+    const [incoming, onDisk] = await Promise.all([
+      readPackageVersion(sourceFile),
+      readPackageVersion(destination)
+    ])
+    if (!incoming || !onDisk) return false
+    return compareVersions(onDisk, incoming) > 0
+  } catch {
+    return false
+  }
+}
 
 // 安装目标列表归一化：兼容旧的单路径字符串与新的 [{slot, path}] 双版本形式；
 // 同一路径只保留首次出现的槽位，避免重复写入同一目录
@@ -718,6 +749,7 @@ class PatchInstaller {
       const recordFiles = []
       const totalSourceFiles = planFiles.reduce((total, entry) => total + entry.sourceFiles.length, 0) * slotTargets.length
       let installedCount = 0
+      let skippedManifestCount = 0
       for (const slotTarget of slotTargets) {
         const installTargets = slotPlanTargets.get(slotTarget)
         for (const planEntry of planFiles) {
@@ -732,6 +764,17 @@ class PatchInstaller {
             const existingStats = await fsp.stat(destination).catch(() => null)
             if (existingStats?.isDirectory()) {
               throw new Error(`目标位置是目录，无法写入文件：${relativePath}`)
+            }
+
+            // 版本标记守卫：磁盘 manifest 比补丁捆绑的更新时跳过覆盖（不备份、不写
+            // 安装记录，还原时因此不会触碰它）。进度照常推进。
+            if (relativePath.toLowerCase() === 'manifest.json' && planEntry.target === 'primary'
+              && await shouldSkipOlderManifestOverlay(sourceFile, destination)) {
+              skippedManifestCount += 1
+              installedCount += 1
+              const percent = 68 + Math.round((installedCount / totalSourceFiles) * 30)
+              this.emit(patchId, { phase: 'install', percent, message: `已保留更新的版本标记，跳过 ${relativePath}` })
+              continue
             }
 
             const hadOriginal = Boolean(existingStats?.isFile())
@@ -786,7 +829,13 @@ class PatchInstaller {
       const latestState = await this.readState()
       latestState.installations[patchId] = installation
       await this.writeState(latestState)
-      this.emit(patchId, { phase: 'complete', percent: 100, message: '安装完成' })
+      this.emit(patchId, {
+        phase: 'complete',
+        percent: 100,
+        message: skippedManifestCount > 0
+          ? `安装完成（已保留 ${skippedManifestCount} 个更新的版本标记文件）`
+          : '安装完成'
+      })
       return installation
     } catch (error) {
       for (const file of appliedFiles.reverse()) {

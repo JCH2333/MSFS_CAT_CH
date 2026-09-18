@@ -344,3 +344,86 @@ test('GsxUpdater blocks updates when base-package fundamentals are missing', asy
 
   await assert.rejects(() => updater.applyUpdate(), /基础安装不完整/)
 })
+
+test('getStatus flags a stale version marker when content is current but manifest lags', async () => {
+  // 幽灵版本：全部组件 ETag 与镜像源一致（无待更新），但本机 manifest 版本落后——
+  // 版本标记被旧版补丁覆盖时的典型状态，界面需据此给出还原指引而非已是最新。
+  const userData = await temporaryDirectory('gsx-updater-stale-')
+  const etagDir = await temporaryDirectory('gsx-updater-etags-stale-')
+  const addonRoot = await temporaryDirectory('gsx-addon-stale-')
+  await fs.mkdir(path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro'), { recursive: true })
+  await fs.writeFile(
+    path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro', 'manifest.json'),
+    JSON.stringify({ package_version: '4.0.21' })
+  )
+  await fs.writeFile(path.join(etagDir, 'GSX.zip.etag'), '0x8DF112D9F24F2B6')
+  await fs.writeFile(path.join(etagDir, 'couatl64.zip.etag'), '0x8DF103EE75B95D4')
+
+  const updater = new GsxUpdater({
+    userDataDirectory: userData,
+    officialEtagDirectory: etagDir,
+    processLister: async () => '',
+    detectInstall: async () => ({
+      installed: true,
+      addonRoot,
+      packagePath: path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro'),
+      version: '4.0.21',
+      source: 'test'
+    }),
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        schemaVersion: 1,
+        latestVersion: '4.0.23',
+        packages: [
+          manifestPackage(),
+          manifestPackage({ component: 'couatl64', etag: '0x8DF103EE75B95D4', deployTarget: 'couatl64' })
+        ]
+      })
+    })
+  })
+
+  const status = await updater.getStatus()
+  assert.equal(status.installed, true)
+  assert.equal(status.versionState, 'older')
+  assert.equal(status.updateAvailable, false)
+  assert.equal(status.pending.length, 0)
+  assert.equal(status.versionMarkerStale, true)
+})
+
+test('getStatus does not flag a stale marker while components are genuinely pending', async () => {
+  const userData = await temporaryDirectory('gsx-updater-stale-off-')
+  const etagDir = await temporaryDirectory('gsx-updater-etags-off-')
+  const addonRoot = await temporaryDirectory('gsx-addon-off-')
+  await fs.mkdir(path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro'), { recursive: true })
+  await fs.writeFile(
+    path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro', 'manifest.json'),
+    JSON.stringify({ package_version: '4.0.21' })
+  )
+  await fs.writeFile(path.join(etagDir, 'GSX.zip.etag'), '0xOLD')
+
+  const updater = new GsxUpdater({
+    userDataDirectory: userData,
+    officialEtagDirectory: etagDir,
+    processLister: async () => '',
+    detectInstall: async () => ({
+      installed: true,
+      addonRoot,
+      packagePath: path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro'),
+      version: '4.0.21',
+      source: 'test'
+    }),
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        schemaVersion: 1,
+        latestVersion: '4.0.23',
+        packages: [manifestPackage()]
+      })
+    })
+  })
+
+  const status = await updater.getStatus()
+  assert.equal(status.updateAvailable, true)
+  assert.equal(status.versionMarkerStale, false)
+})

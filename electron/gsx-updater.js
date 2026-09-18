@@ -269,6 +269,10 @@ class GsxUpdater {
     if (manifest.latestVersion && isSemanticVersion(localVersion)) {
       versionState = compareVersions(localVersion, manifest.latestVersion) >= 0 ? 'current' : 'older'
     }
+    // 幽灵版本检测：manifest 版本落后于镜像源，但全部组件的 ETag 均已同步——
+    // 版本标记（manifest.json）大概率被旧版补丁覆盖（2026-09 v1.2.8 事故），
+    // 此时"已是最新"与版本徽章自相矛盾，界面需给出针对性指引而非静默。
+    const versionMarkerStale = versionState === 'older' && pending.length === 0
     return {
       ...base,
       installed: true,
@@ -276,6 +280,7 @@ class GsxUpdater {
       packagePath: install.packagePath,
       localVersion,
       versionState,
+      versionMarkerStale,
       pending: pending.map((pkg) => ({
         component: pkg.component,
         version: pkg.version,
