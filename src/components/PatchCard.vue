@@ -65,14 +65,27 @@ const packageSize = computed(() => {
 })
 
 const downloadLabel = computed(() => formatDownloadCount(props.patch.downloadCount ?? 0))
+
+// 厂商 logo 水印（L2）：服务端下发 url/位置/垫白，卡片右下等角落低透明度展示
+const vendorLogo = computed(() => props.patch.logo || null)
+const vendorLogoPosition = computed(() => `pos-${vendorLogo.value?.position || 'bottom-right'}`)
 </script>
 
 <template>
   <article class="patch-card">
+    <img
+      v-if="vendorLogo"
+      class="vendor-mark"
+      :class="[vendorLogoPosition, { 'logo-lift': vendorLogo.lift }]"
+      :src="vendorLogo.url"
+      alt=""
+      loading="lazy"
+      draggable="false"
+    />
     <div class="patch-card-main">
       <div class="patch-heading-row">
         <div class="patch-title-group">
-          <h2>{{ patch.name }}</h2>
+          <h2>{{ patch.title || patch.name }}</h2>
           <span class="status-badge" :data-tone="status.tone">{{ status.label }}</span>
         </div>
         <div class="version-block">

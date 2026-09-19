@@ -132,6 +132,17 @@ function validateDualSim(value, patchId) {
   return { slots }
 }
 
+function validateLogo(value, patchId) {
+  if (value === undefined || value === null) return null
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`补丁 ${patchId} logo 必须是对象`)
+  }
+  const url = validateServerDownloadUrl(assertString(value.url, `补丁 ${patchId} logo.url`), patchId)
+  const positions = new Set(['bottom-right', 'bottom-left', 'top-right', 'top-left'])
+  const position = positions.has(value.position) ? value.position : 'bottom-right'
+  return { url, position, lift: value.lift === true }
+}
+
 function validateCatalog(input) {
   if (!input || typeof input !== 'object') {
     throw new Error('补丁目录不是有效对象')
@@ -161,6 +172,8 @@ function validateCatalog(input) {
 
     return {
       id,
+      // 展示标题：服务端下发的中文名优先，回退英文标识 name
+      title: typeof patch.title === 'string' && patch.title.trim() ? patch.title.trim() : null,
       name: assertString(patch.name, `补丁 ${id} name`),
       summary: typeof patch.summary === 'string' ? patch.summary.trim() : '',
       version: (() => {
@@ -197,6 +210,7 @@ function validateCatalog(input) {
         : [],
       targetKind: TARGET_KINDS.has(patch.targetKind) ? patch.targetKind : 'addon',
       dualSim: validateDualSim(patch.dualSim, id),
+      logo: validateLogo(patch.logo, id),
       releaseNotes: Array.isArray(patch.releaseNotes)
         ? patch.releaseNotes.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
         : [],

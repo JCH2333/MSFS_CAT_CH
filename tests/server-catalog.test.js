@@ -486,3 +486,87 @@ test('normalizes downloadCount and publishedAt for sorting and display', () => {
   assert.equal(legacy.patches[0].downloadCount, 0)
   assert.equal(legacy.patches[0].publishedAt, null)
 })
+
+test('uses the plugin title as display name and validates the vendor logo object', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'pmdg-efb-zh-cn',
+    name: 'pmdg-efb-zh-cn',
+    title: 'PMDG 全系 EFB 简体中文',
+    summary: 'Test patch',
+    version: '0.1.1',
+    addonVersion: null,
+    status: 'published',
+    logo: {
+      url: buildServerUrl('/api/catalog/logos/8?v=1789887734000'),
+      position: 'bottom-right',
+      lift: true
+    },
+    package: {
+      releaseTag: 'pmdg-v0.1.1',
+      assetName: 'pmdg.zip',
+      sha256: 'a'.repeat(64),
+      size: 100,
+      downloadUrl: buildServerUrl('/api/patches/package/8')
+    }
+  }))
+  assert.equal(result.patches[0].title, 'PMDG 全系 EFB 简体中文')
+  assert.equal(result.patches[0].name, 'pmdg-efb-zh-cn')
+  assert.deepEqual(result.patches[0].logo, {
+    url: buildServerUrl('/api/catalog/logos/8?v=1789887734000'),
+    position: 'bottom-right',
+    lift: true
+  })
+
+  // 非法位置回退右下；lift 非布尔收敛为 false
+  const normalized = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'gsx-pro-zh-cn',
+    title: '  ',
+    summary: '',
+    version: '1.2.10',
+    status: 'published',
+    logo: { url: buildServerUrl('/api/catalog/logos/1'), position: 'center', lift: 'yes' },
+    package: {
+      releaseTag: 'gsx-v1.2.10',
+      assetName: 'gsx.zip',
+      sha256: 'b'.repeat(64),
+      size: 100,
+      downloadUrl: buildServerUrl('/api/patches/package/6')
+    }
+  }))
+  assert.equal(normalized.patches[0].title, null)
+  assert.equal(normalized.patches[0].logo.position, 'bottom-right')
+  assert.equal(normalized.patches[0].logo.lift, false)
+
+  // 旧缓存没有 logo 字段 → null；logo 指向外部地址 → 拒绝
+  const legacy = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'gsx-pro-zh-cn',
+    summary: '',
+    version: '1.2.10',
+    status: 'published',
+    package: {
+      releaseTag: 'gsx-v1.2.10',
+      assetName: 'gsx.zip',
+      sha256: 'b'.repeat(64),
+      size: 100,
+      downloadUrl: buildServerUrl('/api/patches/package/6')
+    }
+  }))
+  assert.equal(legacy.patches[0].logo, null)
+  assert.throws(() => validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'gsx-pro-zh-cn',
+    summary: '',
+    version: '1.2.10',
+    status: 'published',
+    logo: { url: 'https://cdn.example.com/logo.png', position: 'bottom-right' },
+    package: {
+      releaseTag: 'gsx-v1.2.10',
+      assetName: 'gsx.zip',
+      sha256: 'b'.repeat(64),
+      size: 100,
+      downloadUrl: buildServerUrl('/api/patches/package/6')
+    }
+  })), /必须指向分发服务器/)
+})

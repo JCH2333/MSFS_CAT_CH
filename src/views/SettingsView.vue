@@ -100,7 +100,7 @@ function hasManualSlotPath(patch, slotId) {
         <article v-for="patch in patches" :key="patch.id" class="target-settings-card">
           <div class="target-settings-title">
             <div>
-              <strong>{{ patch.name }}</strong>
+              <strong>{{ patch.title || patch.name }}</strong>
               <small>{{ patchVersionLabel(patch) }}</small>
             </div>
             <MapPin :size="17" />

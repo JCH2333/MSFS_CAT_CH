@@ -210,6 +210,28 @@ button { color: inherit; }
   box-shadow: var(--shadow-soft);
   overflow: hidden;
   transition: border-color 160ms ease, transform 160ms ease;
+  position: relative;
+}
+
+/* 厂商 logo 水印（服务端下发 url/位置/垫白）：低透明度铺在卡片角落 */
+.patch-card .vendor-mark {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.17;
+  max-width: 56%;
+  max-height: 84px;
+}
+.patch-card .vendor-mark.pos-bottom-right { right: -12px; bottom: 4px; }
+.patch-card .vendor-mark.pos-bottom-left { left: -12px; bottom: 4px; }
+.patch-card .vendor-mark.pos-top-right { right: -12px; top: 8px; }
+.patch-card .vendor-mark.pos-top-left { left: -12px; top: 8px; }
+/* 垫白色柔光：深色底上不清晰的 logo（如 PMDG 蓝标）用径向白渐变托底 */
+.patch-card .vendor-mark.logo-lift {
+  opacity: 0.2;
+  padding: 14px 20px;
+  background: radial-gradient(closest-side, rgba(240, 246, 240, 0.5), rgba(240, 246, 240, 0.14) 68%, transparent 100%);
 }
 .patch-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
 .patch-card-main { min-width: 0; padding: 19px 20px 14px; }
