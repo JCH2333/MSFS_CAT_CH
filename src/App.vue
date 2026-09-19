@@ -14,7 +14,7 @@ import AgreementDialog from './components/AgreementDialog.vue'
 import FreeNoticeDialog from './components/FreeNoticeDialog.vue'
 import RequiredUpdateDialog from './components/RequiredUpdateDialog.vue'
 import { createInstallationRequest, createRecognitionDescriptors } from './lib/patch-recognition.mjs'
-import { assessGsxPatchVersion } from './lib/gsx-version-guard.mjs'
+import { assessGsxPatchVersion, guardDialogVariant } from './lib/gsx-version-guard.mjs'
 import PatchInstallSuccessDialog from './components/PatchInstallSuccessDialog.vue'
 import GsxVersionGuardDialog from './components/GsxVersionGuardDialog.vue'
 import {
@@ -416,9 +416,13 @@ async function ensureGsxVersionForPatch(patch) {
     if (!gsxStatus.installed || !gsxStatus.localVersion) return 'ok'
     const verdict = assessGsxPatchVersion(gsxStatus.localVersion, patch.addonVersion)
     if (verdict === 'ok') return 'ok'
+    // "GSX 较新"只拦截面板补丁（gsx-pro-zh-cn，1.2.10 事故的版本标记倒退即源于它）；
+    // 语音包是独立音频文件，不受 GSX 版本结构影响， GSX 较新时应正常安装，
+    // 否则会像 2.2.0 那样把 4.0.23 的用户挡在适配 4.0.21 的语音包之外。
+    if (verdict === 'gsx-newer' && patch.id !== 'gsx-pro-zh-cn') return 'ok'
     gsxVersionGuardInfo.localVersion = gsxStatus.localVersion
     gsxVersionGuardInfo.addonVersion = patch.addonVersion
-    gsxVersionGuardInfo.variant = verdict
+    gsxVersionGuardInfo.variant = guardDialogVariant(verdict)
     showGsxVersionGuard.value = true
     return verdict
   } catch {

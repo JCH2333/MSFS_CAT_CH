@@ -1,6 +1,6 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { assessGsxPatchVersion } = require('../src/lib/gsx-version-guard.mjs')
+const { assessGsxPatchVersion, guardDialogVariant } = require('../src/lib/gsx-version-guard.mjs')
 
 test('assessGsxPatchVersion compares the installed GSX against the patch target in both directions', () => {
   assert.equal(assessGsxPatchVersion('4.0.23', '4.0.23'), 'ok')
@@ -16,4 +16,11 @@ test('assessGsxPatchVersion stays permissive when versions are missing or unpars
   assert.equal(assessGsxPatchVersion('4.0.23', ''), 'ok')
   assert.equal(assessGsxPatchVersion('not-a-version', '4.0.23'), 'ok')
   assert.equal(assessGsxPatchVersion('4.0.23', 'latest'), 'ok')
+})
+
+test('guardDialogVariant maps the newer verdict to the newer dialog form', () => {
+  // 2.2.0 事故回归：'gsx-newer' 必须映射到 newer 形态，否则较新场景渲染"版本过低"文案
+  assert.equal(guardDialogVariant('gsx-newer'), 'newer')
+  assert.equal(guardDialogVariant('gsx-older'), 'older')
+  assert.equal(guardDialogVariant('ok'), 'older')
 })

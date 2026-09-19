@@ -17,3 +17,9 @@ export function assessGsxPatchVersion(localVersion, addonVersion) {
   if (compared > 0) return 'gsx-newer'
   return 'ok'
 }
+
+// 守卫对话框形态：'gsx-newer' 渲染"补丁适配版本低于当前 GSX"，其余渲染"版本过低"。
+// （2.2.0 事故：守卫返回 'gsx-newer' 而对话框比较 'newer'，较新场景错误渲染了过低文案。）
+export function guardDialogVariant(verdict) {
+  return verdict === 'gsx-newer' ? 'newer' : 'older'
+}
