@@ -188,7 +188,7 @@ async function startRequiredSoftwareUpdate() {
 // 失效或强制刷新时才做全盘扫描。detectPatchTargets 的注册表全树枚举在装了大量
 // 软件的机器上可达数秒，是启动安装状态链的主要耗时。
 async function resolvePatchTargets(patches, { force = false } = {}) {
-  const { targets } = await resolveDetectedTargets({
+  const { targets, fromCache } = await resolveDetectedTargets({
     patches,
     force,
     cache: installationTargetCache,
@@ -200,7 +200,7 @@ async function resolvePatchTargets(patches, { force = false } = {}) {
         .map((installation) => ({ targetPath: installation.targetPath, source: '已记录的 GSX 语音目录' }))
     })
   })
-  return targets
+  return { targets, fromCache }
 }
 
 // 安装成功后把实际写入的目标目录回写进目标缓存（渲染层传 [{slot, path}]），
@@ -250,8 +250,8 @@ function registerIpc() {
   })
   ipcMain.handle('patch:reconcile-installations', (_event, { patches, targetPaths }) => installer.reconcileInstallations(patches, targetPaths))
   ipcMain.handle('patch:detect-targets', async (_event, patches, options = {}) => {
-    const targets = await resolvePatchTargets(patches, { force: Boolean(options?.force) })
-    logger?.line('INFO', 'patch', `目录探测完成（${Object.keys(targets).length} 项）`)
+    const { targets, fromCache } = await resolvePatchTargets(patches, { force: Boolean(options?.force) })
+    logger?.line('INFO', 'patch', `目录探测完成（${Object.keys(targets).length} 项，${fromCache ? '缓存命中' : '全量扫描'}）`)
     return targets
   })
   ipcMain.handle('patch:choose-target', async (_event, options = {}) => {
