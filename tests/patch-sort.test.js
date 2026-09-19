@@ -17,12 +17,12 @@ function patch(overrides = {}) {
   }
 }
 
-test('normalizePatchSort falls back to 更新时间降序 for invalid or missing state', () => {
-  assert.deepEqual(normalizePatchSort(null), { sortBy: 'updated', sortOrder: 'desc' })
-  assert.deepEqual(normalizePatchSort({}), { sortBy: 'updated', sortOrder: 'desc' })
-  assert.deepEqual(normalizePatchSort({ sortBy: 'downloads' }), { sortBy: 'downloads', sortOrder: 'desc' })
+test('normalizePatchSort falls back to 下载量降序 for invalid or missing state', () => {
+  assert.deepEqual(normalizePatchSort(null), { sortBy: 'downloads', sortOrder: 'desc' })
+  assert.deepEqual(normalizePatchSort({}), { sortBy: 'downloads', sortOrder: 'desc' })
+  assert.deepEqual(normalizePatchSort({ sortBy: 'updated' }), { sortBy: 'updated', sortOrder: 'desc' })
   assert.deepEqual(normalizePatchSort({ sortBy: 'name', sortOrder: 'asc' }), { sortBy: 'name', sortOrder: 'asc' })
-  assert.deepEqual(normalizePatchSort({ sortBy: 'hacker', sortOrder: 'sideways' }), { sortBy: 'updated', sortOrder: 'desc' })
+  assert.deepEqual(normalizePatchSort({ sortBy: 'hacker', sortOrder: 'sideways' }), { sortBy: 'downloads', sortOrder: 'desc' })
 })
 
 test('sorts by downloads in both directions', () => {

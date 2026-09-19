@@ -11,12 +11,12 @@ export const PATCH_SORT_ORDERS = [
   { id: 'asc', label: '升序' }
 ]
 
-const DEFAULT_SORT = { sortBy: 'updated', sortOrder: 'desc' }
+const DEFAULT_SORT = { sortBy: 'downloads', sortOrder: 'desc' }
 
 const SORT_FIELD_IDS = new Set(PATCH_SORT_FIELDS.map((field) => field.id))
 const SORT_ORDER_IDS = new Set(PATCH_SORT_ORDERS.map((order) => order.id))
 
-// 从 localStorage 等存储值恢复排序状态；非法值回退默认（更新时间降序）
+// 从 localStorage 等存储值恢复排序状态；非法值回退默认（下载量降序）
 export function normalizePatchSort(saved) {
   const value = saved && typeof saved === 'object' ? saved : {}
   return {
