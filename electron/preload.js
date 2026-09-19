@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('gsxTool', {
   patches: {
     chooseTarget: (options) => ipcRenderer.invoke('patch:choose-target', options),
     choosePackage: () => ipcRenderer.invoke('patch:choose-package'),
-    detectTargets: (patches) => ipcRenderer.invoke('patch:detect-targets', patches),
+    detectTargets: (patches, options) => ipcRenderer.invoke('patch:detect-targets', patches, options || {}),
     listInstallations: () => ipcRenderer.invoke('patch:list-installations'),
     verifyInstallations: () => ipcRenderer.invoke('patch:verify-installations'),
     reconcileInstallations: (patches, targetPaths) => ipcRenderer.invoke('patch:reconcile-installations', { patches, targetPaths }),

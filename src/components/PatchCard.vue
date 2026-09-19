@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Download, FolderUp, Heart, MapPin, ShieldAlert, ShieldCheck, RotateCcw, UserRound } from '@lucide/vue'
 import { compareVersions } from '../lib/versioning'
+import { formatDownloadCount } from '../lib/patch-sort.mjs'
 
 const props = defineProps({
   patch: { type: Object, required: true },
@@ -20,7 +21,11 @@ defineEmits(['install', 'import', 'restore', 'author'])
 const published = computed(() => props.patch.status === 'published')
 const isNetworkAuthored = computed(() => props.patch.id === 'gsx-pro-zh-cn-voice')
 const isGsxCombined = computed(() => props.patch.targetKind === 'gsx-combined')
-const showAddonVersion = computed(() => Boolean(props.patch.addonVersion))
+// 语音包等服务端未限定适配版本的补丁（addonVersion 为空）展示"全版本"
+const addonVersionLabel = computed(() => {
+  if (props.patch.addonVersion) return `插件 v${props.patch.addonVersion}`
+  return props.patch.targetKind === 'gsx-audio' ? '插件 全版本适配' : ''
+})
 const versionComparison = computed(() => props.installation ? compareVersions(props.patch.version, props.installation.version) : 0)
 const needsInstall = computed(() => !props.installation || versionComparison.value > 0 || props.installationCheck?.state !== 'intact')
 const status = computed(() => {
@@ -58,6 +63,8 @@ const packageSize = computed(() => {
   if (size >= 1024 ** 2) return `${(size / 1024 ** 2).toFixed(1)} MB`
   return `${Math.ceil(size / 1024)} KB`
 })
+
+const downloadLabel = computed(() => formatDownloadCount(props.patch.downloadCount ?? 0))
 </script>
 
 <template>
@@ -69,7 +76,7 @@ const packageSize = computed(() => {
           <span class="status-badge" :data-tone="status.tone">{{ status.label }}</span>
         </div>
         <div class="version-block">
-          <span v-if="showAddonVersion">{{ `插件 v${patch.addonVersion}` }}</span>
+          <span v-if="addonVersionLabel">{{ addonVersionLabel }}</span>
           <strong>补丁 v{{ patch.version }}</strong>
         </div>
       </div>
@@ -82,6 +89,7 @@ const packageSize = computed(() => {
       </div>
 
       <div class="patch-meta">
+        <span v-if="downloadLabel" class="patch-downloads"><Download :size="11" /> {{ downloadLabel }} 次下载</span>
         <span v-for="item in patch.compatibility" :key="item">{{ item }}</span>
         <span v-for="label in installedSlotLabels" :key="label">{{ label }}</span>
         <span v-if="packageSize">{{ packageSize }}</span>

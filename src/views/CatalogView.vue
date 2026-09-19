@@ -1,8 +1,10 @@
 <script setup>
-import { PackageOpen, RefreshCw, ShieldCheck, ShieldAlert, Wifi, WifiOff } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
+import { ArrowDownNarrowWide, ArrowUpNarrowWide, PackageOpen, RefreshCw, ShieldCheck, ShieldAlert, Wifi, WifiOff } from '@lucide/vue'
 import PatchCard from '../components/PatchCard.vue'
 import { catalogSourcePresentation } from '../lib/catalog-source.mjs'
 import { hasAnyTarget } from '../lib/dual-sim.mjs'
+import { PATCH_SORT_FIELDS, normalizePatchSort, sortPatches } from '../lib/patch-sort.mjs'
 
 const props = defineProps({
   catalogState: { type: Object, required: true },
@@ -26,6 +28,32 @@ function patchHasTarget(patch) {
   )
 }
 
+// 排序状态持久化在本地：下载量 / 更新时间 / 首字母 × 升降序
+const SORT_STORAGE_KEY = 'patch-catalog-sort'
+
+function readSavedSort() {
+  try {
+    return normalizePatchSort(JSON.parse(localStorage.getItem(SORT_STORAGE_KEY) || '{}'))
+  } catch {
+    return normalizePatchSort(null)
+  }
+}
+
+const sortBy = ref(readSavedSort().sortBy)
+const sortOrder = ref(readSavedSort().sortOrder)
+
+watch([sortBy, sortOrder], () => {
+  localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({ sortBy: sortBy.value, sortOrder: sortOrder.value }))
+})
+
+function toggleSortOrder() {
+  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+}
+
+const sortedPatches = computed(() => sortPatches(props.catalogState.catalog?.patches || [], sortBy.value, sortOrder.value))
+const isAsc = computed(() => sortOrder.value === 'asc')
+const orderTitle = computed(() => (isAsc.value ? '当前升序，点击切换为降序' : '当前降序，点击切换为升序'))
+
 </script>
 
 <template>
@@ -36,6 +64,17 @@ function patchHasTarget(patch) {
         <h1>汉化补丁</h1>
       </div>
       <div class="header-actions">
+        <div class="sort-control" role="group" aria-label="补丁排序">
+          <label class="sort-field">
+            <select v-model="sortBy" aria-label="排序依据">
+              <option v-for="field in PATCH_SORT_FIELDS" :key="field.id" :value="field.id">{{ field.label }}</option>
+            </select>
+          </label>
+          <button class="sort-order" type="button" :title="orderTitle" :aria-label="orderTitle" @click="toggleSortOrder">
+            <ArrowUpNarrowWide v-if="isAsc" :size="15" />
+            <ArrowDownNarrowWide v-else :size="15" />
+          </button>
+        </div>
         <div class="source-status" :data-offline="!catalogSourcePresentation(catalogState.source).online">
           <Wifi v-if="catalogSourcePresentation(catalogState.source).online" :size="15" />
           <WifiOff v-else :size="15" />
@@ -63,7 +102,7 @@ function patchHasTarget(patch) {
 
     <div v-if="catalogState.catalog?.patches?.length" class="patch-list compact-card-grid">
       <PatchCard
-        v-for="patch in catalogState.catalog.patches"
+        v-for="patch in sortedPatches"
         :key="patch.id"
         :patch="patch"
         :installation="installations[patch.id]"

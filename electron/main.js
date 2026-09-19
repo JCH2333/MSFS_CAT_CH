@@ -10,6 +10,7 @@ const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure'
 const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
 const { createMsfsLogBridge } = require('./msfslog')
 const { detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
+const { InstallationTargetCache, recordInstalledTarget, resolveDetectedTargets } = require('./installation-cache')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
 const { fetchSponsorQr } = require('./support-qr')
@@ -24,6 +25,7 @@ let logFilePath = null
 let msfsLogBridge = null
 let installer = null
 let gsxUpdater = null
+let installationTargetCache = null
 let latestUpdateStatus = { state: 'idle' }
 
 function send(channel, payload) {
@@ -182,6 +184,44 @@ async function startRequiredSoftwareUpdate() {
   }
 }
 
+// 启动期目录探测：优先复用持久化的目标缓存（签名一致且目录仍存在），只在缓存
+// 失效或强制刷新时才做全盘扫描。detectPatchTargets 的注册表全树枚举在装了大量
+// 软件的机器上可达数秒，是启动安装状态链的主要耗时。
+async function resolvePatchTargets(patches, { force = false } = {}) {
+  const { targets } = await resolveDetectedTargets({
+    patches,
+    force,
+    cache: installationTargetCache,
+    detect: async (descriptorPatches) => detectPatchTargets(descriptorPatches, {
+      appData: app.getPath('appData'),
+      localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local'),
+      knownAudioTargets: Object.values(await installer.listInstallations())
+        .filter((installation) => typeof installation?.targetPath === 'string' && installation.targetPath)
+        .map((installation) => ({ targetPath: installation.targetPath, source: '已记录的 GSX 语音目录' }))
+    })
+  })
+  return targets
+}
+
+// 安装成功后把实际写入的目标目录回写进目标缓存（渲染层传 [{slot, path}]），
+// 下次启动即命中缓存，不再全盘扫描。
+async function recordInstallTargetInCache(patch, targetPaths) {
+  const entries = Array.isArray(targetPaths) ? targetPaths : [targetPaths]
+  const normalized = entries
+    .map((entry) => ({
+      slot: typeof entry === 'object' && typeof entry?.slot === 'string' ? entry.slot : null,
+      path: typeof entry === 'string' ? entry : entry?.path
+    }))
+    .filter((entry) => typeof entry.path === 'string' && entry.path.trim())
+  if (!normalized.length) return
+  await recordInstalledTarget({
+    patchId: typeof patch?.id === 'string' ? patch.id : '',
+    targetPath: normalized[0].path,
+    slots: normalized.filter((entry) => entry.slot).map((entry) => ({ slot: entry.slot, targetPath: entry.path })),
+    cache: installationTargetCache
+  })
+}
+
 function registerIpc() {
   ipcMain.handle('app:get-info', () => ({
     version: app.getVersion(),
@@ -209,13 +249,11 @@ function registerIpc() {
     return result
   })
   ipcMain.handle('patch:reconcile-installations', (_event, { patches, targetPaths }) => installer.reconcileInstallations(patches, targetPaths))
-  ipcMain.handle('patch:detect-targets', async (_event, patches) => detectPatchTargets(patches, {
-    appData: app.getPath('appData'),
-    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local'),
-    knownAudioTargets: Object.values(await installer.listInstallations())
-      .filter((installation) => typeof installation?.targetPath === 'string' && installation.targetPath)
-      .map((installation) => ({ targetPath: installation.targetPath, source: '已记录的 GSX 语音目录' }))
-  }))
+  ipcMain.handle('patch:detect-targets', async (_event, patches, options = {}) => {
+    const targets = await resolvePatchTargets(patches, { force: Boolean(options?.force) })
+    logger?.line('INFO', 'patch', `目录探测完成（${Object.keys(targets).length} 项）`)
+    return targets
+  })
   ipcMain.handle('patch:choose-target', async (_event, options = {}) => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: options.title || '选择补丁安装目录',
@@ -232,8 +270,16 @@ function registerIpc() {
     })
     return result.canceled ? null : result.filePaths[0]
   })
-  ipcMain.handle('patch:install', (_event, { patch, targetPath }) => installer.install(patch, targetPath))
-  ipcMain.handle('patch:install-from-file', (_event, { patch, targetPath, sourceArchivePath }) => installer.installFromFile(patch, targetPath, sourceArchivePath))
+  ipcMain.handle('patch:install', async (_event, { patch, targetPath }) => {
+    const result = await installer.install(patch, targetPath)
+    await recordInstallTargetInCache(patch, targetPath)
+    return result
+  })
+  ipcMain.handle('patch:install-from-file', async (_event, { patch, targetPath, sourceArchivePath }) => {
+    const result = await installer.installFromFile(patch, targetPath, sourceArchivePath)
+    await recordInstallTargetInCache(patch, targetPath)
+    return result
+  })
   ipcMain.handle('patch:restore', async (_event, patchId) => {
     const result = await installer.restore(patchId)
     logger?.line('INFO', 'patch', `还原 ${patchId}: restored=${result.restored} conflicts=${result.conflicts?.length ?? 0}`)
@@ -414,6 +460,9 @@ app.whenReady().then(async () => {
   logger.line('INFO', 'app', `启动：v${app.getVersion()} | 日志${logReady ? '就绪' : '不可用（静默降级）'}：${logFilePath}`)
 
   catalog = new ServerCatalog({ cacheDirectory: path.join(userDataDirectory, 'cache') })
+  installationTargetCache = new InstallationTargetCache({
+    filePath: path.join(userDataDirectory, 'cache', 'installation-targets.json')
+  })
   gsxUpdater = new GsxUpdater({
     userDataDirectory,
     onProgress: (payload) => {

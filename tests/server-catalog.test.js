@@ -422,3 +422,67 @@ test('uses a five-second catalog timeout', () => {
   const client = new ServerCatalog({ cacheDirectory: path.join(os.tmpdir(), 'catalog-timeout-test') })
   assert.equal(client.timeoutMs, 5000)
 })
+
+test('accepts null or blank addonVersion for version-agnostic patches', () => {
+  for (const addonVersion of [null, '', undefined]) {
+    const result = validateCatalog(catalogWith({
+      id: 'gsx-pro-zh-cn-voice',
+      name: 'GSX 中文语音包',
+      summary: 'Network voice pack',
+      version: '1.0.1',
+      addonVersion,
+      status: 'published',
+      targetKind: 'gsx-audio',
+      package: {
+        releaseTag: 'patch-gsx-pro-zh-cn-voice-v1.0.1',
+        assetName: 'voice.zip',
+        sha256: 'e'.repeat(64),
+        size: 100,
+        downloadUrl: buildServerUrl('/api/patches/package/8')
+      }
+    }))
+    assert.equal(result.patches[0].addonVersion, null)
+  }
+})
+
+test('normalizes downloadCount and publishedAt for sorting and display', () => {
+  const result = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro 简体中文',
+    summary: 'Test patch',
+    version: '2.0.0',
+    addonVersion: '4.0.23',
+    status: 'published',
+    downloadCount: 1234,
+    publishedAt: ' 2026-09-18T10:00:00+08:00 ',
+    package: {
+      releaseTag: 'gsx-pro-v2.0.0',
+      assetName: 'gsx-pro-zh-cn.zip',
+      sha256: 'a'.repeat(64),
+      size: 100,
+      downloadUrl: buildServerUrl('/api/patches/package/6')
+    }
+  }))
+  assert.equal(result.patches[0].downloadCount, 1234)
+  assert.equal(result.patches[0].publishedAt, '2026-09-18T10:00:00+08:00')
+
+  // 旧缓存/旧服务端缺失新字段时取安全默认值，不破坏目录加载
+  const legacy = validateCatalog(catalogWith({
+    id: 'gsx-pro-zh-cn',
+    name: 'GSX Pro 简体中文',
+    summary: 'Test patch',
+    version: '2.0.0',
+    addonVersion: '4.0.23',
+    status: 'published',
+    downloadCount: -5,
+    package: {
+      releaseTag: 'gsx-pro-v2.0.0',
+      assetName: 'gsx-pro-zh-cn.zip',
+      sha256: 'a'.repeat(64),
+      size: 100,
+      downloadUrl: buildServerUrl('/api/patches/package/6')
+    }
+  }))
+  assert.equal(legacy.patches[0].downloadCount, 0)
+  assert.equal(legacy.patches[0].publishedAt, null)
+})

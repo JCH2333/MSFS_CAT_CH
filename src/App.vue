@@ -165,14 +165,16 @@ async function verifyInstallations() {
   replaceReactive(installationChecks, await bridge.patches.verifyInstallations())
 }
 
-async function detectTargets(patches = catalogState.catalog?.patches || []) {
+async function detectTargets(patches = catalogState.catalog?.patches || [], { force = false } = {}) {
   const descriptors = patches.map((patch) => ({
     id: patch.id,
     targetKind: patch.targetKind,
     targetFolders: Array.isArray(patch.targetFolders) ? [...patch.targetFolders] : [],
     dualSim: describeDualSim(patch)
   }))
-  replaceReactive(detectedTargets, await bridge.patches.detectTargets(descriptors))
+  // 主进程侧有目标缓存：常规启动直接复用上次结果（目录仍存在时），
+  // force 在缓存未命中需要重试时使用（如用户后装了 GSX）
+  replaceReactive(detectedTargets, await bridge.patches.detectTargets(descriptors, { force }))
 }
 
 // 目标路径选择顺序：手动指定 > 已安装记录 > 自动检测；双版本补丁按槽位分别解析
@@ -430,13 +432,23 @@ async function ensureGsxVersionForPatch(patch) {
   }
 }
 
+// 目标缺失时先强制重探一次再判断（缓存可能记录的是"未安装 GSX"的旧结果）
+async function collectTargetsOrRedetect(patch) {
+  let installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
+  if (!installTargets.length) {
+    await detectTargets(catalogState.catalog?.patches || [], { force: true })
+    installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
+  }
+  return installTargets
+}
+
 async function installPatch(patch) {
   const verdict = await ensureGsxVersionForPatch(patch)
   if (verdict !== 'ok') {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: gsxGuardMessage(verdict) }
     return
   }
-  const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
+  const installTargets = await collectTargetsOrRedetect(patch)
   if (!installTargets.length) {
     operations[patch.id] = {
       busy: false,
@@ -468,7 +480,7 @@ async function importPatch(patch) {
     operations[patch.id] = { busy: false, phase: 'error', percent: 0, message: gsxGuardMessage(verdict) }
     return
   }
-  const installTargets = collectInstallTargets({ targets, installations, detectedTargets }, patch)
+  const installTargets = await collectTargetsOrRedetect(patch)
   if (!installTargets.length) {
     operations[patch.id] = {
       busy: false,

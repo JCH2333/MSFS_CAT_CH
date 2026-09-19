@@ -150,6 +150,33 @@ button { color: inherit; }
 .source-status { height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid rgba(98, 214, 163, 0.26); border-radius: 5px; background: var(--signal-bg); color: var(--signal); font-size: 12px; }
 .source-status[data-offline="true"] { border-color: rgba(227, 178, 83, 0.3); background: rgba(227, 178, 83, 0.09); color: var(--warning); }
 
+.sort-control { height: 34px; display: flex; align-items: stretch; border: 1px solid var(--glass-border); border-radius: 5px; background: var(--surface); overflow: hidden; }
+.sort-field { display: flex; align-items: center; }
+.sort-field select {
+  height: 100%;
+  padding: 0 4px 0 9px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.sort-field select:hover { color: var(--text); }
+.sort-field select option { background: #1d1e1a; color: var(--text); }
+.sort-order {
+  width: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.sort-order:hover { background: var(--surface-hover); color: var(--text); }
+
 .icon-button {
   width: 36px;
   height: 36px;
@@ -203,6 +230,7 @@ button { color: inherit; }
 .patch-free-note button:hover, .text-action:hover { color: var(--signal); }
 .patch-meta { min-height: 22px; display: flex; flex-wrap: wrap; gap: 6px; }
 .patch-meta span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border: 1px solid #3b3c36; border-radius: 4px; color: var(--text-muted); font-size: 10px; }
+.patch-meta .patch-downloads { border-color: rgba(98, 214, 163, 0.28); color: var(--signal); }
 
 .operation-progress { margin-top: 12px; display: grid; grid-template-columns: minmax(100px, 1fr) auto; align-items: center; gap: 10px; color: var(--text-muted); font-size: 10px; }
 .operation-progress[data-error="true"] { color: var(--danger); }

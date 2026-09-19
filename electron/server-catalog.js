@@ -178,6 +178,15 @@ function validateCatalog(input) {
         }
         return addonVersion
       })(),
+      // 下载量（服务端按 IP 24 小时去重累计）；旧缓存/旧服务端缺失时按 0 展示
+      downloadCount: (() => {
+        const count = Number(patch.downloadCount)
+        return Number.isSafeInteger(count) && count > 0 ? count : 0
+      })(),
+      // 发布时间（ISO 字符串）：补丁卡片"按更新时间"排序依据；缺失时排序回退原顺序
+      publishedAt: typeof patch.publishedAt === 'string' && patch.publishedAt.trim()
+        ? patch.publishedAt.trim()
+        : null,
       status,
       compatibility: Array.isArray(patch.compatibility)
         ? patch.compatibility.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
