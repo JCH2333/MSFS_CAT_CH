@@ -34,7 +34,9 @@ const PRODUCT_PACKAGE_FOLDERS = ['fsdreamteam-gsx-pro', 'fsdreamteam-gsx-world-o
 const COMMUNITY_LEAF_CANDIDATES = ['Community2024', 'Community']
 
 const ACTIVATION_POLL_INTERVAL_MS = 3000
-const ACTIVATION_POLL_TIMEOUT_MS = 240000
+// 常规出口是“向导窗口关闭”或“注册表出现激活记录”，超时仅为兜底
+// （例如用户把向导一直开着，或经官方安装器/下载器激活的机器）
+const ACTIVATION_POLL_TIMEOUT_MS = 1800000
 
 async function defaultRegistryReader() {
   try {
@@ -46,6 +48,18 @@ async function defaultRegistryReader() {
   } catch (error) {
     // 值或键不存在时 reg.exe 以非零码退出，同样视为“无激活记录”
     return { present: false, stdout: String(error?.stdout || '') }
+  }
+}
+
+async function defaultProcessExists(pid) {
+  try {
+    const { stdout } = await execFileAsync('tasklist.exe', ['/FI', `PID eq ${pid}`], {
+      windowsHide: true,
+      timeout: 8000
+    })
+    return new RegExp(`\\s${pid}\\s`).test(stdout)
+  } catch {
+    return false
   }
 }
 
@@ -82,6 +96,7 @@ function createGsxInstaller({
   registryReader = defaultRegistryReader,
   rootLister = registeredAddonManagerRoots,
   processLister = defaultProcessLister,
+  processExists = defaultProcessExists,
   launcher = defaultLauncher,
   sleep = defaultSleep,
   pollIntervalMs = ACTIVATION_POLL_INTERVAL_MS,
@@ -90,7 +105,7 @@ function createGsxInstaller({
   async function detectActivation() {
     const { present, stdout } = await registryReader()
     const serial = present ? parseSerialNumber(stdout) : null
-    return { activated: Boolean(serial), serialPresent: Boolean(serial) }
+    return { activated: Boolean(serial), serialPresent: Boolean(serial), serial }
   }
 
   async function detectInfrastructure() {
@@ -156,13 +171,24 @@ function createGsxInstaller({
   }
 
   // 轮询激活结果：SerialNumber 出现且不同于基线即视为激活完成。
-  async function pollForActivation({ baselineSerial = null, timeoutMs = pollTimeoutMs } = {}) {
+  // watchPid 存在时同时监视官方向导窗口——向导一旦关闭，做最后一次注册表
+  // 复查后立即返回，不再干等固定超时；激活记录先出现则提前返回。
+  async function pollForActivation({ baselineSerial = null, timeoutMs = pollTimeoutMs, watchPid = null } = {}) {
     const deadline = Date.now() + timeoutMs
     for (;;) {
       const { present, stdout } = await registryReader()
       const serial = present ? parseSerialNumber(stdout) : null
-      if (serial && serial !== baselineSerial) return { activated: true, timedOut: false }
-      if (Date.now() >= deadline) return { activated: false, timedOut: true }
+      if (serial && serial !== baselineSerial) return { activated: true, timedOut: false, wizardClosed: false }
+      if (watchPid != null && !(await processExists(watchPid))) {
+        const finalCheck = await registryReader()
+        const finalSerial = finalCheck.present ? parseSerialNumber(finalCheck.stdout) : null
+        return {
+          activated: Boolean(finalSerial && finalSerial !== baselineSerial),
+          timedOut: false,
+          wizardClosed: true
+        }
+      }
+      if (Date.now() >= deadline) return { activated: false, timedOut: true, wizardClosed: null }
       await sleep(pollIntervalMs)
     }
   }

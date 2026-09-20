@@ -117,6 +117,26 @@ async function runGsxPackagePresetFlow() {
   return { downloaded: result.downloaded, skipped: result.skipped, manifest: result.manifest }
 }
 
+// 第二步：启动官方 QLM 激活向导并监视激活结果。向导窗口关闭或注册表出现
+// 新激活记录即返回；用户若经官方安装器（Active 按钮）或官方下载器完成激活，
+// 本轮询同样能检测到。激活码只在官方向导内输入，不经过本应用。
+async function runGsxActivateFlow() {
+  if (!gsxInstaller) throw new Error('GSX 组件未就绪')
+  const infrastructure = await gsxInstaller.detectInfrastructure()
+  if (!infrastructure.present) {
+    throw new Error('未检测到 FSDT 安装根目录：请先完成第一步；若已安装过官方安装器，请确认其安装目录未被改名或移动')
+  }
+  const baseline = await gsxInstaller.detectActivation()
+  const pid = await gsxInstaller.launchLicenseWizard(infrastructure)
+  logger?.line('INFO', 'gsx', `激活向导已启动 pid=${pid} baselineActivated=${baseline.activated}`)
+  const result = await gsxInstaller.pollForActivation({
+    baselineSerial: baseline.serial || null,
+    watchPid: pid
+  })
+  logger?.line('INFO', 'gsx', `激活检测结果：activated=${result.activated} wizardClosed=${result.wizardClosed} timedOut=${result.timedOut}`)
+  return result
+}
+
 async function runGsxUpdateFlow() {
   if (!gsxUpdater) throw new Error('GSX 更新器未就绪')
   await gsxUpdater.assertSimClosed()
@@ -487,8 +507,7 @@ function registerIpc() {
   ipcMain.handle('gsx:lifecycle', () => gsxInstaller.detectLifecycle(() => gsxUpdater.detectInstall()))
   // 启动器需 FSDT 根目录：由主进程自探，渲染层不传文件系统路径
   ipcMain.handle('gsx:launch-installer-ui', async () => gsxInstaller.launchLiveUpdateInstaller(await gsxInstaller.detectInfrastructure()))
-  ipcMain.handle('gsx:launch-license-wizard', async () => gsxInstaller.launchLicenseWizard(await gsxInstaller.detectInfrastructure()))
-  ipcMain.handle('gsx:poll-activation', (_event, payload) => gsxInstaller.pollForActivation(payload || {}))
+  ipcMain.handle('gsx:activate:start', () => runGsxActivateFlow())
   ipcMain.handle('gsx:uninstall:start', () => runGsxUninstallFlow())
   // GSX 全新安装镜像（官方安装器 + 本体完整包）
   ipcMain.handle('gsx:install:manifest', () => gsxInstall.loadManifest())

@@ -33,10 +33,10 @@ test('parseSerialNumber extracts the key from reg query output', () => {
 
 test('detectActivation reflects the registry record without network access', async () => {
   const installer = createGsxInstaller({ registryReader: registryReaderStub('AIKD3-B0G00') })
-  assert.deepEqual(await installer.detectActivation(), { activated: true, serialPresent: true })
+  assert.deepEqual(await installer.detectActivation(), { activated: true, serialPresent: true, serial: 'AIKD3-B0G00' })
 
   const inactive = createGsxInstaller({ registryReader: registryReaderStub(null) })
-  assert.deepEqual(await inactive.detectActivation(), { activated: false, serialPresent: false })
+  assert.deepEqual(await inactive.detectActivation(), { activated: false, serialPresent: false, serial: null })
 })
 
 test('detectInfrastructure finds the addon root hosting the official updater', async () => {
@@ -165,7 +165,7 @@ test('pollForActivation times out when the serial never appears', async () => {
     pollTimeoutMs: 30
   })
   const result = await installer.pollForActivation({ baselineSerial: null })
-  assert.deepEqual(result, { activated: false, timedOut: true })
+  assert.deepEqual(result, { activated: false, timedOut: true, wizardClosed: null })
 })
 
 test('launchLicenseWizard passes the official GSX Pro settings file', async () => {
@@ -212,4 +212,42 @@ test('launchLicenseWizard refuses to start without a settings file', async () =>
     () => installer.launchLicenseWizard({ addonRoot }),
     /产品设置文件/
   )
+})
+
+test('pollForActivation returns as soon as the wizard window closes, with a final registry check', async () => {
+  let serial = null
+  let wizardAlive = true
+  let processChecks = 0
+  const installer = createGsxInstaller({
+    registryReader: async () => (serial
+      ? { present: true, stdout: `SerialNumber    REG_SZ    ${serial}` }
+      : { present: false, stdout: '' }),
+    processExists: async () => {
+      processChecks += 1
+      if (processChecks >= 3) wizardAlive = false
+      return wizardAlive
+    },
+    sleep: async () => {},
+    pollIntervalMs: 1,
+    pollTimeoutMs: 60000
+  })
+  // 向导关闭且始终无激活记录：立即返回 wizardClosed，而不是等满超时
+  const result = await installer.pollForActivation({ baselineSerial: null, watchPid: 4321 })
+  assert.deepEqual(result, { activated: false, timedOut: false, wizardClosed: true })
+  assert.equal(processChecks, 3)
+})
+
+test('pollForActivation keeps waiting while the wizard window is open', async () => {
+  let serial = null
+  const installer = createGsxInstaller({
+    registryReader: async () => (serial
+      ? { present: true, stdout: `SerialNumber    REG_SZ    ${serial}` }
+      : { present: false, stdout: '' }),
+    processExists: async () => serial === null,
+    sleep: async () => { serial = 'LATE-KEY' },
+    pollIntervalMs: 1,
+    pollTimeoutMs: 60000
+  })
+  const result = await installer.pollForActivation({ baselineSerial: null, watchPid: 4321 })
+  assert.deepEqual(result, { activated: true, timedOut: false, wizardClosed: false })
 })

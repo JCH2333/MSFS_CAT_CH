@@ -70,8 +70,7 @@ const developmentBridge = {
       product: { installed: false }
     }),
     launchInstallerUi: async () => {},
-    launchLicenseWizard: async () => {},
-    pollActivation: async () => ({ activated: false, timedOut: true }),
+    startActivation: async () => { throw new Error('请在桌面应用中激活 GSX') },
     uninstall: async () => { throw new Error('请在桌面应用中卸载 GSX') },
     installManifest: async () => { throw new Error('请在桌面应用中获取安装清单') },
     startBootstrap: async () => { throw new Error('请在桌面应用中下载官方安装器') },
