@@ -165,7 +165,7 @@ test('pollForActivation times out when the serial never appears', async () => {
     pollTimeoutMs: 30
   })
   const result = await installer.pollForActivation({ baselineSerial: null })
-  assert.deepEqual(result, { activated: false, timedOut: true, wizardClosed: null })
+  assert.deepEqual(result, { activated: false, timedOut: true, wizardClosed: false })
 })
 
 test('launchLicenseWizard passes the official GSX Pro settings file', async () => {
@@ -214,7 +214,7 @@ test('launchLicenseWizard refuses to start without a settings file', async () =>
   )
 })
 
-test('pollForActivation returns as soon as the wizard window closes, with a final registry check', async () => {
+test('pollForActivation returns after the close grace once the wizard window closes', async () => {
   let serial = null
   let wizardAlive = true
   let processChecks = 0
@@ -229,9 +229,10 @@ test('pollForActivation returns as soon as the wizard window closes, with a fina
     },
     sleep: async () => {},
     pollIntervalMs: 1,
-    pollTimeoutMs: 60000
+    pollTimeoutMs: 60000,
+    closeGraceMs: 1
   })
-  // 向导关闭且始终无激活记录：立即返回 wizardClosed，而不是等满超时
+  // 向导关闭且宽限期内始终无激活记录：返回 wizardClosed，而不是等满超时
   const result = await installer.pollForActivation({ baselineSerial: null, watchPid: 4321 })
   assert.deepEqual(result, { activated: false, timedOut: false, wizardClosed: true })
   assert.equal(processChecks, 3)
@@ -273,24 +274,62 @@ test('detectActivation accepts the new Universal Installer HKLM location first',
 
 test('detectActivation falls back to the legacy HKCU location', async () => {
   const installer = createGsxInstaller({
-    registryReader: scriptedReader([EMPTY_READ, serialRead('LEGACY-KEY')])
+    registryReader: scriptedReader([EMPTY_READ, EMPTY_READ, EMPTY_READ, serialRead('LEGACY-KEY')])
   })
   assert.deepEqual(await installer.detectActivation(), { activated: true, serialPresent: true, serial: 'LEGACY-KEY' })
 })
 
 test('pollForActivation recognizes re-activation with the same key after deactivation', async () => {
-  // 每轮询一轮读取两个注册表位置：KEY → 空 → 空 → KEY（停用后又用同一个码激活）
+  // 激活记录先清空（停用）再恢复（同码重激）：经过“无记录”状态后同码也算新激活
+  let serial = 'SAME-KEY'
+  let phase = 0
   const installer = createGsxInstaller({
-    registryReader: scriptedReader([
-      serialRead('SAME-KEY'), EMPTY_READ,
-      EMPTY_READ, EMPTY_READ,
-      EMPTY_READ, EMPTY_READ,
-      serialRead('SAME-KEY'), EMPTY_READ
-    ]),
-    sleep: async () => {},
+    registryReader: async () => (serial
+      ? { present: true, stdout: `    SerialNumber    REG_SZ    ${serial}` }
+      : { present: false, stdout: '' }),
+    sleep: async () => {
+      phase += 1
+      if (phase === 1) serial = null
+      else if (phase === 3) serial = 'SAME-KEY'
+    },
     pollIntervalMs: 1,
     pollTimeoutMs: 60000
   })
   const result = await installer.pollForActivation({ baselineSerial: 'SAME-KEY' })
   assert.deepEqual(result, { activated: true, timedOut: false, wizardClosed: false })
+})
+
+test('pollForActivation keeps checking during the close grace and accepts a late record', async () => {
+  // 实测案例：向导关闭 21 秒后官方下载器才把激活记录补写进注册表
+  let wizardAlive = true
+  let serial = null
+  let sleeps = 0
+  const installer = createGsxInstaller({
+    registryReader: async () => (serial
+      ? { present: true, stdout: '    SerialNumber    REG_SZ    LATE-KEY' }
+      : { present: false, stdout: '' }),
+    processExists: async () => wizardAlive,
+    sleep: async () => {
+      sleeps += 1
+      if (sleeps === 2) wizardAlive = false
+      if (sleeps === 4) serial = 'LATE-KEY'
+    },
+    pollIntervalMs: 1,
+    pollTimeoutMs: 60000,
+    closeGraceMs: 60000
+  })
+  const result = await installer.pollForActivation({ baselineSerial: null, watchPid: 4321 })
+  assert.deepEqual(result, { activated: true, timedOut: false, wizardClosed: true })
+})
+
+test('pollForActivation reports failure only after the close grace expires', async () => {
+  const installer = createGsxInstaller({
+    registryReader: registryReaderStub(null),
+    processExists: async () => false,
+    sleep: async () => {},
+    pollIntervalMs: 1,
+    closeGraceMs: 5
+  })
+  const result = await installer.pollForActivation({ baselineSerial: null, watchPid: 4321 })
+  assert.deepEqual(result, { activated: false, timedOut: false, wizardClosed: true })
 })

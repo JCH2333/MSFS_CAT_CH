@@ -22,10 +22,14 @@ const execFileAsync = promisify(execFile)
 
 const FSDT_REGISTRY_KEY = 'HKCU\\Software\\Fsdreamteam'
 const SERIAL_NUMBER_VALUE_NAME = 'SerialNumber'
-// 激活记录位置（实测 2026-09）：新版 Universal Installer（32 位）写 HKLM 产品子键，
-// 旧版 Addon Manager 时代写 HKCU 根键。两处任一非空即视为已激活，新版优先。
+// 激活记录位置（实测 2026-09-21）：新版 Universal Installer（32 位）写 HKLM 产品子键；
+// 旧版 Addon Manager 写 HKCU 根键。我们的应用不提权启动向导时，向导对 HKLM 的写入
+// 会被 Windows 静默重定向到 VirtualStore（官方工具能读到合并视图），随后官方安装器
+// 常会把它“扶正”回真实 HKLM——因此 VirtualStore 两条也纳入检测，HKLM 优先。
 const ACTIVATION_REGISTRY_LOCATIONS = [
   { key: 'HKLM\\SOFTWARE\\WOW6432Node\\FSDreamTeam\\GSX Pro', valueName: SERIAL_NUMBER_VALUE_NAME },
+  { key: 'HKCU\\Software\\Classes\\VirtualStore\\MACHINE\\SOFTWARE\\WOW6432Node\\FSDreamTeam\\GSX Pro', valueName: SERIAL_NUMBER_VALUE_NAME },
+  { key: 'HKCU\\Software\\Classes\\VirtualStore\\MACHINE\\SOFTWARE\\FSDreamTeam\\GSX Pro', valueName: SERIAL_NUMBER_VALUE_NAME },
   { key: FSDT_REGISTRY_KEY, valueName: SERIAL_NUMBER_VALUE_NAME }
 ]
 const LIVE_UPDATE_EXECUTABLE = 'Couatl_Updater.exe'
@@ -43,6 +47,9 @@ const ACTIVATION_POLL_INTERVAL_MS = 3000
 // 常规出口是“向导窗口关闭”或“注册表出现激活记录”，超时仅为兜底
 // （例如用户把向导一直开着，或经官方安装器/下载器激活的机器）
 const ACTIVATION_POLL_TIMEOUT_MS = 1800000
+// 向导关闭后记录仍可能延迟落盘（实测：官方下载器在向导关闭 21 秒后补写真实
+// HKLM）——关闭后再继续复查这一段时间才允许下“未检测到”的结论
+const ACTIVATION_CLOSE_GRACE_MS = 90000
 
 async function defaultRegistryReader(key, valueName) {
   try {
@@ -106,7 +113,8 @@ function createGsxInstaller({
   launcher = defaultLauncher,
   sleep = defaultSleep,
   pollIntervalMs = ACTIVATION_POLL_INTERVAL_MS,
-  pollTimeoutMs = ACTIVATION_POLL_TIMEOUT_MS
+  pollTimeoutMs = ACTIVATION_POLL_TIMEOUT_MS,
+  closeGraceMs = ACTIVATION_CLOSE_GRACE_MS
 } = {}) {
   async function readCurrentSerial() {
     for (const location of ACTIVATION_REGISTRY_LOCATIONS) {
@@ -186,26 +194,28 @@ function createGsxInstaller({
 
   // 轮询激活结果：任一位置出现 SerialNumber 且不同于基线（或先经过“无记录”
   // 状态——覆盖停用后同码重激）即视为激活完成。watchPid 存在时同时监视官方
-  // 向导窗口——向导一旦关闭，做最后一次注册表复查后立即返回，不再干等固定
-  // 超时；激活记录先出现则提前返回。
-  async function pollForActivation({ baselineSerial = null, timeoutMs = pollTimeoutMs, watchPid = null } = {}) {
+  // 向导窗口：向导关闭后仍按 closeGraceMs 继续复查（官方工具可能延迟补写记录），
+  // 宽限期满才返回“未检测到”；激活记录先出现则提前返回。
+  async function pollForActivation({ baselineSerial = null, timeoutMs = pollTimeoutMs, watchPid = null, closeGraceMs: graceOverride } = {}) {
+    const grace = graceOverride ?? closeGraceMs
     const deadline = Date.now() + timeoutMs
     let sawEmpty = !baselineSerial
+    let closedAt = null
     for (;;) {
       const serial = await readCurrentSerial()
       if (serial && (sawEmpty || serial !== baselineSerial)) {
-        return { activated: true, timedOut: false, wizardClosed: false }
+        return { activated: true, timedOut: false, wizardClosed: closedAt !== null }
       }
       if (!serial) sawEmpty = true
-      if (watchPid != null && !(await processExists(watchPid))) {
-        const finalSerial = await readCurrentSerial()
-        return {
-          activated: Boolean(finalSerial && (sawEmpty || finalSerial !== baselineSerial)),
-          timedOut: false,
-          wizardClosed: true
-        }
+      if (closedAt === null && watchPid != null && !(await processExists(watchPid))) {
+        closedAt = Date.now()
       }
-      if (Date.now() >= deadline) return { activated: false, timedOut: true, wizardClosed: null }
+      if (closedAt !== null && Date.now() - closedAt >= closeGraceMs) {
+        return { activated: false, timedOut: false, wizardClosed: true }
+      }
+      if (closedAt === null && Date.now() >= deadline) {
+        return { activated: false, timedOut: true, wizardClosed: false }
+      }
       await sleep(pollIntervalMs)
     }
   }
@@ -285,6 +295,7 @@ function createGsxInstaller({
 }
 
 module.exports = {
+  ACTIVATION_CLOSE_GRACE_MS,
   ACTIVATION_REGISTRY_LOCATIONS,
   FSDT_REGISTRY_KEY,
   LICENSE_WIZARD_EXECUTABLE,
