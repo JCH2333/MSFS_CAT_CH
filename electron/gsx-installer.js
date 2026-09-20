@@ -26,6 +26,9 @@ const LIVE_UPDATE_EXECUTABLE = 'Couatl_Updater.exe'
 // 与官方桌面快捷方式一致的参数：进入产品安装管理界面（含 Install/卸载入口）
 const LIVE_UPDATE_LAUNCH_ARGS = ['/SILENT', '/INSTALLMODE=TRUE']
 const LICENSE_WIZARD_EXECUTABLE = 'QlmLicenseWizard.exe'
+// 官方向导必须携带产品设置文件（/settings <*.lw.xml>），裸启动会报
+// "No settings file was specified"。GSX Pro 的现行定义即此文件（ProductName="GSX Pro"）。
+const LICENSE_WIZARD_SETTINGS_NAME = 'GSX Pro 3.0.lw.xml'
 // 卸载作用域：仅这两个 GSX 产品包。GSX EFB 为随安装器分发的独立免费产品，不动。
 const PRODUCT_PACKAGE_FOLDERS = ['fsdreamteam-gsx-pro', 'fsdreamteam-gsx-world-of-jetways']
 const COMMUNITY_LEAF_CANDIDATES = ['Community2024', 'Community']
@@ -125,10 +128,31 @@ function createGsxInstaller({
     return launcher(path.join(addonRoot, LIVE_UPDATE_EXECUTABLE), LIVE_UPDATE_LAUNCH_ARGS, addonRoot)
   }
 
+  // 定位官方向导的 GSX Pro 设置文件：优先已知官方文件名，否则按内容扫描
+  // 根目录下 ProductName="GSX Pro" 的 *.lw.xml（不同官方版本可能更新文件名）。
+  async function findLicenseWizardSettings(addonRoot) {
+    const fallbackPath = path.join(addonRoot, LICENSE_WIZARD_SETTINGS_NAME)
+    const fallbackExists = await fs.stat(fallbackPath).then((s) => s.isFile()).catch(() => false)
+    if (fallbackExists) return fallbackPath
+    const entries = await fs.readdir(addonRoot).catch(() => [])
+    for (const entry of entries) {
+      if (!entry.toLowerCase().endsWith('.lw.xml')) continue
+      const fullPath = path.join(addonRoot, entry)
+      try {
+        if (/ProductName="GSX Pro"/.test(await fs.readFile(fullPath, 'utf8'))) return fullPath
+      } catch {
+        // 无法读取的候选文件跳过
+      }
+    }
+    return null
+  }
+
   // 启动官方 QLM 许可向导（在线/离线激活）。许可码由用户在向导中粘贴，不经过本模块。
-  function launchLicenseWizard({ addonRoot }) {
+  async function launchLicenseWizard({ addonRoot }) {
     if (!addonRoot) throw new Error('未检测到 FSDT 安装根目录：请先完成第一步；若已安装过官方安装器，请确认其安装目录未被改名或移动')
-    return launcher(path.join(addonRoot, LICENSE_WIZARD_EXECUTABLE), [], addonRoot)
+    const settingsPath = await findLicenseWizardSettings(addonRoot)
+    if (!settingsPath) throw new Error('官方安装器目录中缺少激活向导的产品设置文件（*.lw.xml），请改在官方安装界面中点击激活')
+    return launcher(path.join(addonRoot, LICENSE_WIZARD_EXECUTABLE), ['/settings', settingsPath], addonRoot)
   }
 
   // 轮询激活结果：SerialNumber 出现且不同于基线即视为激活完成。
@@ -220,6 +244,7 @@ function createGsxInstaller({
 module.exports = {
   FSDT_REGISTRY_KEY,
   LICENSE_WIZARD_EXECUTABLE,
+  LICENSE_WIZARD_SETTINGS_NAME,
   LIVE_UPDATE_EXECUTABLE,
   LIVE_UPDATE_LAUNCH_ARGS,
   PRODUCT_PACKAGE_FOLDERS,

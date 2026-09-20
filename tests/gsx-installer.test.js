@@ -6,7 +6,7 @@ const os = require('node:os')
 const path = require('node:path')
 const { execFile } = require('node:child_process')
 const { promisify } = require('node:util')
-const { createGsxInstaller, parseSerialNumber, PRODUCT_PACKAGE_FOLDERS } = require('../electron/gsx-installer')
+const { createGsxInstaller, parseSerialNumber, PRODUCT_PACKAGE_FOLDERS, LICENSE_WIZARD_SETTINGS_NAME } = require('../electron/gsx-installer')
 
 const execFileAsync = promisify(execFile)
 
@@ -166,4 +166,50 @@ test('pollForActivation times out when the serial never appears', async () => {
   })
   const result = await installer.pollForActivation({ baselineSerial: null })
   assert.deepEqual(result, { activated: false, timedOut: true })
+})
+
+test('launchLicenseWizard passes the official GSX Pro settings file', async () => {
+  const addonRoot = await temporaryDirectory('gsx-installer-qlm-')
+  await fs.writeFile(path.join(addonRoot, 'QlmLicenseWizard.exe'), 'stub')
+  await fs.writeFile(path.join(addonRoot, LICENSE_WIZARD_SETTINGS_NAME), '<licensewizard ProductName="GSX Pro" />')
+  let invoked = null
+  const installer = createGsxInstaller({
+    launcher: async (exePath, args, workingDirectory) => {
+      invoked = { exePath, args, workingDirectory }
+      return 4321
+    }
+  })
+  await installer.launchLicenseWizard({ addonRoot })
+  assert.equal(path.basename(invoked.exePath), 'QlmLicenseWizard.exe')
+  assert.deepEqual(invoked.args, ['/settings', path.join(addonRoot, LICENSE_WIZARD_SETTINGS_NAME)])
+  assert.equal(invoked.workingDirectory, addonRoot)
+})
+
+test('launchLicenseWizard scans *.lw.xml by ProductName when the known file is absent', async () => {
+  const addonRoot = await temporaryDirectory('gsx-installer-qlm-scan-')
+  await fs.writeFile(path.join(addonRoot, 'QlmLicenseWizard.exe'), 'stub')
+  await fs.writeFile(path.join(addonRoot, 'Legacy.lw.xml'), '<licensewizard ProductName="GSX" />')
+  const expected = path.join(addonRoot, 'Renamed GSX Pro.lw.xml')
+  await fs.writeFile(expected, '<licensewizard ProductName="GSX Pro" />')
+  let invoked = null
+  const installer = createGsxInstaller({
+    launcher: async (exePath, args) => {
+      invoked = { exePath, args }
+      return 1
+    }
+  })
+  await installer.launchLicenseWizard({ addonRoot })
+  assert.deepEqual(invoked.args, ['/settings', expected])
+})
+
+test('launchLicenseWizard refuses to start without a settings file', async () => {
+  const addonRoot = await temporaryDirectory('gsx-installer-qlm-empty-')
+  await fs.writeFile(path.join(addonRoot, 'QlmLicenseWizard.exe'), 'stub')
+  const installer = createGsxInstaller({
+    launcher: async () => { throw new Error('测试中不应启动 GUI') }
+  })
+  await assert.rejects(
+    () => installer.launchLicenseWizard({ addonRoot }),
+    /产品设置文件/
+  )
 })
