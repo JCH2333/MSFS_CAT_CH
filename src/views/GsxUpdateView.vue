@@ -37,8 +37,21 @@ const lifecycle = reactive({
   product: { installed: false },
   error: null
 })
-const activationFlow = reactive({ launching: false, polling: false, failed: false, timedOut: false })
+const activationFlow = reactive({ launching: false, polling: false, failed: false, timedOut: false, error: null })
 const officialDownloadPage = 'https://www.fsdreamteam.com/products_msfs.html'
+
+// —— 全新安装镜像（官方安装器 + 本体完整包，均走国内服务器）——
+const installInfo = ref(null)
+const installFlow = reactive({
+  busy: false,
+  kind: '',
+  percent: 0,
+  message: '',
+  error: null,
+  bootstrapReady: false,
+  presetDone: false
+})
+const installerUi = reactive({ launching: false, error: null, opened: false })
 
 // —— 卸载（已安装状态）——
 const uninstallFlow = reactive({ confirming: false, busy: false, done: false, error: null, message: '' })
@@ -48,6 +61,18 @@ const emit = defineEmits(['updated', 'patch-installed'])
 const totalMegabytes = computed(() => {
   if (!status.totalBytes) return '—'
   return `${(status.totalBytes / 1024 / 1024).toFixed(1)} MB`
+})
+
+const bootstrapSizeLabel = computed(() => {
+  if (!installInfo.value?.bootstrap?.size) return '61 MB'
+  return `${(installInfo.value.bootstrap.size / 1024 / 1024).toFixed(0)} MB`
+})
+
+const presetSizeLabel = computed(() => {
+  const packages = installInfo.value?.packages
+  if (!packages?.length) return '—'
+  const total = packages.reduce((sum, pkg) => sum + (pkg.size || 0), 0)
+  return `${(total / 1024 / 1024 / 1024).toFixed(1)} GB`
 })
 
 const progressPercent = computed(() => {
@@ -90,6 +115,7 @@ async function startLicenseWizard() {
   activationFlow.launching = true
   activationFlow.failed = false
   activationFlow.timedOut = false
+  activationFlow.error = null
   try {
     await props.bridge.gsx.launchLicenseWizard()
     activationFlow.launching = false
@@ -111,8 +137,66 @@ async function startLicenseWizard() {
   }
 }
 
+async function loadInstallManifest() {
+  try {
+    installInfo.value = await props.bridge.gsx.installManifest()
+  } catch {
+    installInfo.value = null
+  }
+}
+
+async function startBootstrap() {
+  if (installFlow.busy) return
+  installFlow.busy = true
+  installFlow.kind = 'bootstrap'
+  installFlow.error = null
+  installFlow.percent = 0
+  installFlow.message = '正在准备下载…'
+  try {
+    await props.bridge.gsx.startBootstrap()
+    installFlow.bootstrapReady = true
+    installFlow.message = '官方安装器已启动'
+  } catch (error) {
+    installFlow.error = error.message
+  } finally {
+    installFlow.busy = false
+  }
+}
+
+async function startPackagePreset() {
+  if (installFlow.busy) return
+  installFlow.busy = true
+  installFlow.kind = 'preset'
+  installFlow.error = null
+  installFlow.percent = 0
+  installFlow.message = '正在准备下载…'
+  try {
+    const result = await props.bridge.gsx.startPackagePreset()
+    installFlow.presetDone = true
+    installFlow.percent = 100
+    const downloaded = result?.downloaded?.length || 0
+    installFlow.message = downloaded
+      ? '安装包已预置到本地缓存'
+      : '安装包此前已预置完成'
+  } catch (error) {
+    installFlow.error = error.message
+  } finally {
+    installFlow.busy = false
+  }
+}
+
 async function openInstallerUi() {
-  await props.bridge.gsx.launchInstallerUi()
+  if (installerUi.launching) return
+  installerUi.launching = true
+  installerUi.error = null
+  try {
+    await props.bridge.gsx.launchInstallerUi()
+    installerUi.opened = true
+  } catch (error) {
+    installerUi.error = error.message
+  } finally {
+    installerUi.launching = false
+  }
 }
 
 async function requestUninstall() {
@@ -146,7 +230,10 @@ async function loadStatus() {
   try {
     const result = await props.bridge.gsx.status()
     Object.assign(status, result, { loaded: true })
-    if (!result.installed && !lifecycle.loaded) void loadLifecycle()
+    if (!result.installed) {
+      if (!lifecycle.loaded) void loadLifecycle()
+      void loadInstallManifest()
+    }
   } catch (error) {
     Object.assign(status, { loaded: true, installed: false, pending: [], updateAvailable: false, error: error.message })
     errorMessage.value = error.message
@@ -204,6 +291,13 @@ function formatSize(bytes) {
 const UNINSTALL_PHASES = new Set(['check', 'forget-records', 'remove', 'reset-state'])
 
 const unsubscribeProgress = props.bridge.gsx.onProgress((progress) => {
+  // 全新安装镜像的下载进度（kind: 'install'）走 installFlow，与更新流互不干扰
+  if (progress.kind === 'install') {
+    if (!installFlow.busy) return
+    installFlow.percent = progress.percent || 0
+    installFlow.message = progress.message || ''
+    return
+  }
   if (uninstallFlow.busy && UNINSTALL_PHASES.has(progress.phase)) {
     uninstallFlow.message = progress.message || ''
     return
@@ -230,9 +324,9 @@ onBeforeUnmount(unsubscribeProgress)
   <section class="view-shell gsx-shell">
     <header class="view-header">
       <div>
-        <p class="eyebrow">GSX UPDATE</p>
-        <h1>GSX 更新</h1>
-        <p class="gsx-subtitle">通过国内服务器下载 FSDreamTeam 官方更新包，无需访问国外网络。</p>
+        <p class="eyebrow">GSX DOWNLOAD &amp; UPDATE</p>
+        <h1>GSX 下载与更新</h1>
+        <p class="gsx-subtitle">GSX 本体安装包与官方更新包均由国内服务器分发（逐字节镜像校验），下载与更新无需访问国外网络。</p>
       </div>
       <div class="header-actions">
         <button class="gsx-ghost" type="button" :disabled="status.loading || operation.busy" @click="loadStatus">
@@ -249,14 +343,17 @@ onBeforeUnmount(unsubscribeProgress)
       <div v-if="!status.installed && !errorMessage" class="gsx-empty">
         <Plane :size="28" />
         <strong>未检测到 GSX 本体</strong>
-        <p>已购买正版 GSX Pro？跟随下面三步即可完成安装，全程无需访问国外网络（激活服务器国内直连）。安装完成后回到本页，即可使用国内镜像在线更新。</p>
+        <p>
+          已购买正版 GSX Pro？跟随下面三步即可完成安装：官方安装器与本体安装包均由国内服务器直连下载，
+          激活服务器同样国内可达。仅第一步安装基础组件时可能需要国际网络。安装完成后回到本页，即可使用国内镜像在线更新。
+        </p>
       </div>
 
       <!-- 安装向导（未安装时显示） -->
       <section v-if="!status.installed && !errorMessage" class="gsx-panel gsx-wizard">
         <header class="gsx-panel-head">
           <h3><KeyRound :size="14" /> 安装 GSX Pro</h3>
-          <span>三步完成 · 全程官方组件</span>
+          <span>三步完成 · 安装器与本体均由国内服务器分发</span>
         </header>
 
         <ol class="gsx-steps">
@@ -270,14 +367,34 @@ onBeforeUnmount(unsubscribeProgress)
               <strong>安装 FSDT 官方安装器（基础组件，约 400 MB）</strong>
             </div>
             <p class="gsx-step-body">
-              这是 FSDreamTeam 官方安装器，负责引擎与基础组件。请从官方页面下载
-              Addon_Manager.exe 并安装；下载或安装进度缓慢时，多重试几次即可。
+              从国内服务器下载官方安装器（{{ bootstrapSizeLabel }}）并自动运行，由它安装 couatl 引擎等基础组件。
+              若安装器无法启动或基础组件安装受阻，多为国际网络原因——请<b>临时使用加速器</b>后重试。
             </p>
             <div class="gsx-step-actions">
-              <button class="gsx-secondary" type="button" @click="openOfficialDownloadPage">
+              <button
+                class="gsx-secondary" type="button"
+                :disabled="installFlow.busy"
+                @click="startBootstrap"
+              >
+                <LoaderCircle v-if="installFlow.busy && installFlow.kind === 'bootstrap'" :size="13" class="spin" />
+                <CloudDownload v-else :size="13" />
+                {{ installFlow.busy && installFlow.kind === 'bootstrap' ? '正在下载安装器…' : `下载官方安装器并运行（${bootstrapSizeLabel}）` }}
+              </button>
+              <button class="gsx-ghost" type="button" @click="openOfficialDownloadPage">
                 <ExternalLink :size="13" /> 打开官方下载页
               </button>
             </div>
+            <div v-if="installFlow.busy && installFlow.kind === 'bootstrap'" class="gsx-step-progress">
+              <div class="gsx-track"><span :style="{ width: installFlow.percent + '%' }" /></div>
+              <span class="gsx-step-progress-text">{{ installFlow.message }}</span>
+            </div>
+            <p v-if="installFlow.bootstrapReady" class="gsx-step-note">
+              安装器已启动——请在其中完成基础组件安装，完成后点击右上角「刷新状态」，本页会自动确认。
+            </p>
+            <p v-if="installFlow.error && installFlow.kind === 'bootstrap'" class="gsx-step-note gsx-note-warn">
+              <TriangleAlert :size="12" />
+              {{ installFlow.error }}
+            </p>
           </li>
 
           <!-- 第二步：激活 -->
@@ -290,15 +407,15 @@ onBeforeUnmount(unsubscribeProgress)
               <strong>激活 GSX Pro（需要您的正版激活码）</strong>
             </div>
             <p class="gsx-step-body">
-              激活码可在 SimMarket 订单页查询。点击下方按钮启动<b>官方激活向导</b>，
-              把激活码粘贴进去并点激活——激活服务器在国内直连可达，<b>无需加速器</b>。
+              激活码可在 SimMarket 订单页查询。点击下方按钮启动<b>官方激活向导</b>，选择
+              <b>Online Activation（在线激活）</b>，把激活码粘贴进去并点激活——激活服务器在国内直连可达，<b>无需加速器</b>。
               一个激活码绑定一台电脑；重装系统前请先在官方界面点击 Deactivate 释放名额。
             </p>
             <div class="gsx-step-actions">
               <button
                 v-if="!lifecycle.activation.activated"
                 class="gsx-secondary" type="button"
-                :disabled="activationFlow.launching || activationFlow.polling"
+                :disabled="activationFlow.launching || activationFlow.polling || installFlow.busy"
                 @click="startLicenseWizard"
               >
                 <LoaderCircle v-if="activationFlow.launching || activationFlow.polling" :size="13" class="spin" />
@@ -311,6 +428,10 @@ onBeforeUnmount(unsubscribeProgress)
             </div>
             <p v-if="activationFlow.polling" class="gsx-step-note">
               检测到官方向导已启动——请在向导中完成激活，本页会自动检测结果（最长等待 4 分钟）。
+            </p>
+            <p v-if="activationFlow.failed" class="gsx-step-note gsx-note-warn">
+              <TriangleAlert :size="12" />
+              激活向导启动失败：{{ activationFlow.error || '未检测到 FSDT 安装根目录' }}。请先完成第一步，再重试。
             </p>
             <p v-if="activationFlow.timedOut" class="gsx-step-note gsx-note-warn">
               <TriangleAlert :size="12" />
@@ -325,18 +446,60 @@ onBeforeUnmount(unsubscribeProgress)
               <span class="gsx-step-state">
                 <span class="gsx-step-index">3</span>
               </span>
-              <strong>安装 GSX Pro 本体（约 5 GB，走官方通道）</strong>
+              <strong>安装 GSX Pro 本体（约 {{ presetSizeLabel }}，国内直连）</strong>
             </div>
             <p class="gsx-step-body">
-              点击下方按钮打开「FSDT Live Update」安装管理界面，在 GSX Pro 行点击
-              Install。首次安装需从官方服务器下载产品包，速度不理想时可以挂加速器；
-              完成后回到本页，之后的版本更新即可使用国内镜像。
+              点击「预置安装包」，把 GSX 本体完整包从国内服务器下载到本地缓存（逐字节 SHA-256 校验）；
+              完成后打开官方安装界面，在 GSX Pro 行点击 Install——安装器会<b>直接使用本地安装包</b>完成安装，
+              不再从官方服务器下载数 GB 本体。
             </p>
             <div class="gsx-step-actions">
-              <button class="gsx-secondary" type="button" :disabled="!lifecycle.infrastructure.present || !lifecycle.activation.activated" @click="openInstallerUi">
-                <ExternalLink :size="13" /> 打开官方安装管理界面
+              <button
+                v-if="!installFlow.presetDone"
+                class="gsx-secondary" type="button"
+                :disabled="!lifecycle.infrastructure.present || !lifecycle.activation.activated || installFlow.busy"
+                @click="startPackagePreset"
+              >
+                <LoaderCircle v-if="installFlow.busy && installFlow.kind === 'preset'" :size="13" class="spin" />
+                <CloudDownload v-else :size="13" />
+                {{ installFlow.busy && installFlow.kind === 'preset' ? '正在预置安装包…' : `预置 GSX 本体安装包（约 ${presetSizeLabel}）` }}
+              </button>
+              <button
+                class="gsx-secondary" type="button"
+                :disabled="installFlow.busy || installerUi.launching"
+                @click="openInstallerUi"
+              >
+                <LoaderCircle v-if="installerUi.launching" :size="13" class="spin" />
+                <ExternalLink v-else :size="13" />
+                {{ installerUi.opened ? '再次打开官方安装界面' : '打开官方安装界面完成安装' }}
+              </button>
+              <button
+                v-if="installFlow.presetDone" class="gsx-ghost" type="button"
+                :disabled="installFlow.busy"
+                @click="startPackagePreset"
+              >
+                重新检查安装包
               </button>
             </div>
+            <p v-if="!lifecycle.infrastructure.present || !lifecycle.activation.activated" class="gsx-step-note">
+              预置前需完成第一、二步（基础组件与激活），否则官方安装界面不会提供 Install 按钮。
+            </p>
+            <div v-if="installFlow.busy && installFlow.kind === 'preset'" class="gsx-step-progress">
+              <div class="gsx-track"><span :style="{ width: installFlow.percent + '%' }" /></div>
+              <span class="gsx-step-progress-text">{{ installFlow.message }}</span>
+            </div>
+            <p v-if="installFlow.presetDone" class="gsx-step-note">
+              安装包已就绪。若官方安装器仍提示需要联网校验，可临时挂加速器完成首次安装——不影响之后的国内镜像更新。
+              安装完成后回到本页点「刷新状态」。
+            </p>
+            <p v-if="installFlow.error && installFlow.kind === 'preset'" class="gsx-step-note gsx-note-warn">
+              <TriangleAlert :size="12" />
+              {{ installFlow.error }}
+            </p>
+            <p v-if="installerUi.error" class="gsx-step-note gsx-note-warn">
+              <TriangleAlert :size="12" />
+              官方安装界面启动失败：{{ installerUi.error }}
+            </p>
           </li>
         </ol>
       </section>
@@ -657,6 +820,9 @@ onBeforeUnmount(unsubscribeProgress)
 .gsx-secondary:disabled { opacity: 0.5; cursor: default; }
 .gsx-step-note { display: flex; align-items: center; gap: 6px; margin: 9px 0 0; color: var(--text-muted); font-size: 11px; }
 .gsx-note-warn { color: var(--warning); }
+.gsx-step-progress { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.gsx-step-progress .gsx-track { flex: 1; }
+.gsx-step-progress-text { flex: 0 0 auto; color: var(--text-muted); font-size: 11px; font-family: ui-monospace, Consolas, monospace; }
 
 /* —— 卸载危险区 —— */
 .gsx-danger { border-color: rgba(224, 106, 106, 0.28); }

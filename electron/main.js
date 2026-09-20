@@ -11,6 +11,7 @@ const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
 const { createMsfsLogBridge } = require('./msfslog')
 const { configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { createGsxInstaller } = require('./gsx-installer')
+const { createGsxInstall } = require('./gsx-install')
 const { InstallationTargetCache, recordInstalledTarget, resolveDetectedTargets } = require('./installation-cache')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
@@ -26,6 +27,7 @@ let logFilePath = null
 let msfsLogBridge = null
 let installer = null
 let gsxInstaller = null
+let gsxInstall = null
 let gsxUpdater = null
 let installationTargetCache = null
 let latestUpdateStatus = { state: 'idle' }
@@ -90,6 +92,29 @@ async function runGsxUninstallFlow() {
     removedPackages: result.removedPackages.length,
     forgottenPatchRecords: forgotten
   }
+}
+
+// 第一步：从分发服务器取官方安装器（SHA-256 校验）并启动。基础组件安装
+// 可能需要国际网络，安装器打不开/中断由用户界面引导重试。
+async function runGsxBootstrapFlow() {
+  if (!gsxInstall) throw new Error('GSX 安装组件未就绪')
+  const result = await gsxInstall.ensureBootstrap()
+  logger?.line('INFO', 'gsx', `官方安装器就绪：${result.filePath} downloaded=${result.downloaded}`)
+  await gsxInstall.openBootstrap(result.filePath)
+  return { opened: true, downloaded: result.downloaded, filePath: result.filePath }
+}
+
+// 第三步：把版本化完整包预置到官方 PackagesCache。官方安装器随后本地解压，
+// 不再从官方服务器下载本体。前置条件：第一步基础组件 + 第二步激活已完成。
+async function runGsxPackagePresetFlow() {
+  if (!gsxInstall || !gsxInstaller) throw new Error('GSX 组件未就绪')
+  const infrastructure = await gsxInstaller.detectInfrastructure()
+  if (!infrastructure.present) throw new Error('请先完成第一步：安装 FSDT 官方安装器')
+  const activation = await gsxInstaller.detectActivation()
+  if (!activation.activated) throw new Error('请先完成第二步：激活 GSX Pro')
+  const result = await gsxInstall.presetPackages()
+  logger?.line('INFO', 'gsx', `本体安装包预置完成：downloaded=${result.downloaded.length} skipped=${result.skipped.length}`)
+  return { downloaded: result.downloaded, skipped: result.skipped, manifest: result.manifest }
 }
 
 async function runGsxUpdateFlow() {
@@ -460,10 +485,15 @@ function registerIpc() {
   ipcMain.handle('gsx:update:start', () => runGsxUpdateFlow())
   // GSX 安装生命周期（2.3.0 下载/激活/安装/卸载闭环）
   ipcMain.handle('gsx:lifecycle', () => gsxInstaller.detectLifecycle(() => gsxUpdater.detectInstall()))
-  ipcMain.handle('gsx:launch-installer-ui', (_event, payload) => gsxInstaller.launchLiveUpdateInstaller(payload || {}))
-  ipcMain.handle('gsx:launch-license-wizard', (_event, payload) => gsxInstaller.launchLicenseWizard(payload || {}))
+  // 启动器需 FSDT 根目录：由主进程自探，渲染层不传文件系统路径
+  ipcMain.handle('gsx:launch-installer-ui', async () => gsxInstaller.launchLiveUpdateInstaller(await gsxInstaller.detectInfrastructure()))
+  ipcMain.handle('gsx:launch-license-wizard', async () => gsxInstaller.launchLicenseWizard(await gsxInstaller.detectInfrastructure()))
   ipcMain.handle('gsx:poll-activation', (_event, payload) => gsxInstaller.pollForActivation(payload || {}))
   ipcMain.handle('gsx:uninstall:start', () => runGsxUninstallFlow())
+  // GSX 全新安装镜像（官方安装器 + 本体完整包）
+  ipcMain.handle('gsx:install:manifest', () => gsxInstall.loadManifest())
+  ipcMain.handle('gsx:bootstrap:start', () => runGsxBootstrapFlow())
+  ipcMain.handle('gsx:package:start', () => runGsxPackagePresetFlow())
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)
@@ -526,6 +556,17 @@ app.whenReady().then(async () => {
     }
   })
   gsxInstaller = createGsxInstaller({ processLister: gsxUpdater.processLister })
+  gsxInstall = createGsxInstall({
+    cacheDirectory: path.join(userDataDirectory, 'cache', 'gsx-install'),
+    packagesCacheDirectory: path.join(app.getPath('appData'), 'Virtuali', 'PackagesCache'),
+    opener: (filePath) => shell.openPath(filePath),
+    onProgress: (payload) => {
+      send('gsx:progress', payload)
+      if (logger && ['bootstrap-download', 'package-download'].includes(payload?.phase)) {
+        logger.line('INFO', 'gsx', `${payload.phase}: ${payload.message || ''}`)
+      }
+    }
+  })
   installer = new PatchInstaller({
     userDataDirectory,
     onProgress: (payload) => {

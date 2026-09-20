@@ -44,7 +44,10 @@ contextBridge.exposeInMainWorld('gsxTool', {
     launchInstallerUi: () => ipcRenderer.invoke('gsx:launch-installer-ui'),
     launchLicenseWizard: () => ipcRenderer.invoke('gsx:launch-license-wizard'),
     pollActivation: (payload) => ipcRenderer.invoke('gsx:poll-activation', payload),
-    uninstall: () => ipcRenderer.invoke('gsx:uninstall:start')
+    uninstall: () => ipcRenderer.invoke('gsx:uninstall:start'),
+    installManifest: () => ipcRenderer.invoke('gsx:install:manifest'),
+    startBootstrap: () => ipcRenderer.invoke('gsx:bootstrap:start'),
+    startPackagePreset: () => ipcRenderer.invoke('gsx:package:start')
   },
   announcements: {
     list: () => ipcRenderer.invoke('announcements:list'),

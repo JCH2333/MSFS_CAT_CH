@@ -1,7 +1,7 @@
 <script setup>
 import { CloudDownload, PackageX, TriangleAlert } from '@lucide/vue'
 
-// variant='older'：本机 GSX 低于补丁适配版本，引导去「GSX 更新」页；
+// variant='older'：本机 GSX 低于补丁适配版本，引导去「GSX 下载与更新」页；
 // variant='newer'：本机 GSX 高于补丁适配版本。旧补丁会覆盖新版本的版本标记与
 // 面板文件（2026-09 "幽灵 4.0.21" 事故），必须等待适配新版的补丁。
 defineProps({
@@ -40,12 +40,12 @@ defineEmits(['goto', 'close'])
           当前安装的 GSX 为 <code>v{{ localVersion }}</code>，低于补丁适配的
           <code>v{{ addonVersion }}</code>。旧版本上的文件结构与新版不一致，直接安装补丁会失败或显示异常。
         </p>
-        <p class="gsx-guard-detail">请先在「GSX 更新」页把 GSX 更新到最新版本，再回来安装补丁。</p>
+        <p class="gsx-guard-detail">请先在「GSX 下载与更新」页把 GSX 更新到最新版本，再回来安装补丁。</p>
         <div class="gsx-guard-actions">
           <button class="button button-secondary" type="button" @click="$emit('close')">稍后再说</button>
           <button class="button button-primary" type="button" @click="$emit('goto')">
             <CloudDownload :size="15" />
-            前往 GSX 更新
+            前往 GSX 下载与更新
           </button>
         </div>
       </template>

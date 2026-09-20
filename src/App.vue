@@ -72,7 +72,10 @@ const developmentBridge = {
     launchInstallerUi: async () => {},
     launchLicenseWizard: async () => {},
     pollActivation: async () => ({ activated: false, timedOut: true }),
-    uninstall: async () => { throw new Error('请在桌面应用中卸载 GSX') }
+    uninstall: async () => { throw new Error('请在桌面应用中卸载 GSX') },
+    installManifest: async () => { throw new Error('请在桌面应用中获取安装清单') },
+    startBootstrap: async () => { throw new Error('请在桌面应用中下载官方安装器') },
+    startPackagePreset: async () => { throw new Error('请在桌面应用中预置安装包') }
   },
   feedback: {
     chooseImages: async () => [],
@@ -417,7 +420,7 @@ function openAuthorPage() {
 function gsxGuardMessage(verdict) {
   return verdict === 'gsx-newer'
     ? 'GSX 版本高于补丁适配版本，请等待发布适配新版的补丁'
-    : 'GSX 版本低于补丁适配版本，请先在「GSX 更新」页更新'
+    : 'GSX 版本低于补丁适配版本，请先在「GSX 下载与更新」页更新'
 }
 
 async function ensureGsxVersionForPatch(patch) {
@@ -588,7 +591,7 @@ onBeforeUnmount(() => {
           </button>
           <button type="button" :class="{ active: activeView === 'gsx-update' }" @click="activeView = 'gsx-update'">
             <CloudDownload :size="19" />
-            <span>GSX 更新</span>
+            <span>GSX 下载与更新</span>
           </button>
           <button type="button" :class="{ active: activeView === 'feedback' }" @click="activeView = 'feedback'">
             <MessageSquareText :size="19" />
