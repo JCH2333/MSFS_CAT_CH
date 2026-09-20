@@ -536,10 +536,6 @@ onBeforeUnmount(() => {
               <TriangleAlert :size="12" />
               {{ installFlow.error }}
             </p>
-            <p v-if="installerUi.error" class="gsx-step-note gsx-note-warn">
-              <TriangleAlert :size="12" />
-              官方安装界面启动失败：{{ installerUi.error }}
-            </p>
           </li>
         </ol>
       </section>
