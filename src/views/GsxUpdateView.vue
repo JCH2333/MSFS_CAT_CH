@@ -165,7 +165,7 @@ function startStatusTicker() {
   clearInterval(statusTicker)
   statusTicker = setInterval(() => {
     installFlow.elapsedMs = Date.now() - installFlow.startedAt
-  }, 500)
+  }, 250)
 }
 
 function stopStatusTicker() {
@@ -175,16 +175,20 @@ function stopStatusTicker() {
 
 const statusPercent = computed(() => {
   if (!installFlow.busy) return Math.min(100, installFlow.percent || 0)
-  // 虚拟 10% 起步：真实进度未超过前保持 10%，避免“卡住”的错觉
-  return Math.max(Math.min(100, installFlow.percent || 0), 10)
+  // 假进度动画：0 → 10% 匀速走 20 秒（解压前常有 10-20 秒准备期），真实进度超过后取实值
+  const fake = Math.min(10, (installFlow.elapsedMs / 1000) * 0.5)
+  return Math.max(Math.min(100, installFlow.percent || 0), fake)
 })
 const netSpeedLabel = computed(() =>
   installFlow.busy && NET_PHASES.has(installFlow.currentPhase) ? formatSpeed(installFlow.speed) : '—')
 const diskSpeedLabel = computed(() =>
   installFlow.busy && DISK_PHASES.has(installFlow.currentPhase) ? formatSpeed(installFlow.speed) : '—')
 const elapsedLabel = computed(() => formatDuration(installFlow.elapsedMs / 1000))
+const ETA_PHASES = new Set(['bootstrap-download', 'package-download', 'download', 'deploy'])
 const etaLabel = computed(() => {
-  if (!installFlow.busy || !installFlow.speed || !installFlow.total) return '—'
+  if (!installFlow.busy) return '—'
+  // 校验/部署切换等阶段无法准确估计剩余时间，如实显示占位
+  if (!ETA_PHASES.has(installFlow.currentPhase) || !installFlow.speed || !installFlow.total) return '- 秒'
   return formatDuration((installFlow.total - installFlow.received) / installFlow.speed)
 })
 
@@ -314,6 +318,9 @@ async function startOneClickInstall() {
     installFlow.presetDone = true
     installFlow.percent = 100
     installFlow.message = 'GSX Pro 已安装并更新到最新版本'
+    // 自动刷新：检测安装与更新状态，无需用户手动操作
+    await loadStatus()
+    await loadLifecycle()
   } catch (error) {
     installFlow.error = error.message
   } finally {
@@ -645,7 +652,7 @@ onBeforeUnmount(() => {
             </div>
             <p v-if="installFlow.presetDone && !installFlow.busy" class="gsx-step-note">
               GSX Pro 已安装并更新到最新版本（官方内容逐字节镜像），受影响的汉化补丁也已自动重装。
-              点击右上角「刷新状态」确认版本，然后进模拟器即可使用；如需重装汉化，请到「汉化补丁」页。
+              直接启动模拟器即可使用；如需重装汉化，请到「汉化补丁」页。
             </p>
             <p v-if="installFlow.error && installFlow.kind === 'preset'" class="gsx-step-note gsx-note-warn">
               <TriangleAlert :size="12" />

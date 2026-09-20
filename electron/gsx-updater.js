@@ -531,15 +531,15 @@ class GsxUpdater {
     // 版本标记提升：镜像热更不经过官方更新器，包 manifest 的 package_version 需要
     // 由本流程推进到镜像最新版——否则自部署（如 4.0.10 完整包）+ 热更后版本显示
     // 永远停留在旧版，更新入口也随之消失。
-    if (applied.length > 0 && install.packagePath && manifest.latestVersion && isSemanticVersion(manifest.latestVersion)) {
+    if (applied.length > 0 && install.packagePath && mirror.manifest.latestVersion && isSemanticVersion(mirror.manifest.latestVersion)) {
       const packageManifestPath = path.join(install.packagePath, GSX_PACKAGE_MANIFEST)
       try {
         const parsed = JSON.parse(await fs.readFile(packageManifestPath, 'utf8'))
         const current = typeof parsed?.package_version === 'string' ? parsed.package_version : '0.0.0'
-        if (isSemanticVersion(current) && compareVersions(current, manifest.latestVersion) < 0) {
-          parsed.package_version = manifest.latestVersion
+        if (isSemanticVersion(current) && compareVersions(current, mirror.manifest.latestVersion) < 0) {
+          parsed.package_version = mirror.manifest.latestVersion
           await fs.writeFile(packageManifestPath, JSON.stringify(parsed, null, 2))
-          this.emit({ phase: 'marker-bumped', percent: 100, message: `版本标记已更新到 v\${manifest.latestVersion}` })
+          this.emit({ phase: 'marker-bumped', percent: 100, message: `版本标记已更新到 v${mirror.manifest.latestVersion}` })
         }
       } catch {
         // 标记写不进去只影响版本显示，不影响已部署内容
