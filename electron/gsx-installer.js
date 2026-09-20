@@ -22,6 +22,12 @@ const execFileAsync = promisify(execFile)
 
 const FSDT_REGISTRY_KEY = 'HKCU\\Software\\Fsdreamteam'
 const SERIAL_NUMBER_VALUE_NAME = 'SerialNumber'
+// 激活记录位置（实测 2026-09）：新版 Universal Installer（32 位）写 HKLM 产品子键，
+// 旧版 Addon Manager 时代写 HKCU 根键。两处任一非空即视为已激活，新版优先。
+const ACTIVATION_REGISTRY_LOCATIONS = [
+  { key: 'HKLM\\SOFTWARE\\WOW6432Node\\FSDreamTeam\\GSX Pro', valueName: SERIAL_NUMBER_VALUE_NAME },
+  { key: FSDT_REGISTRY_KEY, valueName: SERIAL_NUMBER_VALUE_NAME }
+]
 const LIVE_UPDATE_EXECUTABLE = 'Couatl_Updater.exe'
 // 与官方桌面快捷方式一致的参数：进入产品安装管理界面（含 Install/卸载入口）
 const LIVE_UPDATE_LAUNCH_ARGS = ['/SILENT', '/INSTALLMODE=TRUE']
@@ -38,9 +44,9 @@ const ACTIVATION_POLL_INTERVAL_MS = 3000
 // （例如用户把向导一直开着，或经官方安装器/下载器激活的机器）
 const ACTIVATION_POLL_TIMEOUT_MS = 1800000
 
-async function defaultRegistryReader() {
+async function defaultRegistryReader(key, valueName) {
   try {
-    const { stdout } = await execFileAsync('reg.exe', ['query', FSDT_REGISTRY_KEY, '/v', SERIAL_NUMBER_VALUE_NAME], {
+    const { stdout } = await execFileAsync('reg.exe', ['query', key, '/v', valueName], {
       windowsHide: true,
       timeout: 8000
     })
@@ -102,9 +108,17 @@ function createGsxInstaller({
   pollIntervalMs = ACTIVATION_POLL_INTERVAL_MS,
   pollTimeoutMs = ACTIVATION_POLL_TIMEOUT_MS
 } = {}) {
+  async function readCurrentSerial() {
+    for (const location of ACTIVATION_REGISTRY_LOCATIONS) {
+      const { present, stdout } = await registryReader(location.key, location.valueName)
+      const serial = present ? parseSerialNumber(stdout) : null
+      if (serial) return serial
+    }
+    return null
+  }
+
   async function detectActivation() {
-    const { present, stdout } = await registryReader()
-    const serial = present ? parseSerialNumber(stdout) : null
+    const serial = await readCurrentSerial()
     return { activated: Boolean(serial), serialPresent: Boolean(serial), serial }
   }
 
@@ -170,20 +184,23 @@ function createGsxInstaller({
     return launcher(path.join(addonRoot, LICENSE_WIZARD_EXECUTABLE), ['/settings', settingsPath], addonRoot)
   }
 
-  // 轮询激活结果：SerialNumber 出现且不同于基线即视为激活完成。
-  // watchPid 存在时同时监视官方向导窗口——向导一旦关闭，做最后一次注册表
-  // 复查后立即返回，不再干等固定超时；激活记录先出现则提前返回。
+  // 轮询激活结果：任一位置出现 SerialNumber 且不同于基线（或先经过“无记录”
+  // 状态——覆盖停用后同码重激）即视为激活完成。watchPid 存在时同时监视官方
+  // 向导窗口——向导一旦关闭，做最后一次注册表复查后立即返回，不再干等固定
+  // 超时；激活记录先出现则提前返回。
   async function pollForActivation({ baselineSerial = null, timeoutMs = pollTimeoutMs, watchPid = null } = {}) {
     const deadline = Date.now() + timeoutMs
+    let sawEmpty = !baselineSerial
     for (;;) {
-      const { present, stdout } = await registryReader()
-      const serial = present ? parseSerialNumber(stdout) : null
-      if (serial && serial !== baselineSerial) return { activated: true, timedOut: false, wizardClosed: false }
+      const serial = await readCurrentSerial()
+      if (serial && (sawEmpty || serial !== baselineSerial)) {
+        return { activated: true, timedOut: false, wizardClosed: false }
+      }
+      if (!serial) sawEmpty = true
       if (watchPid != null && !(await processExists(watchPid))) {
-        const finalCheck = await registryReader()
-        const finalSerial = finalCheck.present ? parseSerialNumber(finalCheck.stdout) : null
+        const finalSerial = await readCurrentSerial()
         return {
-          activated: Boolean(finalSerial && finalSerial !== baselineSerial),
+          activated: Boolean(finalSerial && (sawEmpty || finalSerial !== baselineSerial)),
           timedOut: false,
           wizardClosed: true
         }
@@ -268,6 +285,7 @@ function createGsxInstaller({
 }
 
 module.exports = {
+  ACTIVATION_REGISTRY_LOCATIONS,
   FSDT_REGISTRY_KEY,
   LICENSE_WIZARD_EXECUTABLE,
   LICENSE_WIZARD_SETTINGS_NAME,

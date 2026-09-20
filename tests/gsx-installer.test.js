@@ -251,3 +251,46 @@ test('pollForActivation keeps waiting while the wizard window is open', async ()
   const result = await installer.pollForActivation({ baselineSerial: null, watchPid: 4321 })
   assert.deepEqual(result, { activated: true, timedOut: false, wizardClosed: false })
 })
+
+function scriptedReader(responses) {
+  let index = 0
+  return async () => {
+    const response = responses[Math.min(index, responses.length - 1)]
+    index += 1
+    return response
+  }
+}
+
+const EMPTY_READ = { present: false, stdout: '' }
+const serialRead = (serial) => ({ present: true, stdout: `    SerialNumber    REG_SZ    ${serial}` })
+
+test('detectActivation accepts the new Universal Installer HKLM location first', async () => {
+  const installer = createGsxInstaller({
+    registryReader: scriptedReader([serialRead('NEW-KEY'), EMPTY_READ])
+  })
+  assert.deepEqual(await installer.detectActivation(), { activated: true, serialPresent: true, serial: 'NEW-KEY' })
+})
+
+test('detectActivation falls back to the legacy HKCU location', async () => {
+  const installer = createGsxInstaller({
+    registryReader: scriptedReader([EMPTY_READ, serialRead('LEGACY-KEY')])
+  })
+  assert.deepEqual(await installer.detectActivation(), { activated: true, serialPresent: true, serial: 'LEGACY-KEY' })
+})
+
+test('pollForActivation recognizes re-activation with the same key after deactivation', async () => {
+  // 每轮询一轮读取两个注册表位置：KEY → 空 → 空 → KEY（停用后又用同一个码激活）
+  const installer = createGsxInstaller({
+    registryReader: scriptedReader([
+      serialRead('SAME-KEY'), EMPTY_READ,
+      EMPTY_READ, EMPTY_READ,
+      EMPTY_READ, EMPTY_READ,
+      serialRead('SAME-KEY'), EMPTY_READ
+    ]),
+    sleep: async () => {},
+    pollIntervalMs: 1,
+    pollTimeoutMs: 60000
+  })
+  const result = await installer.pollForActivation({ baselineSerial: 'SAME-KEY' })
+  assert.deepEqual(result, { activated: true, timedOut: false, wizardClosed: false })
+})
