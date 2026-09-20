@@ -1,6 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { ArrowRight, CheckCircle2, CloudDownload, LoaderCircle, Plane, RefreshCw, ShieldCheck, TriangleAlert } from '@lucide/vue'
+import {
+  ArrowRight, CheckCircle2, CircleHelp, CloudDownload, ExternalLink, KeyRound, LoaderCircle,
+  Plane, RefreshCw, ShieldCheck, Trash2, TriangleAlert
+} from '@lucide/vue'
 
 const props = defineProps({
   bridge: { type: Object, required: true }
@@ -26,6 +29,20 @@ const done = ref(false)
 const patchCare = ref(null)
 const skippedComponents = ref([])
 
+// —— 安装向导（未安装状态）——
+const lifecycle = reactive({
+  loaded: false,
+  infrastructure: { present: false },
+  activation: { activated: false },
+  product: { installed: false },
+  error: null
+})
+const activationFlow = reactive({ launching: false, polling: false, failed: false, timedOut: false })
+const officialDownloadPage = 'https://www.fsdreamteam.com/products_msfs.html'
+
+// —— 卸载（已安装状态）——
+const uninstallFlow = reactive({ confirming: false, busy: false, done: false, error: null, message: '' })
+
 const emit = defineEmits(['updated', 'patch-installed'])
 
 const totalMegabytes = computed(() => {
@@ -39,12 +56,97 @@ const progressPercent = computed(() => {
   return Math.min(100, Math.max(0, operation.percent || 0))
 })
 
+const wizardStep = computed(() => {
+  if (!lifecycle.loaded) return 0
+  if (!lifecycle.infrastructure.present) return 1
+  if (!lifecycle.activation.activated) return 2
+  return 3
+})
+
+async function loadLifecycle() {
+  lifecycle.loading = true
+  lifecycle.error = null
+  try {
+    const result = await props.bridge.gsx.lifecycle()
+    lifecycle.infrastructure = result?.infrastructure || { present: false }
+    lifecycle.activation = result?.activation || { activated: false }
+    lifecycle.product = result?.product || { installed: false }
+    lifecycle.loaded = true
+  } catch (error) {
+    lifecycle.error = error.message
+  } finally {
+    lifecycle.loading = false
+  }
+}
+
+async function openOfficialDownloadPage() {
+  try {
+    await props.bridge.external.open(officialDownloadPage)
+  } catch { /* 浏览器打开失败不阻塞引导 */ }
+}
+
+async function startLicenseWizard() {
+  if (activationFlow.launching || activationFlow.polling) return
+  activationFlow.launching = true
+  activationFlow.failed = false
+  activationFlow.timedOut = false
+  try {
+    await props.bridge.gsx.launchLicenseWizard()
+    activationFlow.launching = false
+    activationFlow.polling = true
+    // 主进程轮询注册表 SerialNumber；超时（默认 4 分钟）则引导用户手动刷新
+    const result = await props.bridge.gsx.pollActivation({})
+    activationFlow.polling = false
+    if (result?.activated) {
+      await loadLifecycle()
+      await loadStatus()
+    } else {
+      activationFlow.timedOut = true
+    }
+  } catch (error) {
+    activationFlow.launching = false
+    activationFlow.polling = false
+    activationFlow.failed = true
+    activationFlow.error = error.message
+  }
+}
+
+async function openInstallerUi() {
+  await props.bridge.gsx.launchInstallerUi()
+}
+
+async function requestUninstall() {
+  if (uninstallFlow.busy) return
+  if (!uninstallFlow.confirming) {
+    uninstallFlow.confirming = true
+    return
+  }
+  uninstallFlow.busy = true
+  uninstallFlow.error = null
+  uninstallFlow.done = false
+  uninstallFlow.message = '正在确认模拟器已完全退出…'
+  try {
+    await props.bridge.gsx.uninstall()
+    uninstallFlow.done = true
+    uninstallFlow.confirming = false
+    uninstallFlow.message = 'GSX Pro 已卸载（引擎与激活状态保留）'
+    await loadStatus()
+    await loadLifecycle()
+    emit('updated')
+  } catch (error) {
+    uninstallFlow.error = error.message
+  } finally {
+    uninstallFlow.busy = false
+  }
+}
+
 async function loadStatus() {
   status.loading = true
   errorMessage.value = ''
   try {
     const result = await props.bridge.gsx.status()
     Object.assign(status, result, { loaded: true })
+    if (!result.installed && !lifecycle.loaded) void loadLifecycle()
   } catch (error) {
     Object.assign(status, { loaded: true, installed: false, pending: [], updateAvailable: false, error: error.message })
     errorMessage.value = error.message
@@ -99,7 +201,17 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
+const UNINSTALL_PHASES = new Set(['check', 'forget-records', 'remove', 'reset-state'])
+
 const unsubscribeProgress = props.bridge.gsx.onProgress((progress) => {
+  if (uninstallFlow.busy && UNINSTALL_PHASES.has(progress.phase)) {
+    uninstallFlow.message = progress.message || ''
+    return
+  }
+  if (uninstallFlow.busy && progress.phase === 'complete') {
+    uninstallFlow.message = progress.message || '卸载完成'
+    return
+  }
   operation.phase = progress.phase
   operation.percent = progress.percent || 0
   operation.message = progress.message || ''
@@ -133,12 +245,101 @@ onBeforeUnmount(unsubscribeProgress)
     <div v-if="status.loading && !status.loaded" class="gsx-loading">正在检测本机 GSX 安装…</div>
 
     <template v-else>
-      <!-- 未安装 -->
+      <!-- 未安装：三步安装向导 -->
       <div v-if="!status.installed && !errorMessage" class="gsx-empty">
         <Plane :size="28" />
         <strong>未检测到 GSX 本体</strong>
-        <p>本功能仅提供已安装 GSX 用户的版本更新。首次安装请使用 FSDreamTeam 官方 Universal Installer，安装完成后回到本页即可在线更新。</p>
+        <p>已购买正版 GSX Pro？跟随下面三步即可完成安装，全程无需访问国外网络（激活服务器国内直连）。安装完成后回到本页，即可使用国内镜像在线更新。</p>
       </div>
+
+      <!-- 安装向导（未安装时显示） -->
+      <section v-if="!status.installed && !errorMessage" class="gsx-panel gsx-wizard">
+        <header class="gsx-panel-head">
+          <h3><KeyRound :size="14" /> 安装 GSX Pro</h3>
+          <span>三步完成 · 全程官方组件</span>
+        </header>
+
+        <ol class="gsx-steps">
+          <!-- 第一步：基础组件 -->
+          <li class="gsx-step" :data-state="lifecycle.infrastructure.present ? 'done' : wizardStep === 1 ? 'active' : 'wait'">
+            <div class="gsx-step-head">
+              <span class="gsx-step-state">
+                <CheckCircle2 v-if="lifecycle.infrastructure.present" :size="15" />
+                <span v-else class="gsx-step-index">1</span>
+              </span>
+              <strong>安装 FSDT 官方安装器（基础组件，约 400 MB）</strong>
+            </div>
+            <p class="gsx-step-body">
+              这是 FSDreamTeam 官方安装器，负责引擎与基础组件。请从官方页面下载
+              Addon_Manager.exe 并安装；下载或安装进度缓慢时，多重试几次即可。
+            </p>
+            <div class="gsx-step-actions">
+              <button class="gsx-secondary" type="button" @click="openOfficialDownloadPage">
+                <ExternalLink :size="13" /> 打开官方下载页
+              </button>
+            </div>
+          </li>
+
+          <!-- 第二步：激活 -->
+          <li class="gsx-step" :data-state="lifecycle.activation.activated ? 'done' : wizardStep === 2 ? 'active' : 'wait'">
+            <div class="gsx-step-head">
+              <span class="gsx-step-state">
+                <CheckCircle2 v-if="lifecycle.activation.activated" :size="15" />
+                <span v-else class="gsx-step-index">2</span>
+              </span>
+              <strong>激活 GSX Pro（需要您的正版激活码）</strong>
+            </div>
+            <p class="gsx-step-body">
+              激活码可在 SimMarket 订单页查询。点击下方按钮启动<b>官方激活向导</b>，
+              把激活码粘贴进去并点激活——激活服务器在国内直连可达，<b>无需加速器</b>。
+              一个激活码绑定一台电脑；重装系统前请先在官方界面点击 Deactivate 释放名额。
+            </p>
+            <div class="gsx-step-actions">
+              <button
+                v-if="!lifecycle.activation.activated"
+                class="gsx-secondary" type="button"
+                :disabled="activationFlow.launching || activationFlow.polling"
+                @click="startLicenseWizard"
+              >
+                <LoaderCircle v-if="activationFlow.launching || activationFlow.polling" :size="13" class="spin" />
+                <KeyRound v-else :size="13" />
+                {{ activationFlow.launching ? '正在启动向导…' : activationFlow.polling ? '正在等待激活完成…' : '启动官方激活向导' }}
+              </button>
+              <button class="gsx-ghost" type="button" @click="openOfficialDownloadPage">
+                <CircleHelp :size="13" /> 查询激活码 / 名额帮助
+              </button>
+            </div>
+            <p v-if="activationFlow.polling" class="gsx-step-note">
+              检测到官方向导已启动——请在向导中完成激活，本页会自动检测结果（最长等待 4 分钟）。
+            </p>
+            <p v-if="activationFlow.timedOut" class="gsx-step-note gsx-note-warn">
+              <TriangleAlert :size="12" />
+              等待超时：若向导提示名额已满，请凭 SimMarket 订单联系 FSDT 支持重置激活；
+              若已激活成功，点击「刷新状态」。
+            </p>
+          </li>
+
+          <!-- 第三步：安装产品 -->
+          <li class="gsx-step" :data-state="wizardStep === 3 ? 'active' : 'wait'">
+            <div class="gsx-step-head">
+              <span class="gsx-step-state">
+                <span class="gsx-step-index">3</span>
+              </span>
+              <strong>安装 GSX Pro 本体（约 5 GB，走官方通道）</strong>
+            </div>
+            <p class="gsx-step-body">
+              点击下方按钮打开「FSDT Live Update」安装管理界面，在 GSX Pro 行点击
+              Install。首次安装需从官方服务器下载产品包，速度不理想时可以挂加速器；
+              完成后回到本页，之后的版本更新即可使用国内镜像。
+            </p>
+            <div class="gsx-step-actions">
+              <button class="gsx-secondary" type="button" :disabled="!lifecycle.infrastructure.present || !lifecycle.activation.activated" @click="openInstallerUi">
+                <ExternalLink :size="13" /> 打开官方安装管理界面
+              </button>
+            </div>
+          </li>
+        </ol>
+      </section>
 
       <div v-if="errorMessage && !status.installed" class="gsx-alert" role="alert">
         <TriangleAlert :size="14" />
@@ -268,6 +469,43 @@ onBeforeUnmount(unsubscribeProgress)
             <li>更新包较大（语音包约 229 MB），首次建议在良好网络环境下进行。</li>
           </ul>
         </section>
+
+        <!-- 卸载（危险区） -->
+        <section class="gsx-panel gsx-danger">
+          <header class="gsx-panel-head">
+            <h3><Trash2 :size="14" /> 卸载 GSX Pro</h3>
+          </header>
+          <p class="gsx-danger-text">
+            卸载仅移除 MSFS 社区包与产品文件；couatl 引擎、您的激活状态与机场配置会保留。
+            已安装的 GSX 汉化补丁会随产品一并移除，重新安装 GSX 后可再次安装补丁。
+          </p>
+          <p class="gsx-danger-text gsx-danger-warn">
+            <TriangleAlert :size="12" />
+            提醒：重装系统或更换电脑前，请先在官方界面点击 Deactivate ALL 释放激活名额。
+          </p>
+          <div v-if="uninstallFlow.done" class="gsx-danger-ok">
+            <CheckCircle2 :size="13" />
+            {{ uninstallFlow.message || '已卸载。' }}
+          </div>
+          <p v-if="uninstallFlow.error" class="gsx-danger-text gsx-danger-warn">
+            <TriangleAlert :size="12" />
+            {{ uninstallFlow.error }}
+          </p>
+          <div class="gsx-danger-actions">
+            <button
+              class="gsx-danger-btn" type="button"
+              :disabled="uninstallFlow.busy"
+              @click="requestUninstall"
+            >
+              <LoaderCircle v-if="uninstallFlow.busy" :size="13" class="spin" />
+              <Trash2 v-else :size="13" />
+              {{ uninstallFlow.busy ? (uninstallFlow.message || '正在卸载…') : uninstallFlow.confirming ? '再点一次确认卸载' : '卸载 GSX Pro' }}
+            </button>
+            <button v-if="uninstallFlow.confirming && !uninstallFlow.busy" class="gsx-ghost" type="button" @click="uninstallFlow.confirming = false">
+              取消
+            </button>
+          </div>
+        </section>
       </template>
     </template>
   </section>
@@ -388,6 +626,53 @@ onBeforeUnmount(unsubscribeProgress)
 /* —— 说明 —— */
 .gsx-notes ul { margin: 0; padding-left: 16px; display: grid; gap: 7px; color: var(--text-muted); font-size: 11.5px; line-height: 1.65; }
 .gsx-notes b { color: var(--text-secondary); }
+
+/* —— 安装向导 —— */
+.gsx-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.gsx-step {
+  padding: 13px 16px; border: 1px solid var(--glass-border); border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02); transition: border-color 160ms ease;
+}
+.gsx-step[data-state='active'] { border-color: rgba(98, 214, 163, 0.38); background: rgba(98, 214, 163, 0.045); }
+.gsx-step[data-state='done'] { border-color: rgba(98, 214, 163, 0.2); }
+.gsx-step[data-state='wait'] { opacity: 0.72; }
+.gsx-step-head { display: flex; align-items: center; gap: 9px; }
+.gsx-step-head strong { font-size: 12.5px; color: var(--text-primary, #e8eadf); }
+.gsx-step-state { display: inline-flex; color: var(--signal); }
+.gsx-step-index {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--glass-border); font: 600 11px/1 ui-monospace, Consolas, monospace; color: var(--text-secondary);
+}
+.gsx-step[data-state='done'] .gsx-step-state { color: var(--signal); }
+.gsx-step-body { margin: 8px 0 0; color: var(--text-secondary); font-size: 11.5px; line-height: 1.7; }
+.gsx-step-body b { color: var(--text-primary, #e8eadf); }
+.gsx-step-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 10px; }
+.gsx-secondary {
+  min-height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px;
+  border: 1px solid rgba(98, 214, 163, 0.4); border-radius: 8px;
+  background: rgba(98, 214, 163, 0.1); color: var(--signal);
+  font: 600 11.5px/1 "Microsoft YaHei UI", sans-serif; cursor: pointer; transition: filter 140ms ease;
+}
+.gsx-secondary:hover:not(:disabled) { filter: brightness(1.15); }
+.gsx-secondary:disabled { opacity: 0.5; cursor: default; }
+.gsx-step-note { display: flex; align-items: center; gap: 6px; margin: 9px 0 0; color: var(--text-muted); font-size: 11px; }
+.gsx-note-warn { color: var(--warning); }
+
+/* —— 卸载危险区 —— */
+.gsx-danger { border-color: rgba(224, 106, 106, 0.28); }
+.gsx-danger h3 { color: var(--danger, #e06a6a); }
+.gsx-danger-text { margin: 0 0 8px; color: var(--text-secondary); font-size: 11.5px; line-height: 1.65; }
+.gsx-danger-warn { display: flex; align-items: center; gap: 6px; color: var(--warning); }
+.gsx-danger-ok { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; color: var(--signal); font-size: 11.5px; }
+.gsx-danger-actions { display: flex; align-items: center; gap: 9px; margin-top: 4px; }
+.gsx-danger-btn {
+  min-height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px;
+  border: 1px solid rgba(224, 106, 106, 0.45); border-radius: 8px;
+  background: rgba(224, 106, 106, 0.1); color: var(--danger, #e06a6a);
+  font: 600 11.5px/1 "Microsoft YaHei UI", sans-serif; cursor: pointer; transition: filter 140ms ease;
+}
+.gsx-danger-btn:hover:not(:disabled) { filter: brightness(1.15); }
+.gsx-danger-btn:disabled { opacity: 0.6; cursor: default; }
 
 .spin { animation: gsx-spin 1s linear infinite; }
 @keyframes gsx-spin { to { transform: rotate(360deg); } }

@@ -9,7 +9,8 @@ const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence'
 const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure')
 const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
 const { createMsfsLogBridge } = require('./msfslog')
-const { detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
+const { configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
+const { createGsxInstaller } = require('./gsx-installer')
 const { InstallationTargetCache, recordInstalledTarget, resolveDetectedTargets } = require('./installation-cache')
 const { PatchInstaller } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
@@ -24,6 +25,7 @@ let restoreConsole = null
 let logFilePath = null
 let msfsLogBridge = null
 let installer = null
+let gsxInstaller = null
 let gsxUpdater = null
 let installationTargetCache = null
 let latestUpdateStatus = { state: 'idle' }
@@ -45,10 +47,54 @@ const GSX_TEXT_PATCH_ID = 'gsx-pro-zh-cn'
 const GSX_VOICE_PATCH_ID = 'gsx-pro-zh-cn-voice'
 const GSX_VOICE_COMPONENT = 'GSX_sounds'
 
+// 卸载 GSX 产品（官方作用域）：仅移除 MSFS 社区包与产品文件，引擎目录、
+// 激活状态与机场配置保留。已安装的 GSX 汉化补丁记录一并失效（产品文件随之删除）。
+async function runGsxUninstallFlow() {
+  if (!gsxUpdater || !gsxInstaller || !installer) throw new Error('GSX 组件未就绪')
+  const send2 = (phase, percent, message) => send('gsx:progress', { phase, percent, message })
+  send2('check', 2, '正在确认模拟器已完全退出…')
+  await gsxUpdater.assertSimClosed()
+
+  const install = await gsxUpdater.detectInstall()
+  if (!install.installed || !install.addonRoot) throw new Error('未检测到 GSX 安装，无需卸载')
+
+  send2('check', 10, '正在收集安装信息…')
+  const communityRoots = await configuredRoots({
+    appData: app.getPath('appData'),
+    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')
+  })
+
+  send2('forget-records', 25, '正在移除汉化补丁安装记录…')
+  const installations = await installer.listInstallations()
+  const forgotten = await installer.forgetInstallations([GSX_TEXT_PATCH_ID, GSX_VOICE_PATCH_ID].filter((id) => installations[id]))
+
+  send2('remove', 55, '正在移除 GSX 产品文件与社区目录链接…')
+  const result = await gsxInstaller.uninstallProduct({
+    addonRoot: install.addonRoot,
+    communityDirectories: communityRoots.map((entry) => entry.packageRoot)
+      .flatMap((packageRoot) => [
+        packageRoot,
+        path.join(packageRoot, 'Community2024'),
+        path.join(packageRoot, 'Community')
+      ])
+  })
+
+  send2('reset-state', 80, '正在重置本机更新状态…')
+  await gsxUpdater.clearAppliedState()
+
+  send2('complete', 100, 'GSX Pro 已卸载（引擎与激活状态保留）')
+  logger?.line?.('INFO', 'gsx', `GSX 产品已卸载：移除链接 ${result.removedLinks.length} 个、产品目录 ${result.removedPackages.length} 个、补丁记录 ${forgotten} 条`)
+  return {
+    state: 'uninstalled',
+    removedLinks: result.removedLinks.length,
+    removedPackages: result.removedPackages.length,
+    forgottenPatchRecords: forgotten
+  }
+}
+
 async function runGsxUpdateFlow() {
   if (!gsxUpdater) throw new Error('GSX 更新器未就绪')
   await gsxUpdater.assertSimClosed()
-
   const status = await gsxUpdater.getStatus()
   if (!status.installed) throw new Error('未检测到 GSX 安装，无法更新')
   const pendingComponents = new Set(status.pending.map((pkg) => pkg.component))
@@ -412,6 +458,12 @@ function registerIpc() {
     return status
   })
   ipcMain.handle('gsx:update:start', () => runGsxUpdateFlow())
+  // GSX 安装生命周期（2.3.0 下载/激活/安装/卸载闭环）
+  ipcMain.handle('gsx:lifecycle', () => gsxInstaller.detectLifecycle(() => gsxUpdater.detectInstall()))
+  ipcMain.handle('gsx:launch-installer-ui', (_event, payload) => gsxInstaller.launchLiveUpdateInstaller(payload || {}))
+  ipcMain.handle('gsx:launch-license-wizard', (_event, payload) => gsxInstaller.launchLicenseWizard(payload || {}))
+  ipcMain.handle('gsx:poll-activation', (_event, payload) => gsxInstaller.pollForActivation(payload || {}))
+  ipcMain.handle('gsx:uninstall:start', () => runGsxUninstallFlow())
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)
@@ -465,6 +517,7 @@ app.whenReady().then(async () => {
   })
   gsxUpdater = new GsxUpdater({
     userDataDirectory,
+    hotfixEtagsPath: path.join(app.getPath('appData'), 'Virtuali', 'hotfix_etags.txt'),
     onProgress: (payload) => {
       send('gsx:progress', payload)
       if (logger && ['complete', 'error', 'component-complete', 'component-skipped'].includes(payload?.phase)) {
@@ -472,6 +525,7 @@ app.whenReady().then(async () => {
       }
     }
   })
+  gsxInstaller = createGsxInstaller({ processLister: gsxUpdater.processLister })
   installer = new PatchInstaller({
     userDataDirectory,
     onProgress: (payload) => {

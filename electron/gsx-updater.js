@@ -122,6 +122,26 @@ async function readEtagSidecar(etagDirectory, component) {
   }
 }
 
+// boot 更新器（couatl64_boot.exe）的引擎组件 ETag 记录，位于
+// %APPDATA%\Virtuali\hotfix_etags.txt，每行 `URL=ETag`。引擎组件经官方
+// Live Update 从零安装后不写 github-etags sidecar，只写这份文件——
+// 把它作为第三条记录源可避免对这类机器的重复下载误报（2026-09 实测案例）。
+function parseHotfixEtags(contents) {
+  const map = {}
+  const suffix = '.zip.001'
+  for (const line of String(contents || '').split(/\r?\n/)) {
+    const separator = line.lastIndexOf('=')
+    if (separator <= 0) continue
+    const url = line.slice(0, separator).trim()
+    const etag = normalizeEtag(line.slice(separator + 1))
+    if (!etag) continue
+    const base = url.split('/').pop() || ''
+    if (!base.endsWith(suffix)) continue
+    map[base.slice(0, -suffix.length)] = etag
+  }
+  return map
+}
+
 async function walkFiles(root) {
   const files = []
   const walk = async (current) => {
@@ -203,6 +223,7 @@ class GsxUpdater {
     detectInstall = defaultDetectInstall,
     processLister = defaultSimProcessLister,
     officialEtagDirectory = defaultOfficialEtagDirectory(),
+    hotfixEtagsPath = null,
     now = () => new Date().toISOString()
   } = {}) {
     if (!userDataDirectory) throw new Error('GsxUpdater 需要 userDataDirectory')
@@ -213,6 +234,7 @@ class GsxUpdater {
     this.detectInstall = detectInstall
     this.processLister = processLister
     this.officialEtagDirectory = officialEtagDirectory
+    this.hotfixEtagsPath = hotfixEtagsPath
     this.now = now
     this.statePath = path.join(userDataDirectory, 'gsx-state.json')
     this.backupRoot = path.join(userDataDirectory, 'gsx-backups')
@@ -239,15 +261,32 @@ class GsxUpdater {
   async computePending(packages) {
     const state = await readJsonState(this.statePath)
     const applied = state.appliedComponents || {}
+    let hotfixEtags = {}
+    if (this.hotfixEtagsPath) {
+      try {
+        hotfixEtags = parseHotfixEtags(await fs.readFile(this.hotfixEtagsPath, 'utf8'))
+      } catch {
+        hotfixEtags = {}
+      }
+    }
     const pending = []
     for (const pkg of packages) {
       const officialEtag = await readEtagSidecar(this.officialEtagDirectory, pkg.component)
       if (officialEtag && officialEtag === pkg.etag) continue
       const appliedEtag = normalizeEtag(applied[pkg.component]?.etag)
       if (appliedEtag === pkg.etag) continue
+      const hotfixEtag = normalizeEtag(hotfixEtags[pkg.component])
+      if (hotfixEtag && hotfixEtag === pkg.etag) continue
       pending.push(pkg)
     }
     return pending
+  }
+
+  /** 重置本地应用状态（产品被卸载/官方重装后，从干净状态重新对账） */
+  async clearAppliedState() {
+    const state = await readJsonState(this.statePath)
+    state.appliedComponents = {}
+    await writeJsonState(this.statePath, state)
   }
 
   async getStatus() {
@@ -546,5 +585,6 @@ module.exports = {
   GsxUpdater,
   fetchGsxManifest,
   normalizeEtag,
+  parseHotfixEtags,
   validateGsxManifest
 }

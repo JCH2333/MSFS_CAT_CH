@@ -338,6 +338,7 @@ async function detectPatchTargets(patches, options = {}) {
 module.exports = {
   addonManagerRootsFromPrimaryPath,
   addonManagerRootsFromRecordedResPath,
+  configuredRoots,
   detectGsxRuntimeResTarget,
   detectPatchTargets,
   normalizeTargetFolders,

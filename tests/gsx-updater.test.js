@@ -427,3 +427,55 @@ test('getStatus does not flag a stale marker while components are genuinely pend
   assert.equal(status.updateAvailable, true)
   assert.equal(status.versionMarkerStale, false)
 })
+
+test('hotfix_etags.txt acts as a third applied record to prevent false pendings', async () => {
+  const userData = await temporaryDirectory('gsx-updater-hotfix-')
+  const addonRoot = await temporaryDirectory('gsx-addon-')
+  const etagDir = await temporaryDirectory('gsx-etags-')
+  const hotfixPath = path.join(await temporaryDirectory('gsx-hotfix-'), 'hotfix_etags.txt')
+  await fs.mkdir(path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro'), { recursive: true })
+  await fs.writeFile(
+    path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro', 'manifest.json'),
+    JSON.stringify({ package_version: '4.0.23' })
+  )
+  // 引擎组件经官方 Live Update 从零安装后不写 github-etags sidecar，只写 hotfix_etags.txt
+  await fs.writeFile(hotfixPath, 'https://github.com/virtualisoftware/fsdt-offline-installer/releases/latest/download/GSX.zip.001=0x8DF112D9F24F2B6\n')
+
+  const updater = new GsxUpdater({
+    userDataDirectory: userData,
+    officialEtagDirectory: etagDir,
+    hotfixEtagsPath: hotfixPath,
+    processLister: async () => '',
+    detectInstall: async () => ({
+      installed: true,
+      addonRoot,
+      packagePath: path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro'),
+      version: '4.0.23',
+      source: 'test'
+    }),
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        schemaVersion: 1,
+        latestVersion: '4.0.23',
+        packages: [manifestPackage()]
+      })
+    })
+  })
+
+  const status = await updater.getStatus()
+  assert.equal(status.updateAvailable, false, 'hotfix_etags 已记录该组件时不得误报待更新')
+})
+
+test('clearAppliedState resets applied components for post-reinstall reconciliation', async () => {
+  const userData = await temporaryDirectory('gsx-updater-clear-')
+  const updater = new GsxUpdater({ userDataDirectory: userData, processLister: async () => '' })
+  // 先写入一条应用记录
+  await fs.writeFile(
+    path.join(userData, 'gsx-state.json'),
+    JSON.stringify({ schemaVersion: 1, appliedComponents: { GSX: { etag: '0xABC', version: '4.0.23' } } })
+  )
+  await updater.clearAppliedState()
+  const state = JSON.parse(await fs.readFile(path.join(userData, 'gsx-state.json'), 'utf8'))
+  assert.deepEqual(state.appliedComponents, {})
+})

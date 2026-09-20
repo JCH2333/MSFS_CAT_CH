@@ -63,7 +63,16 @@ const developmentBridge = {
   gsx: {
     status: async () => ({ installed: false, pending: [], updateAvailable: false }),
     startUpdate: async () => { throw new Error('请在桌面应用中更新 GSX') },
-    onProgress: () => () => {}
+    onProgress: () => () => {},
+    lifecycle: async () => ({
+      infrastructure: { present: false },
+      activation: { activated: false },
+      product: { installed: false }
+    }),
+    launchInstallerUi: async () => {},
+    launchLicenseWizard: async () => {},
+    pollActivation: async () => ({ activated: false, timedOut: true }),
+    uninstall: async () => { throw new Error('请在桌面应用中卸载 GSX') }
   },
   feedback: {
     chooseImages: async () => [],

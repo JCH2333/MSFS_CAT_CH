@@ -87,3 +87,7 @@ tools/gsx-image-localizer/__pycache__/
 /tools/fenix-a320/
 /tools/ifly-737max-efb/
 /tools/c919x-efb/
+
+# 桌面端开发运行残留
+/LocalStorage/
+/cookies.dat

@@ -454,6 +454,21 @@ class PatchInstaller {
   async listInstallations() {
     return (await this.readState()).installations
   }
+
+  /** 移除指定补丁的安装记录（产品被卸载时记录随之失效，重装后从干净状态开始） */
+  async forgetInstallations(patchIds) {
+    const state = await this.readState()
+    let removed = 0
+    for (const patchId of patchIds || []) {
+      if (state.installations && state.installations[patchId]) {
+        delete state.installations[patchId]
+        removed += 1
+      }
+    }
+    if (removed > 0) await this.writeState(state)
+    return removed
+  }
+
   async inspectInstallation(installation) {
     const missingFiles = []
     const modifiedFiles = []
