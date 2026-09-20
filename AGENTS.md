@@ -84,6 +84,10 @@ node --check electron/patch-installer.js
 
 For interface changes, also inspect desktop and narrow layouts and check the browser/Electron console for errors. For packaging or update changes, run `npm run dist:win` when the environment permits it.
 
+## Client Build And Test Loop
+
+Every client change follows this loop without exception: build a fresh local installer (`npm run dist:win`), silently cover-install it for the user to test, and only push or publish the update after the user confirms that exact build. Silent install notes: close the running app first (`taskkill /F /IM MSFS_CAT_CH.exe`), resolve the real install location from the `HKCU\...\Uninstall` registry key (this machine uses a custom dir, not the default), and run `cmd /c "MSFS_CAT_CH-Setup-<version>.exe /S /D=<install dir>"` — the NSIS `/D=` value must stay unquoted (avoid Git Bash arg mangling; with `MSYS_NO_PATHCONV=1` use single-slash `cmd /c`, not `//c`).
+
 ## Git And Releases
 
 - The public `main` branch must have clean history containing only the desktop application and its GitHub/Gitee distribution configuration.
