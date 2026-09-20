@@ -121,13 +121,13 @@ function createGsxInstaller({
 
   // 启动官方 Live Update 界面（产品安装管理；也是激活的兜底入口）
   function launchLiveUpdateInstaller({ addonRoot }) {
-    if (!addonRoot) throw new Error('未检测到 FSDT 安装根目录，请先安装官方安装器')
+    if (!addonRoot) throw new Error('未检测到 FSDT 安装根目录：请先完成第一步；若已安装过官方安装器，请确认其安装目录未被改名或移动')
     return launcher(path.join(addonRoot, LIVE_UPDATE_EXECUTABLE), LIVE_UPDATE_LAUNCH_ARGS, addonRoot)
   }
 
   // 启动官方 QLM 许可向导（在线/离线激活）。许可码由用户在向导中粘贴，不经过本模块。
   function launchLicenseWizard({ addonRoot }) {
-    if (!addonRoot) throw new Error('未检测到 FSDT 安装根目录，请先安装官方安装器')
+    if (!addonRoot) throw new Error('未检测到 FSDT 安装根目录：请先完成第一步；若已安装过官方安装器，请确认其安装目录未被改名或移动')
     return launcher(path.join(addonRoot, LICENSE_WIZARD_EXECUTABLE), [], addonRoot)
   }
 

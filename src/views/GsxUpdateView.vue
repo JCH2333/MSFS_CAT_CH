@@ -415,7 +415,7 @@ onBeforeUnmount(unsubscribeProgress)
               <button
                 v-if="!lifecycle.activation.activated"
                 class="gsx-secondary" type="button"
-                :disabled="activationFlow.launching || activationFlow.polling || installFlow.busy"
+                :disabled="!lifecycle.infrastructure.present || activationFlow.launching || activationFlow.polling || installFlow.busy"
                 @click="startLicenseWizard"
               >
                 <LoaderCircle v-if="activationFlow.launching || activationFlow.polling" :size="13" class="spin" />
@@ -426,6 +426,9 @@ onBeforeUnmount(unsubscribeProgress)
                 <CircleHelp :size="13" /> 查询激活码 / 名额帮助
               </button>
             </div>
+            <p v-if="!lifecycle.infrastructure.present" class="gsx-step-note">
+              官方激活向导随第一步的基础组件一同安装——请先完成第一步，再启动激活。
+            </p>
             <p v-if="activationFlow.polling" class="gsx-step-note">
               检测到官方向导已启动——请在向导中完成激活，本页会自动检测结果（最长等待 4 分钟）。
             </p>
