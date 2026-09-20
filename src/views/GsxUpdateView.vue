@@ -92,11 +92,20 @@ const installFlow = reactive({
   busy: false,
   kind: '',
   percent: 0,
+  received: 0,
+  total: 0,
   message: '',
   error: null,
   bootstrapReady: false,
-  presetDone: false
+  presetDone: false,
+  currentPhase: '',
+  queuePosition: null,
+  speed: 0,
+  lastSample: null,
+  startedAt: 0,
+  elapsedMs: 0
 })
+let statusTicker = null
 
 // —— 卸载（已安装状态）——
 const uninstallFlow = reactive({ confirming: false, busy: false, done: false, error: null, message: '' })
@@ -118,6 +127,65 @@ const presetSizeLabel = computed(() => {
   if (!packages?.length) return '—'
   const total = packages.reduce((sum, pkg) => sum + (pkg.size || 0), 0)
   return `${(total / 1024 / 1024 / 1024).toFixed(1)} GB`
+})
+
+const NET_PHASES = new Set(['bootstrap-download', 'package-download', 'download'])
+const DISK_PHASES = new Set(['deploy', 'install', 'verify', 'patch-restore', 'patch-reinstall'])
+
+function formatSpeed(bytesPerSecond) {
+  if (!bytesPerSecond || bytesPerSecond <= 0) return '—'
+  if (bytesPerSecond < 1024 * 1024) return `${(bytesPerSecond / 1024).toFixed(0)} KB/s`
+  return `${(bytesPerSecond / 1024 / 1024).toFixed(1)} MB/s`
+}
+
+function formatDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '—'
+  const minutes = Math.floor(seconds / 60)
+  const rest = Math.round(seconds % 60)
+  return minutes > 0 ? `${minutes} 分 ${rest} 秒` : `${rest} 秒`
+}
+
+function sampleSpeed(received) {
+  const now = Date.now()
+  if (installFlow.lastSample && Number.isFinite(received) && received >= installFlow.lastSample.received) {
+    const seconds = (now - installFlow.lastSample.t) / 1000
+    if (seconds >= 0.25) {
+      const instant = (received - installFlow.lastSample.received) / seconds
+      installFlow.speed = installFlow.speed > 0 ? installFlow.speed * 0.6 + instant * 0.4 : instant
+      installFlow.lastSample = { t: now, received }
+    }
+  } else {
+    installFlow.lastSample = Number.isFinite(received) ? { t: now, received } : null
+  }
+}
+
+function startStatusTicker() {
+  installFlow.startedAt = Date.now()
+  installFlow.elapsedMs = 0
+  clearInterval(statusTicker)
+  statusTicker = setInterval(() => {
+    installFlow.elapsedMs = Date.now() - installFlow.startedAt
+  }, 500)
+}
+
+function stopStatusTicker() {
+  clearInterval(statusTicker)
+  statusTicker = null
+}
+
+const statusPercent = computed(() => {
+  if (!installFlow.busy) return Math.min(100, installFlow.percent || 0)
+  // 虚拟 10% 起步：真实进度未超过前保持 10%，避免“卡住”的错觉
+  return Math.max(Math.min(100, installFlow.percent || 0), 10)
+})
+const netSpeedLabel = computed(() =>
+  installFlow.busy && NET_PHASES.has(installFlow.currentPhase) ? formatSpeed(installFlow.speed) : '—')
+const diskSpeedLabel = computed(() =>
+  installFlow.busy && DISK_PHASES.has(installFlow.currentPhase) ? formatSpeed(installFlow.speed) : '—')
+const elapsedLabel = computed(() => formatDuration(installFlow.elapsedMs / 1000))
+const etaLabel = computed(() => {
+  if (!installFlow.busy || !installFlow.speed || !installFlow.total) return '—'
+  return formatDuration((installFlow.total - installFlow.received) / installFlow.speed)
 })
 
 const progressPercent = computed(() => {
@@ -204,6 +272,13 @@ async function startBootstrap() {
   installFlow.kind = 'bootstrap'
   installFlow.error = null
   installFlow.percent = 0
+  installFlow.received = 0
+  installFlow.total = 0
+  installFlow.speed = 0
+  installFlow.lastSample = null
+  installFlow.currentPhase = ''
+  installFlow.queuePosition = null
+  startStatusTicker()
   installFlow.message = '正在准备下载…'
   try {
     await props.bridge.gsx.startBootstrap()
@@ -212,6 +287,7 @@ async function startBootstrap() {
   } catch (error) {
     installFlow.error = error.message
   } finally {
+    stopStatusTicker()
     installFlow.busy = false
   }
 }
@@ -225,15 +301,23 @@ async function startOneClickInstall() {
   installFlow.error = null
   installFlow.presetDone = false
   installFlow.percent = 0
+  installFlow.received = 0
+  installFlow.total = 0
+  installFlow.speed = 0
+  installFlow.lastSample = null
+  installFlow.currentPhase = ''
+  installFlow.queuePosition = null
+  startStatusTicker()
   installFlow.message = '正在准备下载…'
   try {
     await props.bridge.gsx.startPackagePreset()
     installFlow.presetDone = true
     installFlow.percent = 100
-    installFlow.message = 'GSX Pro 本体已安装完成'
+    installFlow.message = 'GSX Pro 已安装并更新到最新版本'
   } catch (error) {
     installFlow.error = error.message
   } finally {
+    stopStatusTicker()
     installFlow.busy = false
   }
 }
@@ -330,13 +414,26 @@ function formatSize(bytes) {
 const UNINSTALL_PHASES = new Set(['check', 'forget-records', 'remove', 'reset-state'])
 
 const unsubscribeProgress = props.bridge.gsx.onProgress((progress) => {
-  // 全新安装镜像的下载进度（kind: 'install'）走 installFlow，与更新流互不干扰
-  if (progress.kind === 'install') {
-    if (!installFlow.busy) return
-    installFlow.percent = progress.percent || 0
-    installFlow.message = progress.message || ''
+  // 一键安装（含自动更新链）进行中：所有 GSX 进度统一导向状态条
+  if (installFlow.busy) {
+    installFlow.currentPhase = progress.phase || ''
+    if (progress.phase === 'queue') {
+      installFlow.queuePosition = progress.position ?? null
+      installFlow.message = progress.message || '服务器繁忙，排队中…'
+      return
+    }
+    installFlow.queuePosition = null
+    if (Number.isFinite(progress.percent)) installFlow.percent = progress.percent
+    if (progress.message) installFlow.message = progress.message
+    if (Number.isFinite(progress.received)) {
+      installFlow.received = progress.received
+      sampleSpeed(progress.received)
+    }
+    if (Number.isFinite(progress.total)) installFlow.total = progress.total
+    if (progress.phase === 'error') installFlow.error = progress.error || progress.message
     return
   }
+  if (progress.kind === 'install') return
   if (uninstallFlow.busy && UNINSTALL_PHASES.has(progress.phase)) {
     uninstallFlow.message = progress.message || ''
     return
@@ -359,6 +456,7 @@ onMounted(loadStatus)
 onBeforeUnmount(() => {
   clearTimeout(activationWaitTimer)
   activationWaitTimer = null
+  stopStatusTicker()
   unsubscribeProgress()
 })
 </script>
@@ -416,23 +514,31 @@ onBeforeUnmount(() => {
               从国内服务器下载官方安装器（{{ bootstrapSizeLabel }}）并自动运行。如果可以正常进入安装器中，
               点击 GSX Pro 旁边的 Active 进行激活即可——激活服务器国内直连，无需加速器。
             </p>
-            <div class="gsx-step-actions">
+            <div v-if="!(installFlow.busy && installFlow.kind === 'bootstrap')" class="gsx-step-actions">
               <button
                 class="gsx-secondary" type="button"
                 :disabled="installFlow.busy"
                 @click="startBootstrap"
               >
-                <LoaderCircle v-if="installFlow.busy && installFlow.kind === 'bootstrap'" :size="13" class="spin" />
-                <CloudDownload v-else :size="13" />
-                {{ installFlow.busy && installFlow.kind === 'bootstrap' ? '正在下载安装器…' : `下载官方安装器并运行（${bootstrapSizeLabel}）` }}
+                <CloudDownload :size="13" />
+                下载官方安装器并运行（{{ bootstrapSizeLabel }}）
               </button>
               <button class="gsx-ghost" type="button" @click="openOfficialDownloadPage">
                 <ExternalLink :size="13" /> 打开官方下载页
               </button>
             </div>
-            <div v-if="installFlow.busy && installFlow.kind === 'bootstrap'" class="gsx-step-progress">
-              <div class="gsx-track"><span :style="{ width: installFlow.percent + '%' }" /></div>
-              <span class="gsx-step-progress-text">{{ installFlow.message }}</span>
+            <div v-if="installFlow.busy && installFlow.kind === 'bootstrap'" class="gsx-statusbar">
+              <div class="gsx-statusbar-head">
+                <LoaderCircle :size="13" class="spin" />
+                <span>{{ installFlow.message || '正在准备下载…' }}</span>
+              </div>
+              <div class="gsx-track"><span :style="{ width: statusPercent + '%' }" /></div>
+              <div class="gsx-statusbar-stats">
+                <span>网速 <b>{{ netSpeedLabel }}</b></span>
+                <span>硬盘写入 <b>{{ diskSpeedLabel }}</b></span>
+                <span>已用 <b>{{ elapsedLabel }}</b></span>
+                <span>剩余约 <b>{{ etaLabel }}</b></span>
+              </div>
             </div>
             <p v-if="installFlow.bootstrapReady" class="gsx-step-note">
               安装器已启动——请在其中完成基础组件安装，完成后点击右上角「刷新状态」，本页会自动确认。
@@ -510,27 +616,36 @@ onBeforeUnmount(() => {
               随后<b>直接解压部署</b>到官方目录结构并在模拟器社区目录创建链接——
               全程无需打开官方安装器，也不连接国外网络。
             </p>
-            <div class="gsx-step-actions">
+            <div v-if="!(installFlow.busy && installFlow.kind === 'preset')" class="gsx-step-actions">
               <button
                 class="gsx-install-all" type="button"
                 :disabled="!lifecycle.infrastructure.present || !lifecycle.activation.activated || installFlow.busy"
                 @click="startOneClickInstall"
               >
-                <LoaderCircle v-if="installFlow.busy && installFlow.kind === 'preset'" :size="17" class="spin" />
-                <Rocket v-else :size="17" />
-                {{ installFlow.busy && installFlow.kind === 'preset' ? (installFlow.message || '正在一键安装…') : '一键安装 GSX Pro 本体' }}
+                <Rocket :size="17" />
+                一键安装 GSX Pro 本体
               </button>
             </div>
             <p v-if="!lifecycle.infrastructure.present || !lifecycle.activation.activated" class="gsx-step-note">
-              需先完成第一、二步（基础组件与激活），官方安装界面才会提供 Install 按钮。
+              需先完成第一、二步（基础组件与激活）才能一键安装。
             </p>
-            <div v-if="installFlow.busy && installFlow.kind === 'preset' && installFlow.percent > 0" class="gsx-step-progress">
-              <div class="gsx-track"><span :style="{ width: installFlow.percent + '%' }" /></div>
-              <span class="gsx-step-progress-text">{{ installFlow.percent }}%</span>
+            <div v-if="installFlow.busy && installFlow.kind === 'preset'" class="gsx-statusbar">
+              <div class="gsx-statusbar-head">
+                <LoaderCircle :size="13" class="spin" />
+                <span>{{ installFlow.message || '正在准备下载…' }}</span>
+                <span v-if="installFlow.queuePosition" class="gsx-statusbar-queue">排队第 {{ installFlow.queuePosition }} 位</span>
+              </div>
+              <div class="gsx-track"><span :style="{ width: statusPercent + '%' }" /></div>
+              <div class="gsx-statusbar-stats">
+                <span>网速 <b>{{ netSpeedLabel }}</b></span>
+                <span>硬盘写入 <b>{{ diskSpeedLabel }}</b></span>
+                <span>已用 <b>{{ elapsedLabel }}</b></span>
+                <span>剩余约 <b>{{ etaLabel }}</b></span>
+              </div>
             </div>
             <p v-if="installFlow.presetDone && !installFlow.busy" class="gsx-step-note">
-              GSX Pro 本体已安装（官方内容的逐字节镜像版本）。点击右上角「刷新状态」检测版本，
-              然后在本页用国内镜像把 GSX 更新到最新版本（约 500 MB），更新完成后再到「汉化补丁」页安装最新汉化。
+              GSX Pro 已安装并更新到最新版本（官方内容逐字节镜像），受影响的汉化补丁也已自动重装。
+              点击右上角「刷新状态」确认版本，然后进模拟器即可使用；如需重装汉化，请到「汉化补丁」页。
             </p>
             <p v-if="installFlow.error && installFlow.kind === 'preset'" class="gsx-step-note gsx-note-warn">
               <TriangleAlert :size="12" />
@@ -882,6 +997,11 @@ onBeforeUnmount(() => {
 .gsx-install-all:disabled { opacity: 0.55; cursor: default; transform: none; }
 .gsx-step-note { display: flex; align-items: center; gap: 6px; margin: 9px 0 0; color: var(--text-muted); font-size: 11px; }
 .gsx-note-warn { color: var(--warning); }
+.gsx-statusbar { display: grid; gap: 8px; margin-top: 12px; }
+.gsx-statusbar-head { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 12px; }
+.gsx-statusbar-queue { padding: 1px 8px; border: 1px solid rgba(227, 178, 83, 0.35); border-radius: 999px; color: var(--warning); font-size: 10.5px; }
+.gsx-statusbar-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--text-muted); font-size: 11px; }
+.gsx-statusbar-stats b { color: var(--text-secondary); font-family: ui-monospace, Consolas, monospace; font-weight: 600; }
 .gsx-step-progress { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 .gsx-step-progress .gsx-track { flex: 1; }
 .gsx-step-progress-text { flex: 0 0 auto; color: var(--text-muted); font-size: 11px; font-family: ui-monospace, Consolas, monospace; }

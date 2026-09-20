@@ -12,8 +12,9 @@ const { createMsfsLogBridge } = require('./msfslog')
 const { classifySimSlot, configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { createGsxInstaller } = require('./gsx-installer')
 const { createGsxInstall } = require('./gsx-install')
+const { createGsxQueueClient, createQueueAwareDownload } = require('./gsx-queue')
 const { InstallationTargetCache, recordInstalledTarget, resolveDetectedTargets } = require('./installation-cache')
-const { PatchInstaller } = require('./patch-installer')
+const { PatchInstaller, downloadToFile } = require('./patch-installer')
 const { GsxUpdater } = require('./gsx-updater')
 const { fetchSponsorQr } = require('./support-qr')
 const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
@@ -144,12 +145,16 @@ async function runGsxOneClickInstallFlow() {
     throw new Error('模拟器社区目录不存在或不可访问，无法创建社区链接')
   }
 
-  const result = await gsxInstall.deployPackages({
+  const deployResult = await gsxInstall.deployPackages({
     addonRoot: infrastructure.addonRoot,
     communityTargets
   })
-  logger?.line('INFO', 'gsx', `一键安装完成：deployed=${result.deployed.length} skipped=${result.skipped.length} links=${result.linked.length} linkSkipped=${result.linksSkipped.length}`)
-  return result
+  logger?.line('INFO', 'gsx', `一键安装部署完成：deployed=${deployResult.deployed.length} skipped=${deployResult.skipped.length} links=${deployResult.linked.length}`)
+  send('gsx:progress', { kind: 'install', phase: 'deploy', percent: 100, message: '本体部署完成，正在更新到最新版本…' })
+  // 自动连跑：镜像更新到最新版本 + 受影响汉化补丁自动重装，用户零多余操作
+  const updateResult = await runGsxUpdateFlow()
+  logger?.line('INFO', 'gsx', `一键安装全部完成：applied=${updateResult?.applied?.length ?? 0} patchReinstalled=${updateResult?.patchCare?.reinstalled?.length ?? 0}`)
+  return { deploy: deployResult, update: updateResult }
 }
 
 // 第二步：启动官方 QLM 激活向导并监视激活结果。向导窗口关闭或注册表出现
@@ -599,9 +604,13 @@ app.whenReady().then(async () => {
   installationTargetCache = new InstallationTargetCache({
     filePath: path.join(userDataDirectory, 'cache', 'installation-targets.json')
   })
+  const updaterQueue = createGsxQueueClient({
+    onQueue: (info) => send('gsx:progress', { phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' })
+  })
   gsxUpdater = new GsxUpdater({
     userDataDirectory,
     hotfixEtagsPath: path.join(app.getPath('appData'), 'Virtuali', 'hotfix_etags.txt'),
+    download: createQueueAwareDownload(downloadToFile, updaterQueue),
     onProgress: (payload) => {
       send('gsx:progress', payload)
       if (logger && ['complete', 'error', 'component-complete', 'component-skipped'].includes(payload?.phase)) {
@@ -610,8 +619,12 @@ app.whenReady().then(async () => {
     }
   })
   gsxInstaller = createGsxInstaller({ processLister: gsxUpdater.processLister })
+  const installQueue = createGsxQueueClient({
+    onQueue: (info) => send('gsx:progress', { kind: 'install', phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' })
+  })
   gsxInstall = createGsxInstall({
     cacheDirectory: path.join(userDataDirectory, 'cache', 'gsx-install'),
+    download: createQueueAwareDownload(downloadToFile, installQueue),
     packagesCacheDirectory: path.join(app.getPath('appData'), 'Virtuali', 'PackagesCache'),
     opener: (filePath) => shell.openPath(filePath),
     onProgress: (payload) => {

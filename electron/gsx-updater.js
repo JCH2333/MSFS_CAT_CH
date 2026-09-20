@@ -258,7 +258,7 @@ class GsxUpdater {
     return result
   }
 
-  async computePending(packages) {
+  async computePending(packages, { localVersion = null, addonRoot = null } = {}) {
     const state = await readJsonState(this.statePath)
     const applied = state.appliedComponents || {}
     let hotfixEtags = {}
@@ -270,7 +270,32 @@ class GsxUpdater {
       }
     }
     const pending = []
+    const packageVersions = new Map()
     for (const pkg of packages) {
+      // 内容对账：部署目标在插件包内部的组件（textures 等），其真实内容随目标包版本走。
+      // 目标包版本低于组件版本时，任何“已应用”记录都不可信——它们可能来自自部署
+      // 之前的机器状态（官方下载器写入的 hotfix_etags 等），否则会出现 4.0.10 本体
+      // 配 4.0.23 记录、更新按钮消失的假阴性。目标包缺失时维持记录判定（应用阶段会跳过）。
+      if (pkg.deployTarget.startsWith('MSFS/') && addonRoot) {
+        const targetPackage = pkg.deployTarget.split('/')[1]
+        if (targetPackage && !packageVersions.has(targetPackage)) {
+          const targetManifestPath = path.join(addonRoot, 'MSFS', targetPackage, GSX_PACKAGE_MANIFEST)
+          const version = await fs.readFile(targetManifestPath, 'utf8')
+            .then((contents) => {
+              const parsed = JSON.parse(contents)
+              const value = typeof parsed?.package_version === 'string' ? parsed.package_version
+                : (typeof parsed?.packageVersion === 'string' ? parsed.packageVersion : null)
+              return value && isSemanticVersion(value) ? value : null
+            })
+            .catch(() => null)
+          packageVersions.set(targetPackage, version)
+        }
+        const targetVersion = packageVersions.get(targetPackage)
+        if (targetVersion && compareVersions(targetVersion, pkg.version) < 0) {
+          pending.push(pkg)
+          continue
+        }
+      }
       const officialEtag = await readEtagSidecar(this.officialEtagDirectory, pkg.component)
       if (officialEtag && officialEtag === pkg.etag) continue
       const appliedEtag = normalizeEtag(applied[pkg.component]?.etag)
@@ -302,7 +327,7 @@ class GsxUpdater {
     if (!install.installed) {
       return { ...base, installed: false, updateAvailable: false, pending: [], localVersion: null }
     }
-    const pending = await this.computePending(manifest.packages)
+    const pending = await this.computePending(manifest.packages, { localVersion: install.version, addonRoot: install.addonRoot })
     const localVersion = install.version
     let versionState = 'unknown'
     if (manifest.latestVersion && isSemanticVersion(localVersion)) {
@@ -369,7 +394,7 @@ class GsxUpdater {
       }
     }
     const mirror = await this.loadMirrorManifest()
-    const pending = await this.computePending(mirror.manifest.packages)
+    const pending = await this.computePending(mirror.manifest.packages, { localVersion: install.version, addonRoot: install.addonRoot })
     if (pending.length === 0) return { state: 'current', applied: [], skipped: [] }
 
     const state = await readJsonState(this.statePath)
@@ -500,6 +525,24 @@ class GsxUpdater {
         throw error
       } finally {
         await fs.rm(stagingRoot, { recursive: true, force: true })
+      }
+    }
+
+    // 版本标记提升：镜像热更不经过官方更新器，包 manifest 的 package_version 需要
+    // 由本流程推进到镜像最新版——否则自部署（如 4.0.10 完整包）+ 热更后版本显示
+    // 永远停留在旧版，更新入口也随之消失。
+    if (applied.length > 0 && install.packagePath && manifest.latestVersion && isSemanticVersion(manifest.latestVersion)) {
+      const packageManifestPath = path.join(install.packagePath, GSX_PACKAGE_MANIFEST)
+      try {
+        const parsed = JSON.parse(await fs.readFile(packageManifestPath, 'utf8'))
+        const current = typeof parsed?.package_version === 'string' ? parsed.package_version : '0.0.0'
+        if (isSemanticVersion(current) && compareVersions(current, manifest.latestVersion) < 0) {
+          parsed.package_version = manifest.latestVersion
+          await fs.writeFile(packageManifestPath, JSON.stringify(parsed, null, 2))
+          this.emit({ phase: 'marker-bumped', percent: 100, message: `版本标记已更新到 v\${manifest.latestVersion}` })
+        }
+      } catch {
+        // 标记写不进去只影响版本显示，不影响已部署内容
       }
     }
 
