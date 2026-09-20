@@ -424,3 +424,35 @@ test('deployPackages links the 2020-only package into 2020 community slots', asy
   const linkStats = await fs.lstat(path.join(community2020, cacheName.replace(/-v4\.0\.10\.zip$/, '')))
   assert.equal(linkStats.isSymbolicLink(), true)
 })
+
+test('detectPatchTargets auto-resolves gsx-combined patches to the community package folder', async () => {
+  const { detectPatchTargets } = require('../electron/installation-targets')
+  const root = await temporaryDirectory('gsx-combined-root-')
+  const community2024 = path.join(root, 'Community2024')
+  await fs.mkdir(path.join(community2024, 'fsdreamteam-gsx-pro'), { recursive: true })
+  await fs.writeFile(path.join(community2024, 'fsdreamteam-gsx-pro', 'manifest.json'), '{}')
+
+  const targets = await detectPatchTargets(
+    [{ id: 'gsx-pro-zh-cn', targetKind: 'gsx-combined', targetFolders: [] }],
+    { packageRoots: [{ packageRoot: root, source: 'Steam / MSFS 2024' }] }
+  )
+  assert.equal(targets['gsx-pro-zh-cn']?.targetPath, path.join(community2024, 'fsdreamteam-gsx-pro'))
+
+  // 2020 槽位的 Community 目录同样可作为回退目标
+  const root2020 = await temporaryDirectory('gsx-combined-root2020-')
+  const community2020 = path.join(root2020, 'Community')
+  await fs.mkdir(path.join(community2020, 'fsdreamteam-gsx-pro'), { recursive: true })
+  const targets2020 = await detectPatchTargets(
+    [{ id: 'gsx-pro-zh-cn', targetKind: 'gsx-combined', targetFolders: [] }],
+    { packageRoots: [{ packageRoot: root2020, source: 'Steam / MSFS 2020' }] }
+  )
+  assert.equal(targets2020['gsx-pro-zh-cn']?.targetPath, path.join(community2020, 'fsdreamteam-gsx-pro'))
+
+  // 完全没有 GSX 包时不产出目标（保持「请先选择目录」引导）
+  const emptyRoot = await temporaryDirectory('gsx-combined-empty-')
+  const targetsEmpty = await detectPatchTargets(
+    [{ id: 'gsx-pro-zh-cn', targetKind: 'gsx-combined', targetFolders: [] }],
+    { packageRoots: [{ packageRoot: emptyRoot, source: 'Steam / MSFS 2024' }] }
+  )
+  assert.equal(targetsEmpty['gsx-pro-zh-cn'], undefined)
+})

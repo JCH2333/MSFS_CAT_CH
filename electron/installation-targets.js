@@ -54,6 +54,9 @@ const SIM_SLOT_RULES = [
 
 const SLOT_ORDER = { msfs2024: 0, msfs2020: 1 }
 
+// GSX 文本补丁（gsx-combined）的安装目标包名，与 gsx-updater 的 GSX_PACKAGE_FOLDER 一致
+const GSX_COMBINED_PACKAGE_FOLDER = 'fsdreamteam-gsx-pro'
+
 function classifySimSlot(source) {
   return SIM_SLOT_RULES.find(({ pattern }) => pattern.test(source || ''))?.slot || null
 }
@@ -287,6 +290,24 @@ async function detectPatchTargets(patches, options = {}) {
         candidates.push(candidate)
       }
       if (candidates.length) result[patch.id] = { ...candidates[0], candidates }
+      continue
+    }
+
+    // GSX 文本补丁（gsx-combined）：目标是社区目录里的 GSX Pro 插件包文件夹，
+    // 自部署 junction 与官方安装产物均可解析。此前该类型不做自动检测——卸载清空
+    // 安装记录后会陷入「请先选择目录」死路，自动重装链也因此拿不到目标。
+    if (patch?.id && patch?.targetKind === 'gsx-combined') {
+      for (const root of roots) {
+        if (!root?.packageRoot || !root?.source) continue
+        for (const communityRoot of communityRoots(root.packageRoot)) {
+          const targetPath = path.join(communityRoot, GSX_COMBINED_PACKAGE_FOLDER)
+          if (await isDirectory(targetPath)) {
+            result[patch.id] = { targetPath, source: root.source }
+            break
+          }
+        }
+        if (result[patch.id]) break
+      }
       continue
     }
 
