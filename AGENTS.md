@@ -82,7 +82,7 @@ node --check electron/gsx-updater.js
 node --check electron/patch-installer.js
 ```
 
-For interface changes, also inspect desktop and narrow layouts and check the browser/Electron console for errors. For packaging or update changes, run `npm run dist:win` when the environment permits it.
+For interface changes, also inspect desktop and narrow layouts and check the browser/Electron console for errors. When removing renderer state, grep the whole view for stale template references first: Vite still builds, but Electron renders a blank pane at runtime. For packaging or update changes, run `npm run dist:win` when the environment permits it.
 
 ## Client Build And Test Loop
 
