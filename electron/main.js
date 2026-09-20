@@ -9,7 +9,7 @@ const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence'
 const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure')
 const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
 const { createMsfsLogBridge } = require('./msfslog')
-const { configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
+const { classifySimSlot, configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { createGsxInstaller } = require('./gsx-installer')
 const { createGsxInstall } = require('./gsx-install')
 const { InstallationTargetCache, recordInstalledTarget, resolveDetectedTargets } = require('./installation-cache')
@@ -104,17 +104,52 @@ async function runGsxBootstrapFlow() {
   return { opened: true, downloaded: result.downloaded, filePath: result.filePath }
 }
 
-// 第三步：把版本化完整包预置到官方 PackagesCache。官方安装器随后本地解压，
-// 不再从官方服务器下载本体。前置条件：第一步基础组件 + 第二步激活已完成。
-async function runGsxPackagePresetFlow() {
+// 第三步（一键安装）：把版本化完整包预置到官方 PackagesCache 后，由本应用直接
+// 解压部署到 Addon Manager\MSFS\<产品> 并在模拟器社区目录创建链接——全程不拉起
+// 官方安装器。前置条件：第一步基础组件 + 第二步激活已完成。
+async function runGsxOneClickInstallFlow() {
   if (!gsxInstall || !gsxInstaller) throw new Error('GSX 组件未就绪')
+  await gsxUpdater.assertSimClosed()
   const infrastructure = await gsxInstaller.detectInfrastructure()
   if (!infrastructure.present) throw new Error('请先完成第一步：安装 FSDT 官方安装器')
   const activation = await gsxInstaller.detectActivation()
   if (!activation.activated) throw new Error('请先完成第二步：激活 GSX Pro')
-  const result = await gsxInstall.presetPackages()
-  logger?.line('INFO', 'gsx', `本体安装包预置完成：downloaded=${result.downloaded.length} skipped=${result.skipped.length}`)
-  return { downloaded: result.downloaded, skipped: result.skipped, manifest: result.manifest }
+
+  const communityRoots = await configuredRoots({
+    appData: app.getPath('appData'),
+    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')
+  })
+  if (!communityRoots.length) {
+    throw new Error('未检测到模拟器社区目录：请先在「汉化补丁」页完成一次安装目标检测后再试')
+  }
+  const fsPromises = require('node:fs/promises')
+  const communityTargets = []
+  const seenDirectories = new Set()
+  for (const entry of communityRoots) {
+    const slot = classifySimSlot(entry.source) || 'msfs2024'
+    const candidates = slot === 'msfs2020'
+      ? [path.join(entry.packageRoot, 'Community'), entry.packageRoot]
+      : [path.join(entry.packageRoot, 'Community2024'), path.join(entry.packageRoot, 'Community'), entry.packageRoot]
+    for (const directory of candidates) {
+      const key = path.resolve(directory).toLowerCase()
+      if (seenDirectories.has(key)) continue
+      const stats = await fsPromises.stat(directory).then((s) => s.isDirectory()).catch(() => false)
+      if (!stats) continue
+      seenDirectories.add(key)
+      communityTargets.push({ directory, slot })
+      break
+    }
+  }
+  if (!communityTargets.length) {
+    throw new Error('模拟器社区目录不存在或不可访问，无法创建社区链接')
+  }
+
+  const result = await gsxInstall.deployPackages({
+    addonRoot: infrastructure.addonRoot,
+    communityTargets
+  })
+  logger?.line('INFO', 'gsx', `一键安装完成：deployed=${result.deployed.length} skipped=${result.skipped.length} links=${result.linked.length} linkSkipped=${result.linksSkipped.length}`)
+  return result
 }
 
 // 第二步：启动官方 QLM 激活向导并监视激活结果。向导窗口关闭或注册表出现
@@ -512,7 +547,7 @@ function registerIpc() {
   // GSX 全新安装镜像（官方安装器 + 本体完整包）
   ipcMain.handle('gsx:install:manifest', () => gsxInstall.loadManifest())
   ipcMain.handle('gsx:bootstrap:start', () => runGsxBootstrapFlow())
-  ipcMain.handle('gsx:package:start', () => runGsxPackagePresetFlow())
+  ipcMain.handle('gsx:package:start', () => runGsxOneClickInstallFlow())
 
   ipcMain.handle('external:open', async (_event, input) => {
     const url = new URL(input)

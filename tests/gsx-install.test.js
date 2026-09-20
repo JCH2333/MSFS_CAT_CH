@@ -5,6 +5,7 @@ const os = require('node:os')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const {
+  DEPLOY_TEMP_SUFFIX,
   DISK_SPACE_MARGIN_BYTES,
   createGsxInstall,
   productPrefixOf,
@@ -256,4 +257,170 @@ test('loadManifest falls back to the last good copy when the server fails', asyn
   assert.equal(second.source, 'memory')
   assert.equal(second.stale, true)
   assert.equal(second.manifest.bootstrap.assetName, 'FSDT_Universal_Installer.exe')
+})
+
+const { execFile } = require('node:child_process')
+const { promisify } = require('node:util')
+const execFileAsync = promisify(execFile)
+// 用 PowerShell Compress-Archive 构造真实 zip（含子目录），供部署测试消费
+async function createTestZip(zipPath, files) {
+  const stage = await temporaryDirectory('gsx-zip-stage-')
+  for (const file of files) {
+    const target = path.join(stage, ...file.name.split('/'))
+    await fs.mkdir(path.dirname(target), { recursive: true })
+    await fs.writeFile(target, file.content)
+  }
+  await execFileAsync('powershell.exe', [
+    '-NoProfile', '-Command',
+    `Compress-Archive -Path '${stage}\\*' -DestinationPath '${zipPath}' -Force`
+  ])
+}
+
+async function fileSha256(filePath) {
+  return crypto.createHash('sha256').update(await fs.readFile(filePath)).digest('hex')
+}
+
+
+// 部署清单：单个 GSX Pro 完整包（zip 由测试现场构建，大小/校验和随之回填）
+async function buildDeployFixture({ packagesCacheDirectory, withProTarget }) {
+  const cacheName = 'fsdreamteam-gsx-pro-v4.0.10.zip'
+  const zipPath = path.join(packagesCacheDirectory, cacheName)
+  await createTestZip(zipPath, [
+    { name: 'manifest.json', content: JSON.stringify({ package_version: '4.0.10' }) },
+    { name: 'html_ui/panel/test-file.txt', content: 'deploy-payload' }
+  ])
+  const manifest = manifestFixture({
+    overwrites: {
+      product: {
+        size: (await fs.stat(zipPath)).size,
+        sha256: await fileSha256(zipPath)
+      },
+      // 部署场景只关注产品包：移除 extra 包避免噪音
+      extra: { role: '__absent__' }
+    }
+  })
+  // manifestFixture 不支持剔除条目——手工重建 packages
+  manifest.packages = manifest.packages.filter((pkg) => pkg.role !== '__absent__')
+  return { manifest, cacheName }
+}
+
+test('deployPackages extracts packages into the addon root and creates community junctions', async () => {
+  const cacheDirectory = await temporaryDirectory('gsx-deploy-cache-')
+  const packagesCacheDirectory = await temporaryDirectory('gsx-deploy-pc-')
+  const addonRoot = await temporaryDirectory('gsx-deploy-addon-')
+  const communityDirectory = path.join(addonRoot, 'community2024')
+  await fs.mkdir(communityDirectory, { recursive: true })
+  const { manifest } = await buildDeployFixture({ packagesCacheDirectory })
+  const client = createGsxInstall({
+    cacheDirectory,
+    packagesCacheDirectory,
+    fetchImpl: async () => responseStub(manifest),
+    statFs: async () => ({ bsize: 4096, bavail: 64 * 1024 * 1024 }),
+    opener: async () => null
+  })
+
+  const result = await client.deployPackages({
+    addonRoot,
+    communityTargets: [{ directory: communityDirectory, slot: 'msfs2024' }]
+  })
+
+  const target = path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  assert.equal(await fs.readFile(path.join(target, 'manifest.json'), 'utf8'), JSON.stringify({ package_version: '4.0.10' }))
+  assert.equal(await fs.readFile(path.join(target, 'html_ui', 'panel', 'test-file.txt'), 'utf8'), 'deploy-payload')
+  assert.deepEqual(result.deployed, ['fsdreamteam-gsx-pro'])
+  assert.deepEqual(result.skipped, [])
+  const linkStats = await fs.lstat(path.join(communityDirectory, 'fsdreamteam-gsx-pro'))
+  assert.equal(linkStats.isSymbolicLink(), true, '社区目录应创建 junction 链接')
+  // 链接可直接读通目标内容
+  assert.equal(await fs.readFile(path.join(communityDirectory, 'fsdreamteam-gsx-pro', 'manifest.json'), 'utf8'), JSON.stringify({ package_version: '4.0.10' }))
+  // 临时部署目录不残留
+  const leftovers = (await fs.readdir(path.join(addonRoot, 'MSFS'))).filter((name) => name.endsWith(DEPLOY_TEMP_SUFFIX))
+  assert.deepEqual(leftovers, [])
+})
+
+test('deployPackages skips products that are already deployed', async () => {
+  const cacheDirectory = await temporaryDirectory('gsx-deploy-skip-cache-')
+  const packagesCacheDirectory = await temporaryDirectory('gsx-deploy-skip-pc-')
+  const addonRoot = await temporaryDirectory('gsx-deploy-skip-addon-')
+  const communityDirectory = path.join(addonRoot, 'community2024')
+  await fs.mkdir(communityDirectory, { recursive: true })
+  const { manifest } = await buildDeployFixture({ packagesCacheDirectory })
+  const existing = path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  await fs.mkdir(existing, { recursive: true })
+  await fs.writeFile(path.join(existing, 'manifest.json'), JSON.stringify({ package_version: '4.0.10' }))
+
+  const client = createGsxInstall({
+    cacheDirectory,
+    packagesCacheDirectory,
+    fetchImpl: async () => responseStub(manifest),
+    statFs: async () => ({ bsize: 4096, bavail: 64 * 1024 * 1024 })
+  })
+  const result = await client.deployPackages({
+    addonRoot,
+    communityTargets: [{ directory: communityDirectory, slot: 'msfs2024' }]
+  })
+  assert.deepEqual(result.skipped, ['fsdreamteam-gsx-pro'])
+  assert.deepEqual(result.deployed, [])
+  assert.equal(result.linked.length, 1, '已部署产品仍需补齐社区链接')
+})
+
+test('deployPackages refuses a partial deployment target instead of overwriting', async () => {
+  const cacheDirectory = await temporaryDirectory('gsx-deploy-part-cache-')
+  const packagesCacheDirectory = await temporaryDirectory('gsx-deploy-part-pc-')
+  const addonRoot = await temporaryDirectory('gsx-deploy-part-addon-')
+  const partial = path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  await fs.mkdir(partial, { recursive: true })
+  await fs.writeFile(path.join(partial, 'broken.tmp'), 'x')
+  const { manifest } = await buildDeployFixture({ packagesCacheDirectory })
+  const client = createGsxInstall({
+    cacheDirectory,
+    packagesCacheDirectory,
+    fetchImpl: async () => responseStub(manifest),
+    statFs: async () => ({ bsize: 4096, bavail: 64 * 1024 * 1024 })
+  })
+  await assert.rejects(
+    () => client.deployPackages({ addonRoot, communityTargets: [] }),
+    /部署目标已存在但不完整/
+  )
+})
+
+test('deployPackages links the 2020-only package into 2020 community slots', async () => {
+  const cacheDirectory = await temporaryDirectory('gsx-deploy-2020-cache-')
+  const packagesCacheDirectory = await temporaryDirectory('gsx-deploy-2020-pc-')
+  const addonRoot = await temporaryDirectory('gsx-deploy-2020-addon-')
+  const community2024 = path.join(addonRoot, 'community2024')
+  const community2020 = path.join(addonRoot, 'community2020')
+  await fs.mkdir(community2024, { recursive: true })
+  await fs.mkdir(community2020, { recursive: true })
+  const cacheName = 'fsdreamteam-gsx-world-of-jetways-2020-v4.0.10.zip'
+  const zipPath = path.join(packagesCacheDirectory, cacheName)
+  await createTestZip(zipPath, [
+    { name: 'manifest.json', content: JSON.stringify({ package_version: '4.0.10' }) }
+  ])
+  const manifest = manifestFixture()
+  manifest.packages = [{
+    role: 'extra',
+    cacheName,
+    version: '4.0.10',
+    size: (await fs.stat(zipPath)).size,
+    sha256: await fileSha256(zipPath),
+    downloadUrl: 'http://47.109.31.236:20075/downloads/gsx/' + cacheName
+  }]
+  const client = createGsxInstall({
+    cacheDirectory,
+    packagesCacheDirectory,
+    fetchImpl: async () => responseStub(manifest),
+    statFs: async () => ({ bsize: 4096, bavail: 64 * 1024 * 1024 })
+  })
+  const result = await client.deployPackages({
+    addonRoot,
+    communityTargets: [
+      { directory: community2024, slot: 'msfs2024' },
+      { directory: community2020, slot: 'msfs2020' }
+    ]
+  })
+  assert.deepEqual(result.deployed, ['fsdreamteam-gsx-world-of-jetways-2020'])
+  assert.equal((await fs.readdir(community2024)).length, 0, '2020 专属产品不得链接进 2024 槽位')
+  const linkStats = await fs.lstat(path.join(community2020, cacheName.replace(/-v4\.0\.10\.zip$/, '')))
+  assert.equal(linkStats.isSymbolicLink(), true)
 })

@@ -69,9 +69,9 @@ const TUTORIALS = {
   step3: {
     title: '教程 · 一键安装 GSX Pro 本体',
     sections: [
-      { text: '点击「一键安装」后，应用会把 GSX 本体完整包（约 7.3 GB）从国内服务器下载到官方缓存目录（PackagesCache），全程逐字节 SHA-256 校验，无需访问国外网络。' },
-      { text: '下载完成后会自动打开官方安装界面：在 GSX Pro 行点击 Install，安装器会直接使用本地预置的安装包完成安装，不再从官方服务器下载数 GB 本体。' },
-      { text: '安装后若 GSX 未出现在模拟器社区目录中，重新打开官方安装界面点击 Relink 修复链接即可。' },
+      { text: '点击「一键安装」后，应用把 GSX 本体完整包（约 7.3 GB）从国内服务器直连下载到本地缓存，全程逐字节 SHA-256 校验，不连接国外网络。' },
+      { text: '下载完成后由本应用直接解压部署到官方目录结构（Addon Manager\\MSFS\\<包名>），并在模拟器社区目录创建链接——不需要打开官方安装器。' },
+      { text: '部署的是官方版本的逐字节内容（当前随镜像为 4.0.10）。回到本页点「刷新状态」，即可用国内镜像在线把 GSX 更新到最新版本（约 500 MB），再到「汉化补丁」页安装最新汉化。' },
       { text: '安装完成后回到本页点「刷新状态」，即可使用国内镜像在线更新 GSX。' }
     ]
   }
@@ -97,7 +97,6 @@ const installFlow = reactive({
   bootstrapReady: false,
   presetDone: false
 })
-const installerUi = reactive({ error: null })
 
 // —— 卸载（已安装状态）——
 const uninstallFlow = reactive({ confirming: false, busy: false, done: false, error: null, message: '' })
@@ -217,8 +216,8 @@ async function startBootstrap() {
   }
 }
 
-// 一键安装：预置本体安装包（国内直连下载 + SHA-256 校验 + 写入官方缓存）后，
-// 自动打开官方安装界面完成最后的 Install 点击。
+// 一键安装：预置官方完整包（国内直连下载 + SHA-256 校验 + 写入官方缓存）后，
+// 由本应用直接解压部署到官方目录结构并创建社区链接——不拉起官方安装器。
 async function startOneClickInstall() {
   if (installFlow.busy) return
   installFlow.busy = true
@@ -231,13 +230,7 @@ async function startOneClickInstall() {
     await props.bridge.gsx.startPackagePreset()
     installFlow.presetDone = true
     installFlow.percent = 100
-    installFlow.message = '安装包已就绪，正在打开官方安装界面…'
-    try {
-      await props.bridge.gsx.launchInstallerUi()
-    } catch (error) {
-      installerUi.error = error.message
-    }
-    installFlow.message = '请在官方安装界面的 GSX Pro 行点击 Install 完成安装'
+    installFlow.message = 'GSX Pro 本体已安装完成'
   } catch (error) {
     installFlow.error = error.message
   } finally {
@@ -513,9 +506,9 @@ onBeforeUnmount(() => {
               </button>
             </div>
             <p class="gsx-step-body">
-              点击「一键安装」：应用会把 GSX 本体完整包从国内服务器下载到本地缓存（逐字节 SHA-256 校验），
-              随后自动打开官方安装界面——在 GSX Pro 行点击 Install 即完成安装，
-              <b>直接使用本地安装包</b>，不再从官方服务器下载数 GB 本体。
+              点击「一键安装」：应用把 GSX 本体完整包从国内服务器下载到本地缓存（逐字节 SHA-256 校验），
+              随后<b>直接解压部署</b>到官方目录结构并在模拟器社区目录创建链接——
+              全程无需打开官方安装器，也不连接国外网络。
             </p>
             <div class="gsx-step-actions">
               <button
@@ -536,9 +529,8 @@ onBeforeUnmount(() => {
               <span class="gsx-step-progress-text">{{ installFlow.percent }}%</span>
             </div>
             <p v-if="installFlow.presetDone && !installFlow.busy" class="gsx-step-note">
-              安装包已就绪。请在已打开的官方安装界面中，于 GSX Pro 行点击 Install 完成安装；
-              若安装器提示联网校验，属正常版本核对，不会重新下载数 GB 本体。若 GSX 未出现在模拟器社区目录，
-              重新打开官方安装界面点击 Relink 修复链接即可。安装完成后回到本页点「刷新状态」。
+              GSX Pro 本体已安装（官方内容的逐字节镜像版本）。点击右上角「刷新状态」检测版本，
+              然后在本页用国内镜像把 GSX 更新到最新版本（约 500 MB），更新完成后再到「汉化补丁」页安装最新汉化。
             </p>
             <p v-if="installFlow.error && installFlow.kind === 'preset'" class="gsx-step-note gsx-note-warn">
               <TriangleAlert :size="12" />

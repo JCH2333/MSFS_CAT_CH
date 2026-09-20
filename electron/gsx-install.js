@@ -1,7 +1,10 @@
 const fs = require('node:fs/promises')
+const nodeFs = require('node:fs')
 const path = require('node:path')
+const { pipeline } = require('node:stream/promises')
+const yauzl = require('yauzl')
 const { buildServerUrl, isTrustedServerUrl } = require('./distribution-server')
-const { downloadToFile, sha256 } = require('./patch-installer')
+const { downloadToFile, sha256, ensureWithin } = require('./patch-installer')
 const { compareVersions, isSemanticVersion } = require('./versioning')
 
 // GSX 全新安装的国内镜像客户端，与 gsx-updater.js 的热更镜像互补：
@@ -19,6 +22,12 @@ const GSX_INSTALL_MANIFEST_TIMEOUT_MS = 8000
 
 // 预置下载之外保留的临时空间余量（解压 .part 与官方安装器自身的解包需要）
 const DISK_SPACE_MARGIN_BYTES = 1024 * 1024 * 1024
+
+// 自部署：解压目标为 Addon Manager\MSFS\<产品前缀>；两个模拟器槽位都要建链接的
+// 产品 + 仅 2020 槽位的产品（与官方部署形态一致：woj-2020 本体存在但 2024 槽位无链接）
+const DEPLOY_PRODUCT_PACKAGES = ['fsdreamteam-gsx-pro', 'fsdreamteam-gsx-world-of-jetways', 'fsdreamteam-gsx-efb']
+const DEPLOY_PRODUCT_PACKAGES_2020 = ['fsdreamteam-gsx-world-of-jetways-2020']
+const DEPLOY_TEMP_SUFFIX = '.deploying'
 
 const ASSET_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/
 // 官方完整包命名：<product>-v<semver>.zip（如 fsdreamteam-gsx-pro-v4.0.10.zip）
@@ -116,6 +125,119 @@ function productPrefixOf(cacheName) {
 
 async function defaultStatFs(target) {
   return fs.statfs(target)
+}
+
+// 读取 zip 元数据（仅中央目录，秒级完成）：条目数与解压后总字节，
+// 用于磁盘空间守卫与按字节加权的部署进度。
+function summarizeZip(zipPath) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(zipPath, { lazyEntries: true, autoClose: false }, (error, zipfile) => {
+      if (error) return reject(new Error(`无法读取安装包 ${path.basename(zipPath)}：${error.message}`))
+      let entries = 0
+      let bytes = 0
+      let settled = false
+      const finish = (fn, value) => {
+        if (settled) return
+        settled = true
+        zipfile.close()
+        fn(value)
+      }
+      zipfile.on('error', (e) => finish(reject, e))
+      zipfile.on('entry', (entry) => {
+        entries += 1
+        bytes += entry.uncompressedSize
+        zipfile.readEntry()
+      })
+      zipfile.on('end', () => finish(resolve, { entries, bytes }))
+      zipfile.readEntry()
+    })
+  })
+}
+
+// zip 条目名 → 目标路径（不可信输入）：拒绝盘符/绝对路径/穿越，统一斜杠
+function resolveZipEntryPath(destination, entryName) {
+  const normalized = String(entryName).replace(/\\/g, '/')
+  if (normalized.startsWith('/') || /^[A-Za-z]:/.test(normalized)) {
+    throw new Error(`安装包内检测到非法路径条目：${entryName}`)
+  }
+  const segments = normalized.split('/').filter((segment) => segment.length > 0 && segment !== '.')
+  if (segments.some((segment) => segment === '..')) {
+    throw new Error(`安装包内检测到路径穿越条目：${entryName}`)
+  }
+  const resolved = path.resolve(destination, ...segments)
+  return ensureWithin(destination, resolved)
+}
+
+// 带进度安全解压：先收集全部条目的隐含目录（部分 zip 的目录条目不规范，
+// 文件条目可能先于目录条目出现），再逐条解压；进度按解压完成字节累计。
+function extractZipArchive({ zipPath, destination, onProgress }) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(zipPath, { lazyEntries: true, autoClose: false }, (error, zipfile) => {
+      if (error) return reject(new Error(`无法读取安装包 ${path.basename(zipPath)}：${error.message}`))
+      const impliedDirectories = new Set([path.resolve(destination)])
+      const fileEntries = []
+      let settled = false
+      let completedBytes = 0
+      const fail = (e) => {
+        if (settled) return
+        settled = true
+        zipfile.close()
+        reject(e instanceof Error ? e : new Error(String(e)))
+      }
+      zipfile.on('error', fail)
+      zipfile.on('entry', (entry) => {
+        try {
+          const isDirectory = entry.fileName.endsWith('/')
+          const resolved = resolveZipEntryPath(destination, entry.fileName)
+          if (isDirectory) {
+            impliedDirectories.add(resolved)
+          } else {
+            fileEntries.push({ entry, resolved })
+            let cursor = path.dirname(resolved)
+            while (cursor.startsWith(path.resolve(destination))) {
+              impliedDirectories.add(cursor)
+              const parent = path.dirname(cursor)
+              if (parent === cursor) break
+              cursor = parent
+            }
+          }
+          zipfile.readEntry()
+        } catch (e) {
+          fail(e)
+        }
+      })
+      zipfile.on('end', async () => {
+        try {
+          for (const directory of impliedDirectories) {
+            await fs.mkdir(directory, { recursive: true })
+          }
+          for (const { entry, resolved } of fileEntries) {
+            await new Promise((entryDone, entryFail) => {
+              zipfile.openReadStream(entry, (streamError, stream) => {
+                if (streamError) return entryFail(streamError)
+                const output = nodeFs.createWriteStream(resolved)
+                output.on('error', entryFail)
+                stream.on('error', entryFail)
+                stream.on('end', () => {
+                  completedBytes += entry.uncompressedSize
+                  onProgress?.({ entriesDone: fileEntries.length, bytesDone: completedBytes })
+                  entryDone()
+                })
+                stream.pipe(output)
+              })
+            })
+          }
+          if (settled) return
+          settled = true
+          zipfile.close()
+          resolve({ entries: fileEntries.length, bytes: completedBytes })
+        } catch (e) {
+          fail(e)
+        }
+      })
+      zipfile.readEntry()
+    })
+  })
 }
 
 function createGsxInstall({
@@ -286,21 +408,136 @@ function createGsxInstall({
     }
   }
 
+  // 自部署：把 PackagesCache 里的官方完整包解压到 Addon Manager\MSFS\<产品>
+  // 并在模拟器社区目录创建链接——不依赖官方安装器。流程：先确保包已预置
+  // （复用下载+SHA-256 校验），逐包“临时目录解压 → 校验 manifest → 原子改名”，
+  // 最后按槽位建 junction。已部署的产品自动跳过。
+  async function deployPackages({ addonRoot, communityTargets } = {}) {
+    if (!addonRoot) throw new Error('未检测到 FSDT 安装根目录，无法部署')
+    const { manifest } = await loadManifest()
+    await presetPackages()
+
+    const resolvedAddonRoot = path.resolve(addonRoot)
+    const pending = []
+    const skipped = []
+    const deployed = []
+    for (const pkg of manifest.packages) {
+      const productName = productPrefixOf(pkg.cacheName)
+      if (!productName) throw new Error(`安装包缓存名无法识别产品：${pkg.cacheName}`)
+      const target = ensureWithin(resolvedAddonRoot, path.join(resolvedAddonRoot, 'MSFS', productName))
+      const stats = await fs.stat(target).catch(() => null)
+      if (stats?.isDirectory()) {
+        const deployedManifest = await fs.readFile(path.join(target, 'manifest.json'), 'utf8').catch(() => null)
+        if (deployedManifest) {
+          skipped.push(productName)
+          continue
+        }
+        throw new Error(`部署目标已存在但不完整（${target}），请先在「卸载 GSX Pro」中清理后重试`)
+      }
+      pending.push({ pkg, productName, target })
+    }
+
+    if (pending.length > 0) {
+      const summaries = []
+      let totalBytes = 0
+      for (const item of pending) {
+        const source = path.join(packagesCacheDirectory, item.pkg.cacheName)
+        const summary = await summarizeZip(source)
+        summaries.push(summary)
+        totalBytes += summary.bytes
+      }
+      const usage = await statFs(resolvedAddonRoot)
+      const availableBytes = Number(usage.bavail) * Number(usage.bsize)
+      if (availableBytes < totalBytes + DISK_SPACE_MARGIN_BYTES) {
+        const needed = Math.ceil((totalBytes + DISK_SPACE_MARGIN_BYTES) / 1024 / 1024 / 1024)
+        const have = Math.floor(availableBytes / 1024 / 1024 / 1024)
+        throw new Error(`磁盘空间不足：部署完整包还需约 ${needed} GB，目标盘剩余约 ${have} GB，请清理后重试`)
+      }
+
+      let finishedBytes = 0
+      for (let index = 0; index < pending.length; index += 1) {
+        const { pkg, productName, target } = pending[index]
+        const source = path.join(packagesCacheDirectory, pkg.cacheName)
+        const temporary = path.join(path.dirname(target), `${path.basename(target)}${DEPLOY_TEMP_SUFFIX}`)
+        await fs.rm(temporary, { recursive: true, force: true })
+        try {
+          let lastPercent = -1
+          await extractZipArchive({
+            zipPath: source,
+            destination: temporary,
+            onProgress: ({ bytesDone }) => {
+              const overall = totalBytes > 0
+                ? Math.min(100, Math.floor(((finishedBytes + bytesDone) / totalBytes) * 100))
+                : 0
+              if (overall !== lastPercent) {
+                lastPercent = overall
+                emit('deploy', { percent: overall, received: finishedBytes + bytesDone, total: totalBytes, message: `正在部署 ${pkg.cacheName}… ${overall}%` })
+              }
+            }
+          })
+          const deployedManifest = JSON.parse(await fs.readFile(path.join(temporary, 'manifest.json'), 'utf8'))
+          const deployedVersion = typeof deployedManifest?.package_version === 'string'
+            ? deployedManifest.package_version
+            : (typeof deployedManifest?.packageVersion === 'string' ? deployedManifest.packageVersion : null)
+          if (deployedVersion !== pkg.version) {
+            throw new Error(`${pkg.cacheName} 部署后校验失败（manifest 版本 ${deployedVersion || '缺失'} ≠ ${pkg.version}）`)
+          }
+          await fs.rename(temporary, target)
+        } catch (error) {
+          await fs.rm(temporary, { recursive: true, force: true }).catch(() => {})
+          throw error
+        }
+        finishedBytes += summaries[index].bytes
+        deployed.push(productName)
+      }
+    }
+
+    const linked = []
+    const linksSkipped = []
+    for (const target of communityTargets || []) {
+      const slot = target.slot === 'msfs2020' ? 'msfs2020' : 'msfs2024'
+      const products = slot === 'msfs2020'
+        ? [...DEPLOY_PRODUCT_PACKAGES, ...DEPLOY_PRODUCT_PACKAGES_2020]
+        : DEPLOY_PRODUCT_PACKAGES
+      for (const productName of products) {
+        const source = path.join(resolvedAddonRoot, 'MSFS', productName)
+        if (!(await fs.stat(source).then((s) => s.isDirectory()).catch(() => false))) continue
+        const linkPath = ensureWithin(path.resolve(target.directory), path.join(target.directory, productName))
+        const existing = await fs.lstat(linkPath).catch(() => null)
+        if (existing) {
+          linksSkipped.push(linkPath)
+          continue
+        }
+        await fs.symlink(source, linkPath, 'junction')
+        linked.push(linkPath)
+      }
+    }
+
+    return { deployed, skipped, linked, linksSkipped }
+  }
+
   return {
     loadManifest,
     ensureBootstrap,
     openBootstrap,
     planPackages,
-    presetPackages
+    presetPackages,
+    deployPackages
   }
 }
 
 module.exports = {
+  DEPLOY_PRODUCT_PACKAGES,
+  DEPLOY_PRODUCT_PACKAGES_2020,
+  DEPLOY_TEMP_SUFFIX,
+  DISK_SPACE_MARGIN_BYTES,
   GSX_INSTALL_MANIFEST_PATH,
   GSX_INSTALL_MANIFEST_URL,
-  DISK_SPACE_MARGIN_BYTES,
   createGsxInstall,
+  extractZipArchive,
   fetchInstallManifest,
   productPrefixOf,
+  resolveZipEntryPath,
+  summarizeZip,
   validateInstallManifest
 }
