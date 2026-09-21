@@ -75,7 +75,7 @@ test('embedded bundle is valid and pinned to the archived agreement hash', async
   const bundle = loadEmbeddedBundle()
   const parsed = validateEncryptedBundle(bundle)
   assert.ok(parsed, '内嵌密文包必须通过结构校验')
-  assert.equal(bundle.revision, '2026-09-17-v1')
+  assert.equal(bundle.revision, '2026-09-21-v1')
   assert.equal(bundle.algorithm, 'aes-256-gcm')
   assert.equal(bundle.sha256, AGREEMENT_TEXT_SHA256, '内嵌密文的存证哈希必须等于 pinned 常量')
   // 内置包同样携带作者签名：使用内嵌公钥验签必须通过（防公钥/私钥漂移）
