@@ -6,7 +6,7 @@ const { isSemanticVersion } = require('./versioning')
 const CATALOG_MANIFEST_PATH = '/api/catalog/manifest.json'
 const CATALOG_URL = buildServerUrl(CATALOG_MANIFEST_PATH)
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
-const TARGET_KINDS = new Set(['addon', 'gsx-audio', 'gsx-combined'])
+const TARGET_KINDS = new Set(['addon', 'addon-inject', 'gsx-audio', 'gsx-combined'])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
 const CATALOG_TIMEOUT_MS = 5000
 

@@ -925,3 +925,172 @@ test('still replaces an older on-disk manifest with the patch-bundled newer one'
   assert.equal(installation.files.some((file) => file.relativePath.toLowerCase() === 'manifest.json'), true)
   await fs.rm(root, { recursive: true, force: true })
 })
+
+test('injective patch installs into the vendor package, syncs its layout, and restores originals', async () => {
+  const root = await temporaryDirectory('gsx-installer-injective-')
+  const community = path.join(root, 'community')
+  const vendor = path.join(community, 'fycyc-aircraft-c919x')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'injective.zip')
+  const gaugeRelative = 'html_ui/Pages/VCockpit/Instruments/C919X/EFB/efb.index.js'
+
+  // 机模包原版：manifest + layout（只登记被覆盖的 gauge）+ gauge 原文
+  await fs.mkdir(path.join(vendor, 'html_ui', 'Pages', 'VCockpit', 'Instruments', 'C919X', 'EFB'), { recursive: true })
+  await fs.writeFile(path.join(vendor, 'manifest.json'), '{"package_version":"0.0.1"}')
+  const originalGauge = 'var ORIGINAL = true;'
+  await fs.writeFile(path.join(vendor, gaugeRelative), originalGauge)
+  // date 是 18 位 FILETIME，超 Number 安全整数：夹具必须手拼字符串，不能 JSON.stringify（会丢精度）
+  const originalLayout = '{"content": [\n    {\n      "path": "' + gaugeRelative
+    + '",\n      "size": ' + Buffer.byteLength(originalGauge) + ',\n      "date": 134254064046392362\n    }\n  ]}'
+  await fs.writeFile(path.join(vendor, 'layout.json'), originalLayout)
+
+  // 注入式 ZIP：files/ 下是补丁内容（覆盖 gauge + 新增 zh 引擎），tools/ 里的脚本不应被安装
+  await fs.mkdir(path.join(source, 'files', 'html_ui', 'Pages', 'VCockpit', 'Instruments', 'C919X', 'EFB'), { recursive: true })
+  await fs.mkdir(path.join(source, 'files', 'html_ui', 'Pages', 'VCockpit', 'Instruments', 'C919X', 'zh'), { recursive: true })
+  await fs.mkdir(path.join(source, 'tools'), { recursive: true })
+  const localizedGauge = 'var LOCALIZED = true;'
+  await fs.writeFile(path.join(source, 'files', gaugeRelative), localizedGauge)
+  await fs.writeFile(path.join(source, 'files', 'html_ui/Pages/VCockpit/Instruments/C919X/zh/c919x-zh.js'), '// zh engine')
+  await fs.writeFile(path.join(source, 'tools', 'inject.ps1'), '# must not be installed')
+  await createZip(source, archive)
+
+  const patch = {
+    id: 'fycyc919x-efb-zh-cn',
+    name: 'fYcyc C919X EFB 简体中文',
+    version: '0.1.0',
+    status: 'published',
+    targetKind: 'addon-inject',
+    targetFolders: ['fycyc-aircraft-c919x'],
+    fingerprint: [
+      { relativePath: `files/${gaugeRelative}`, sha256: await sha256(path.join(source, 'files', gaugeRelative)) },
+      { relativePath: 'files/html_ui/Pages/VCockpit/Instruments/C919X/zh/c919x-zh.js', sha256: await sha256(path.join(source, 'files', 'html_ui/Pages/VCockpit/Instruments/C919X/zh/c919x-zh.js')) }
+    ],
+    package: {
+      sha256: await sha256(archive),
+      size: (await fs.stat(archive)).size,
+      installPlan: [{ target: 'primary', contentRoot: 'files' }]
+    }
+  }
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async () => { throw new Error('offline import must not download') }
+  })
+  const installation = await installer.installFromFile(patch, vendor, archive)
+
+  // 内容写入机模包；tools/ 里的脚本不安装；厂商 manifest 未被触碰
+  assert.equal(await fs.readFile(path.join(vendor, gaugeRelative), 'utf8'), localizedGauge)
+  assert.equal(await fs.readFile(path.join(vendor, 'html_ui/Pages/VCockpit/Instruments/C919X/zh/c919x-zh.js'), 'utf8'), '// zh engine')
+  assert.equal(await fs.access(path.join(vendor, 'inject.ps1')).then(() => true, () => false), false)
+  assert.equal(await fs.readFile(path.join(vendor, 'manifest.json'), 'utf8'), '{"package_version":"0.0.1"}')
+
+  // 机模包 layout.json：被覆盖条目 size 更新、新增条目插入，且 layout 本身入安装记录
+  const layoutRecord = installation.files.find((file) => file.relativePath === 'layout.json')
+  assert.ok(layoutRecord, 'layout.json 应以覆盖文件身份进入安装记录')
+  assert.equal(layoutRecord.hadOriginal, true)
+  const syncedLayout = JSON.parse(await fs.readFile(path.join(vendor, 'layout.json'), 'utf8'))
+  const updatedEntry = syncedLayout.content.find((entry) => entry.path === gaugeRelative)
+  assert.equal(updatedEntry.size, Buffer.byteLength(localizedGauge))
+  const addedEntry = syncedLayout.content.find((entry) => entry.path === 'html_ui/Pages/VCockpit/Instruments/C919X/zh/c919x-zh.js')
+  assert.ok(addedEntry, '新增文件应登记进机模包 layout.json')
+
+  // 注入状态可被指纹识别（contentRoot 前缀剥离后与机模包内路径匹配）
+  const freshInstaller = new PatchInstaller({ userDataDirectory: path.join(root, 'user-data-2') })
+  const recognized = await freshInstaller.reconcileInstallations([patch], {
+    [patch.id]: vendor
+  })
+  assert.equal(recognized[patch.id], 'recognized')
+
+  // 还原：覆盖文件回滚、新增文件删除、layout.json 回到字节级原版
+  const restoreResult = await installer.restore(patch.id)
+  assert.equal(restoreResult.restored, true)
+  assert.equal(restoreResult.conflicts.length, 0)
+  assert.equal(await fs.readFile(path.join(vendor, gaugeRelative), 'utf8'), originalGauge)
+  assert.equal(await fs.readFile(path.join(vendor, 'layout.json'), 'utf8'), originalLayout)
+  assert.equal(await fs.access(path.join(vendor, 'html_ui/Pages/VCockpit/Instruments/C919X/zh/c919x-zh.js')).then(() => true, () => false), false)
+
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('openness: a brand-new injective patch (different id, vendor package, contentRoot) needs no client changes', async () => {
+  const root = await temporaryDirectory('gsx-installer-injective-open-')
+  const community = path.join(root, 'community')
+  const vendor = path.join(community, 'future-aircraft-x9')
+  const userData = path.join(root, 'user-data')
+  const source = path.join(root, 'source')
+  const archive = path.join(root, 'injective-open.zip')
+  const contentRootPrefix = 'payload'
+  const overlayRelative = 'html_ui/Pages/VCockpit/Instruments/X9/panel/x9-panel.js'
+
+  // 机模包：manifest + layout（已有两条无关条目 + 目标条目）+ 多级目录下的面板文件
+  await fs.mkdir(path.join(vendor, 'html_ui', 'Pages', 'VCockpit', 'Instruments', 'X9', 'panel'), { recursive: true })
+  await fs.writeFile(path.join(vendor, 'manifest.json'), '{"package_version":"2.5.1"}')
+  const originalPanel = 'define([], () => ({ mode: "en" }))'
+  const unrelatedLayoutEntry = '    {\n      "path": "html_ui/unrelated.js",\n      "size": 5,\n      "date": 132000000000000000\n    },'
+  const originalLayout = '{"content": [\n' + unrelatedLayoutEntry + '\n    {\n      "path": "' + overlayRelative
+    + '",\n      "size": ' + Buffer.byteLength(originalPanel) + ',\n      "date": 132000000000000001\n    }\n  ]}'
+  await fs.writeFile(path.join(vendor, overlayRelative), originalPanel)
+  await fs.writeFile(path.join(vendor, 'html_ui', 'unrelated.js'), 'keep')
+  await fs.writeFile(path.join(vendor, 'layout.json'), originalLayout)
+
+  // 全新注入式补丁：contentRoot 用 payload/（非 files/），多文件多子目录，含品牌无关的 id
+  const localizedPanel = 'define([], () => ({ mode: "zh-CN" }))'
+  const newFile = 'html_ui/Pages/VCockpit/Instruments/X9/zh/x9-zh.js'
+  await fs.mkdir(path.join(source, contentRootPrefix, 'html_ui', 'Pages', 'VCockpit', 'Instruments', 'X9', 'panel'), { recursive: true })
+  await fs.mkdir(path.join(source, contentRootPrefix, 'html_ui', 'Pages', 'VCockpit', 'Instruments', 'X9', 'zh'), { recursive: true })
+  await fs.writeFile(path.join(source, contentRootPrefix, overlayRelative), localizedPanel)
+  await fs.writeFile(path.join(source, contentRootPrefix, newFile), '// x9 zh engine')
+  await fs.mkdir(path.join(source, 'scripts'), { recursive: true })
+  await fs.writeFile(path.join(source, 'scripts', 'install-helper.ps1'), '# must not be installed')
+  await createZip(source, archive)
+
+  const patch = {
+    id: 'future-x9-efb-zh-cn',
+    name: 'Future X9 EFB 简体中文',
+    version: '0.1.0',
+    status: 'published',
+    targetKind: 'addon-inject',
+    targetFolders: ['future-aircraft-x9'],
+    fingerprint: [
+      { relativePath: `${contentRootPrefix}/${overlayRelative}`, sha256: await sha256(path.join(source, contentRootPrefix, overlayRelative)) },
+      { relativePath: `${contentRootPrefix}/${newFile}`, sha256: await sha256(path.join(source, contentRootPrefix, newFile)) }
+    ],
+    package: {
+      sha256: await sha256(archive),
+      size: (await fs.stat(archive)).size,
+      installPlan: [{ target: 'primary', contentRoot: contentRootPrefix }]
+    }
+  }
+
+  const installer = new PatchInstaller({
+    userDataDirectory: userData,
+    download: async () => { throw new Error('offline import must not download') }
+  })
+  const installation = await installer.installFromFile(patch, vendor, archive)
+
+  assert.equal(await fs.readFile(path.join(vendor, overlayRelative), 'utf8'), localizedPanel)
+  assert.equal(await fs.readFile(path.join(vendor, newFile), 'utf8'), '// x9 zh engine')
+  assert.equal(await fs.access(path.join(vendor, 'scripts')).then(() => true, () => false), false, 'contentRoot 外的目录不应被安装')
+  assert.equal(await fs.readFile(path.join(vendor, 'html_ui', 'unrelated.js'), 'utf8'), 'keep')
+  const syncedLayout = JSON.parse(await fs.readFile(path.join(vendor, 'layout.json'), 'utf8'))
+  const updatedEntry = syncedLayout.content.find((entry) => entry.path === overlayRelative)
+  assert.equal(updatedEntry.size, Buffer.byteLength(localizedPanel), '被覆盖条目 size 应更新')
+  assert.ok(syncedLayout.content.find((entry) => entry.path === newFile), '新增文件应登记进 layout')
+  assert.ok(syncedLayout.content.find((entry) => entry.path === 'html_ui/unrelated.js'), '无关条目应保留')
+  const layoutRecord = installation.files.find((file) => file.relativePath === 'layout.json')
+  assert.ok(layoutRecord && layoutRecord.hadOriginal)
+
+  const freshInstaller = new PatchInstaller({ userDataDirectory: path.join(root, 'user-data-2') })
+  const recognized = await freshInstaller.reconcileInstallations([patch], { [patch.id]: vendor })
+  assert.equal(recognized[patch.id], 'recognized')
+
+  const restoreResult = await installer.restore(patch.id)
+  assert.equal(restoreResult.restored, true)
+  assert.equal(restoreResult.conflicts.length, 0)
+  assert.equal(await fs.readFile(path.join(vendor, overlayRelative), 'utf8'), originalPanel)
+  assert.equal(await fs.readFile(path.join(vendor, 'layout.json'), 'utf8'), originalLayout)
+  assert.equal(await fs.access(path.join(vendor, newFile)).then(() => true, () => false), false)
+
+  await fs.rm(root, { recursive: true, force: true })
+})

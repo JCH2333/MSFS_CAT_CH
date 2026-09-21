@@ -312,14 +312,25 @@ async function detectPatchTargets(patches, options = {}) {
     }
 
     // 多模拟器补丁（iniBuilds 机模汉化）：按服务端配置的槽位与社区子文件夹定位，
-    // 不再检测机模目录——补丁包直接放入社区根目录（ZIP 内自带包目录前缀）
+    // 不再检测机模目录——补丁包直接放入社区根目录（ZIP 内自带包目录前缀）。
+    // 注入式补丁（addon-inject）例外：安装目标是机模包目录本身（targetFolders[0]），
+    // 机模未安装的槽位直接跳过，不产生候选。
     if (patch?.id && dualSimEnabled(patch)) {
+      const injective = patch?.targetKind === 'addon-inject'
+      const vendorPackage = injective ? (normalizeTargetFolders(patch?.targetFolders)[0] || '') : ''
       const slots = []
       for (const configured of configuredMultiSimSlots(patch)) {
         for (const root of roots) {
           if (classifySimSlot(root?.source) !== configured.slot) continue
           const found = await findConfiguredCommunityRoot(root, configured.slot, configured.communityFolder)
-          if (found) slots.push({ slot: configured.slot, ...found })
+          if (!found) continue
+          if (injective) {
+            const vendorPath = path.join(found.targetPath, vendorPackage)
+            if (!await isDirectory(vendorPath)) continue
+            slots.push({ slot: configured.slot, ...found, targetPath: vendorPath })
+            break
+          }
+          slots.push({ slot: configured.slot, ...found })
           break
         }
       }

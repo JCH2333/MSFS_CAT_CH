@@ -124,15 +124,36 @@ async function validateInstallationTarget(patch, target) {
   }
 }
 
+/**
+ * 注入式补丁：不解压到社区根目录，而是把 contentRoot 内容直接写进机模包目录
+ * （检测与手选的安装目标即机模包本身，targetFolders[0] = 机模包目录名，
+ * 如 fycyc-aircraft-c919x），并同步机模包自己的 layout.json。
+ * 约定 ZIP 内文件位于 contentRoot（通常 files/）之下，其余条目（注入/还原脚本等）不安装。
+ */
+function isInjectivePatch(patch) {
+  return patch?.targetKind === 'addon-inject'
+}
+
 function normalizeInstallPlan(patch) {
   const configured = patch?.package?.installPlan
   if (!Array.isArray(configured) || configured.length === 0) {
     return [{ target: 'primary', contentRoot: normalizeContentRoot(patch?.package?.contentRoot) }]
   }
+  if (isInjectivePatch(patch)) {
+    // 注入式补丁必须显式声明 contentRoot：没有它，ZIP 根的注入/还原脚本会被
+    // 当作补丁内容一起写进机模包
+    if (configured.length !== 1 || configured[0]?.target !== 'primary') {
+      throw new Error('注入式补丁的安装计划必须是单目标 primary')
+    }
+    const contentRoot = normalizeContentRoot(configured[0]?.contentRoot)
+    if (!contentRoot) {
+      throw new Error('注入式补丁必须声明 package.installPlan 的 contentRoot（如 files）')
+    }
+    return [{ target: 'primary', contentRoot }]
+  }
   if (patch?.targetKind !== 'gsx-combined') {
     throw new Error('只有 GSX 总补丁可以使用多目标安装计划')
   }
-
   const targets = new Set()
   const plan = configured.map((entry, index) => {
     const target = typeof entry?.target === 'string' ? entry.target.trim() : ''
@@ -202,6 +223,45 @@ function replaceLayoutDate(layoutText, relativePath, fileTime) {
     'i'
   )
   return layoutText.replace(entryPattern, `$1${fileTime}`)
+}
+
+function nowWindowsFileTime() {
+  return (BigInt(Date.now()) * 10000n + 116444736000000000n).toString()
+}
+
+/**
+ * 注入式补丁专用：把刚写入机模包的文件同步进机模包自己的 layout.json——
+ * 已登记的条目更新 size 与 date，未登记的（本次新增文件）在 content 数组头部插入。
+ * 机模厂商的登记串大小写与缩进风格不一，正则按宽松空白匹配、插入条目用 4/6 空格缩进。
+ * 只改内存文本由调用方负责写盘与备份。
+ */
+function synchronizeVendorLayoutEntries(layoutText, installedFiles) {
+  let text = layoutText
+  const missing = []
+  for (const file of installedFiles) {
+    const escapedPath = escapeRegExp(file.relativePath.replace(/\\/g, '/'))
+    const pattern = new RegExp(
+      `("path"\\s*:\\s*"${escapedPath}"\\s*,\\s*"size"\\s*:\\s*)\\d+(\\s*,\\s*"date"\\s*:\\s*)\\d+`,
+      'i'
+    )
+    if (pattern.test(text)) {
+      text = text.replace(pattern, (_match, prefix, middle) => `${prefix}${file.size}${middle}${nowWindowsFileTime()}`)
+    } else {
+      missing.push(file)
+    }
+  }
+  if (missing.length > 0) {
+    const anchor = text.indexOf('"content"')
+    if (anchor < 0) return text
+    const insertAt = text.indexOf('{', anchor)
+    if (insertAt < 0) return text
+    const date = nowWindowsFileTime()
+    const newEntries = missing
+      .map((file) => `    {\n      "path": "${file.relativePath.replace(/\\/g, '/')}",\n      "size": ${file.size},\n      "date": ${date}\n    },`)
+      .join('\n')
+    text = text.slice(0, insertAt) + newEntries + '\n' + text.slice(insertAt)
+  }
+  return text
 }
 
 async function synchronizeInstalledLayoutDates(target, files) {
@@ -506,10 +566,17 @@ class PatchInstaller {
 
   async resolvePlanTargets(patch, primaryTarget) {
     const plan = normalizeInstallPlan(patch)
+    const injective = isInjectivePatch(patch)
     const targets = new Map()
     for (const entry of plan) {
       let targetPath = primaryTarget
-      if (entry.target !== 'primary') {
+      if (injective) {
+        // 注入式补丁：安装目标即机模包目录（要求机模已安装，以其 manifest.json 为准）
+        const manifestStats = await fsp.stat(path.join(primaryTarget, 'manifest.json')).catch(() => null)
+        if (!manifestStats?.isFile()) {
+          throw new Error('所选目录不是机模包（缺少 manifest.json）：请选择机模包目录（如 fycyc-aircraft-c919x）')
+        }
+      } else if (entry.target !== 'primary') {
         if (typeof this.resolveAdditionalTarget !== 'function') {
           throw new Error('无法自动定位 GSX 图片资源目录')
         }
@@ -557,20 +624,34 @@ class PatchInstaller {
         if (!targetStats?.isDirectory()) continue
         const installTargets = await this.resolvePlanTargets(patch, target).catch(() => null)
         if (!installTargets) continue
-
+        // 注入式补丁：指纹是 ZIP 内全路径（files/html_ui/...），而文件落在机模包内
+        // （html_ui/...），匹配前剥掉 contentRoot 前缀；不以该前缀开头的条目
+        // （如发布 ZIP 根的注入/还原脚本、说明文件）不属于机模包内容，跳过
+        const injective = isInjectivePatch(patch)
+        const contentRootPrefix = injective
+          ? `${normalizeContentRoot(patch?.package?.installPlan?.[0]?.contentRoot ?? patch?.package?.contentRoot ?? '')}/`
+          : ''
+        const fingerprintsToMatch = injective
+          ? fingerprints.filter((file) => contentRootPrefix === '/' || file.relativePath.startsWith(contentRootPrefix))
+          : fingerprints
+        if (fingerprintsToMatch.length === 0) continue
         const matchedFiles = []
-        for (const file of fingerprints) {
+        for (const file of fingerprintsToMatch) {
           try {
             const fileTarget = installTargets.get(file.target || 'primary')
             if (!fileTarget) break
-            const destination = ensureWithin(fileTarget.targetPath, path.join(fileTarget.targetPath, file.relativePath))
+            let relativePath = file.relativePath
+            if (injective && contentRootPrefix !== '/' && relativePath.startsWith(contentRootPrefix)) {
+              relativePath = relativePath.slice(contentRootPrefix.length)
+            }
+            const destination = ensureWithin(fileTarget.targetPath, path.join(fileTarget.targetPath, relativePath))
             const stats = await fsp.stat(destination).catch(() => null)
             if (!stats?.isFile() || await sha256(destination) !== file.sha256) break
             matchedFiles.push({
               target: file.target || 'primary',
               slot: entry.slot,
               targetPath: fileTarget.targetPath,
-              relativePath: file.relativePath,
+              relativePath,
               hadOriginal: false,
               backupPath: null,
               installedHash: file.sha256
@@ -579,7 +660,7 @@ class PatchInstaller {
             break
           }
         }
-        if (matchedFiles.length === fingerprints.length) {
+        if (matchedFiles.length === fingerprintsToMatch.length) {
           matchedSlots.push({ targetPath: target, slot: entry.slot, files: matchedFiles })
         }
       }
@@ -809,6 +890,7 @@ class PatchInstaller {
             await fsp.mkdir(path.dirname(destination), { recursive: true })
             await fsp.copyFile(sourceFile, destination)
             const installedHash = await sha256(destination)
+            const installedSize = (await fsp.stat(destination)).size
             const fileRecord = {
               target: planEntry.target,
               slot: slotTarget.slot,
@@ -816,7 +898,8 @@ class PatchInstaller {
               relativePath,
               hadOriginal,
               backupPath: hadOriginal ? backupPath : null,
-              installedHash
+              installedHash,
+              installedSize
             }
             recordFiles.push(fileRecord)
             appliedFiles.push({ destination, ...fileRecord })
@@ -830,9 +913,50 @@ class PatchInstaller {
 
       for (const slotTarget of slotTargets) {
         const primaryFiles = recordFiles.filter((file) => file.target === 'primary' && file.targetPath === slotTarget.targetPath)
+        // 注入式补丁跳过：机模包 layout 的同步由下方注入段全权负责（先备份原版再改），
+        // 否则这里会先改写 date，备份就不再是字节级原版
+        if (isInjectivePatch(patch)) continue
         if (await synchronizeInstalledLayoutDates(slotTarget.targetPath, primaryFiles)) {
           const layoutRecord = primaryFiles.find((file) => file.relativePath.toLowerCase() === 'layout.json')
           if (layoutRecord) layoutRecord.installedHash = await sha256(path.join(slotTarget.targetPath, layoutRecord.relativePath))
+        }
+      }
+
+      // 注入式补丁：机模包自己的 layout.json 不随补丁分发，需就地同步——
+      // 备份厂商原版 → 已登记条目更新 size/date、新增条目插入 content 数组 →
+      // layout.json 以覆盖文件身份写入安装记录（还原时同样回滚到备份）。
+      if (isInjectivePatch(patch)) {
+        for (const slotTarget of slotTargets) {
+          const vendorRoot = slotPlanTargets.get(slotTarget).get('primary').targetPath
+          const slot = slotTarget.slot ?? null
+          const slotFiles = recordFiles.filter((file) => (file.slot ?? null) === slot
+            && file.targetPath === vendorRoot && file.relativePath.toLowerCase() !== 'layout.json')
+          if (slotFiles.length === 0) continue
+          const layoutPath = path.join(vendorRoot, 'layout.json')
+          const layoutStats = await fsp.stat(layoutPath).catch(() => null)
+          if (!layoutStats?.isFile()) continue
+          const backupPath = ensureWithin(backupDirectory, path.join(backupDirectory, 'layout.json'))
+          await fsp.mkdir(path.dirname(backupPath), { recursive: true })
+          await fsp.copyFile(layoutPath, backupPath)
+          const layoutText = await fsp.readFile(layoutPath, 'utf8')
+          const updated = synchronizeVendorLayoutEntries(layoutText, slotFiles.map((file) => ({
+            relativePath: file.relativePath,
+            size: file.installedSize
+          })))
+          if (updated === layoutText) continue
+          await fsp.writeFile(layoutPath, updated, 'utf8')
+          const layoutRecord = {
+            target: 'primary',
+            slot: slotTarget.slot,
+            targetPath: vendorRoot,
+            relativePath: 'layout.json',
+            hadOriginal: true,
+            backupPath,
+            installedHash: await sha256(layoutPath),
+            installedSize: (await fsp.stat(layoutPath)).size
+          }
+          recordFiles.push(layoutRecord)
+          appliedFiles.push({ destination: layoutPath, ...layoutRecord })
         }
       }
 
