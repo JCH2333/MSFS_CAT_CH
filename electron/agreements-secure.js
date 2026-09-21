@@ -26,7 +26,7 @@ const REVISION_PATTERN = /^[A-Za-z0-9._-]{1,64}$/
 // tools/encrypt-agreements.mjs 同步更换，三方一致由 tests/agreements-secure.test.js 守护。
 // 该 pinned 值仅约束随安装包分发的内置密文包；服务器推送的更新修订版由作者
 // ed25519 签名约束（见 AGREEMENT_SIGNING_PUBLIC_KEY 与 verifyBundleSignature）。
-const AGREEMENT_TEXT_SHA256 = '8800950befa1331745521fee69eb32f456d726c5d91f6a72af34aa380f7a2200'
+const AGREEMENT_TEXT_SHA256 = 'bd99993155fa92512a5881512ce5e7bdce5a9b83e9607a24f18f9b09d1469969'
 
 // 作者协议签名公钥（ed25519，SPKI PEM）。私钥只存开发机 .local-keys/（不入库），
 // 构建工具 tools/encrypt-agreements.mjs 用私钥对每个修订版签名，客户端用本公钥验证。

@@ -3,7 +3,7 @@ export const AUTHOR_URL = 'https://space.bilibili.com/472309803?spm_id_from=333.
 
 // Increment this value whenever the agreement text or the legal basis for use changes.
 // A new value deliberately requires every existing installation to consent again.
-export const AGREEMENT_REVISION = '2026-09-17-v1'
+export const AGREEMENT_REVISION = '2026-09-21-v1'
 export const AGREEMENT_ACCEPTANCE_VALUE = `accepted-${AGREEMENT_REVISION}`
 
 const ACCEPTED_PREFIX = 'accepted-'
