@@ -269,9 +269,68 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
-    void startRequiredSoftwareUpdate()
+    runForcedUpdateGate()
   })
   mainWindow.on('closed', () => { mainWindow = null })
+}
+
+
+// ===== 强制更新门（2.3.0）=====
+// 启动即锁定全部交互（renderer 全屏遮罩 + 窗口禁输入），联网检查软件更新：
+// 有更新 → 自动下载（失败无限重试）→ 下载完成自动静默安装并重启新版本。
+// 软件依托服务器分发，服务器不可达时用户进入也无意义——因此检查/下载失败
+// 不放行、无限重试；离开本门只有两种方式：「确认无更新」或「完成更新」。
+// 检查在每次启动都会重新执行。
+let forcedGate = { locked: true, message: '正在检查软件更新…' }
+
+function setGateStatus(payload) {
+  forcedGate = { ...payload, locked: true }
+  send('gate:status', forcedGate)
+}
+
+function releaseGate() {
+  forcedGate = { locked: false, message: '' }
+  try { mainWindow?.setEnabled(true) } catch {}
+  send('gate:released', forcedGate)
+}
+
+function sleepMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function runForcedUpdateGate() {
+  if (!app.isPackaged) { releaseGate(); return }
+  try { mainWindow?.setEnabled(false) } catch {}
+  setGateStatus({ message: '正在检查软件更新…' })
+
+  // 检查：失败无限重试（5 秒间隔），不放行
+  let status = null
+  let attempt = 0
+  for (;;) {
+    attempt += 1
+    status = await startRequiredSoftwareUpdate().catch(() => null)
+    if (status) break
+    setGateStatus({ message: `无法连接更新服务器，正在重试（第 ${attempt} 次）…` })
+    logger?.line('WARN', 'update', `强制更新门：检查失败（第 ${attempt} 次），5 秒后重试`)
+    await sleepMs(5000)
+  }
+  if (status.state !== 'available') { releaseGate(); return }
+
+  // 有更新：自动下载，失败无限重试；下载完成由 configureUpdater 的 update-downloaded
+  // 自动静默安装并重启新版本（新版本启动后再过本门）
+  setGateStatus({ message: '检测到新版本，正在下载更新…' })
+  let downloadAttempt = 0
+  for (;;) {
+    downloadAttempt += 1
+    try {
+      await downloadUpdate(autoUpdater)
+      return
+    } catch {
+      setGateStatus({ message: `更新下载失败，正在重试（第 ${downloadAttempt} 次）…` })
+      logger?.line('WARN', 'update', `强制更新门：下载失败（第 ${downloadAttempt} 次），5 秒后重试`)
+      await sleepMs(5000)
+    }
+  }
 }
 
 function configureUpdater() {
@@ -419,6 +478,7 @@ function registerIpc() {
 
   ipcMain.handle('updates:check', () => startRequiredSoftwareUpdate())
   ipcMain.handle('updates:status', () => latestUpdateStatus)
+  ipcMain.handle('gate:status', () => forcedGate)
   ipcMain.handle('updates:download', async () => {
     if (!app.isPackaged) return { state: 'development' }
     try {

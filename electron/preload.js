@@ -36,6 +36,11 @@ contextBridge.exposeInMainWorld('gsxTool', {
     install: () => ipcRenderer.invoke('updates:install'),
     onStatus: (listener) => subscribe('updates:status', listener)
   },
+  gates: {
+    status: () => ipcRenderer.invoke('gate:status'),
+    onStatus: (listener) => subscribe('gate:status', listener),
+    onReleased: (listener) => subscribe('gate:released', listener)
+  },
   gsx: {
     status: () => ipcRenderer.invoke('gsx:status'),
     startUpdate: () => ipcRenderer.invoke('gsx:update:start'),

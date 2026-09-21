@@ -60,6 +60,11 @@ const developmentBridge = {
     install: async () => ({ state: 'development' }),
     onStatus: () => () => {}
   },
+  gates: {
+    status: async () => ({ locked: false, message: '' }),
+    onStatus: () => () => {},
+    onReleased: () => () => {}
+  },
   gsx: {
     status: async () => ({ installed: false, pending: [], updateAvailable: false }),
     startUpdate: async () => { throw new Error('请在桌面应用中更新 GSX') },
@@ -113,6 +118,12 @@ const targets = reactive(JSON.parse(localStorage.getItem('patch-targets') || '{}
 const detectedTargets = reactive({})
 const operations = reactive({})
 const updateStatus = reactive({ state: 'idle', info: null, progress: null, message: '' })
+const gateLocked = ref(true)
+const gateMessage = ref('正在检查软件更新…')
+const gatePercent = computed(() => {
+  const percent = Number(updateStatus.progress?.percent)
+  return Number.isFinite(percent) ? Math.min(100, Math.max(0, Math.round(percent))) : 0
+})
 const loadingCatalog = ref(false)
 // 同意状态自 2.1.1 起记录修订号（accepted-<revision>）：首次安装与跨版本升级时
 // 以内置修订版弹窗；此后服务器推送更新的修订版（主进程验签后下发）同样强制重新同意。
@@ -152,6 +163,8 @@ const activePopupAnnouncement = computed(() => {
 })
 let unsubscribeProgress = () => {}
 let unsubscribeUpdates = () => {}
+let unsubscribeGateStatus = () => {}
+let unsubscribeGateReleased = () => {}
 
 function readShownAnnouncementPopupIds() {
   try {
@@ -557,6 +570,14 @@ onMounted(async () => {
   })
   unsubscribeUpdates = bridge.updates.onStatus((status) => Object.assign(updateStatus, status))
   Object.assign(updateStatus, await bridge.updates.status())
+  unsubscribeGateStatus = bridge.gates.onStatus((status) => {
+    gateLocked.value = status.locked !== false
+    if (status.message) gateMessage.value = status.message
+  })
+  unsubscribeGateReleased = bridge.gates.onReleased(() => { gateLocked.value = false })
+  const gateState = await bridge.gates.status()
+  gateLocked.value = gateState.locked !== false
+  if (gateState.message) gateMessage.value = gateState.message
   await refreshCatalog()
   void loadAnnouncements()
   void retryPendingAgreementEvidence() // 离线时未报成的协议同意存证自动补报
@@ -566,11 +587,23 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   unsubscribeProgress()
   unsubscribeUpdates()
+  unsubscribeGateStatus()
+  unsubscribeGateReleased()
 })
 </script>
 
 <template>
   <div class="app-frame">
+    <div v-if="gateLocked" class="force-gate">
+      <div class="force-gate-card">
+        <img src="/logo.png" alt="MSFS_CAT_CH" />
+        <strong>{{ gateMessage }}</strong>
+        <div v-if="updateStatus.state === 'downloading'" class="force-gate-bar">
+          <div class="force-gate-fill" :style="{ width: gatePercent + '%' }"></div>
+        </div>
+        <span v-if="updateStatus.state === 'downloading'" class="force-gate-percent">{{ gatePercent }}%</span>
+      </div>
+    </div>
     <TitleBar />
     <div class="workspace">
       <aside class="sidebar">
