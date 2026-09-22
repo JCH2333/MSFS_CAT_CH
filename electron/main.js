@@ -15,6 +15,8 @@ const { createGsxInstall } = require('./gsx-install')
 const { createGsxQueueClient, createQueueAwareDownload } = require('./gsx-queue')
 const { InstallationTargetCache, recordInstalledTarget, resolveDetectedTargets } = require('./installation-cache')
 const { PatchInstaller, downloadToFile } = require('./patch-installer')
+const nodeFs = require('node:fs')
+const { randomUUID } = require('node:crypto')
 const { GsxUpdater } = require('./gsx-updater')
 const { fetchSponsorQr } = require('./support-qr')
 const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
@@ -664,8 +666,17 @@ app.whenReady().then(async () => {
   installationTargetCache = new InstallationTargetCache({
     filePath: path.join(userDataDirectory, 'cache', 'installation-targets.json')
   })
+  // 排队粘性标识：同一台机器等待中重试/重启应用拿回同一排位，不因超时掉到队尾
+  const queueClientId = (() => {
+    const file = path.join(userDataDirectory, 'queue-client-id.txt')
+    try { const existing = nodeFs.readFileSync(file, 'utf8').trim(); if (existing) return existing } catch {}
+    const created = 'msfs-cat-ch-' + randomUUID()
+    try { nodeFs.writeFileSync(file, created) } catch {}
+    return created
+  })()
   const updaterQueue = createGsxQueueClient({
-    onQueue: (info) => send('gsx:progress', { phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' })
+    onQueue: (info) => send('gsx:progress', { phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' }),
+    clientId: queueClientId,
   })
   gsxUpdater = new GsxUpdater({
     userDataDirectory,
@@ -680,7 +691,8 @@ app.whenReady().then(async () => {
   })
   gsxInstaller = createGsxInstaller({ processLister: gsxUpdater.processLister })
   const installQueue = createGsxQueueClient({
-    onQueue: (info) => send('gsx:progress', { kind: 'install', phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' })
+    onQueue: (info) => send('gsx:progress', { kind: 'install', phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' }),
+    clientId: queueClientId,
   })
   gsxInstall = createGsxInstall({
     cacheDirectory: path.join(userDataDirectory, 'cache', 'gsx-install'),

@@ -1,8 +1,12 @@
 const { buildServerUrl } = require('./distribution-server')
 
 // 分发服务器下载排队客户端：大文件（GSX 安装器/完整包/热更组件）按“先来后到”
-// 过闸，后到的用户排队等待。流程：begin 取票（容量满则 waiting + 排位）→
-// 轮询 status 直到 ready → 携票下载 → done 归还槽位。票过期/丢失时自动重取。
+// 过闸。流程：begin 取票（携带稳定 clientId，等待中重试/重启应用拿回同一排位）→
+// 轮询 status 直到 ready → 携票下载 → 流程结束后 done 归还槽位。
+//
+// 会话化：createQueueAwareDownload 返回的下载函数会在首次使用时取票，并在整个
+// 流程期间复用同一张票（下载间隙校验/解压不重新排队），空闲超过 idleReleaseMs
+// 才归还槽位；服务端租约以“下载请求/轮询”为心跳续期。
 
 const QUEUE_BEGIN_PATH = '/api/gsx/queue/begin'
 const QUEUE_STATUS_PATH = '/api/gsx/queue/status'
@@ -16,7 +20,8 @@ function createGsxQueueClient({
   fetchImpl = globalThis.fetch,
   onQueue = () => {},
   pollIntervalMs = 3000,
-  timeoutMs = 7200000
+  timeoutMs = 21600000, // 排队等待上限（6 小时）；clientId 粘性保证超时重试不丢排位
+  clientId = null
 } = {}) {
   async function requestJson(url, options = {}) {
     const response = await fetchImpl(buildServerUrl(url), {
@@ -31,13 +36,14 @@ function createGsxQueueClient({
   // 取票并阻塞到就绪；返回票号。onQueue({ position }) 向界面汇报排位。
   async function acquire({ scope = 'gsx' } = {}) {
     const deadline = Date.now() + timeoutMs
-    const begin = await requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: JSON.stringify({ scope }) })
+    const beginBody = JSON.stringify({ scope, clientId })
+    let begin = await requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: beginBody })
     let ticket = begin.ticket
     if (!ticket) throw new Error('排队服务未返回票号')
     if (begin.status === 'ready') return ticket
     onQueue({ position: begin.position ?? null })
     for (;;) {
-      if (Date.now() > deadline) throw new Error('排队等待超时，请稍后重试')
+      if (Date.now() > deadline) throw new Error('排队等待超时，请稍后重试（会保留您的排队位）')
       await defaultSleep(pollIntervalMs)
       const state = await requestJson(`${QUEUE_STATUS_PATH}?ticket=${encodeURIComponent(ticket)}`)
       if (state.status === 'ready') return ticket
@@ -45,11 +51,11 @@ function createGsxQueueClient({
         onQueue({ position: state.position ?? null })
         continue
       }
-      // 票已过期/丢失：重新取票（可能直接就绪）
-      const again = await requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: JSON.stringify({ scope }) })
-      ticket = again.ticket ?? ticket
-      if (again.status === 'ready') return ticket
-      onQueue({ position: again.position ?? null })
+      // 票已失效（服务端等待超期等）：重新取票——clientId 粘性会尽量找回排位
+      begin = await requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: beginBody })
+      ticket = begin.ticket ?? ticket
+      if (begin.status === 'ready') return ticket
+      onQueue({ position: begin.position ?? null })
     }
   }
 
@@ -63,7 +69,7 @@ function createGsxQueueClient({
     }
   }
 
-  return { acquire, release }
+  return { acquire, release, clientId }
 }
 
 function withTicket(url, ticket) {
@@ -71,14 +77,39 @@ function withTicket(url, ticket) {
   return `${url}${url.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(ticket)}`
 }
 
-// 包装下载函数：下载前取票排队，结束（无论成败）归还槽位。
-function createQueueAwareDownload(downloadImpl, queue) {
+// 会话化下载包装：首次下载取票，整个流程复用同一张票（跨多个文件不重新排队），
+// 空闲超过 idleReleaseMs 才归还槽位（服务端租约另行兜底）。
+function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 } = {}) {
+  let session = null // { ticket }
+  let idleTimer = null
+
+  function touchIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer)
+    idleTimer = setTimeout(async () => {
+      const current = session
+      session = null
+      if (current) await queue.release(current.ticket).catch(() => {})
+    }, idleReleaseMs)
+    if (typeof idleTimer.unref === 'function') idleTimer.unref()
+  }
+
   return async (url, destination, onProgress) => {
-    const ticket = await queue.acquire()
+    if (!session) {
+      const ticket = await queue.acquire()
+      session = { ticket }
+    }
+    const ticket = session.ticket
+    touchIdleTimer()
     try {
       return await downloadImpl(withTicket(url, ticket), destination, onProgress)
-    } finally {
-      await queue.release(ticket)
+    } catch (error) {
+      // 下载失败即结束会话：让出槽位，避免后续文件拿失效票
+      if (idleTimer) clearTimeout(idleTimer)
+      idleTimer = null
+      const current = session
+      session = null
+      if (current) await queue.release(current.ticket).catch(() => {})
+      throw error
     }
   }
 }
