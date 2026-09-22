@@ -91,17 +91,30 @@ function configuredMultiSimSlots(patch) {
   return slots
 }
 
-async function findConfiguredCommunityRoot(root, slot, communityFolder) {
+// 按优先级返回该槽位下所有真实存在的社区目录候选（配置目录 → 槽位惯例 → 包根）。
+// 注入式补丁需要遍历全部候选：用户包根下可能同时存在旧 Community 与 Community2024
+// （SU4 起社区目录更名），机模装在哪个目录不能靠「第一个存在的目录」猜。
+async function findConfiguredCommunityRoots(root, slot, communityFolder) {
   const candidates = []
   if (communityFolder) candidates.push(path.join(root.packageRoot, communityFolder))
   for (const name of SLOT_COMMUNITY_FALLBACKS[slot] || []) {
     candidates.push(path.join(root.packageRoot, name))
   }
   candidates.push(path.resolve(root.packageRoot))
+  const found = []
+  const seen = new Set()
   for (const candidate of candidates) {
-    if (await isDirectory(candidate)) return { targetPath: candidate, source: root.source }
+    const key = path.resolve(candidate).toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    if (await isDirectory(candidate)) found.push({ targetPath: candidate, source: root.source })
   }
-  return null
+  return found
+}
+
+async function findConfiguredCommunityRoot(root, slot, communityFolder) {
+  const roots = await findConfiguredCommunityRoots(root, slot, communityFolder)
+  return roots[0] || null
 }
 
 async function configuredRoots({ appData, localAppData, configLocations }) {
@@ -322,14 +335,24 @@ async function detectPatchTargets(patches, options = {}) {
       for (const configured of configuredMultiSimSlots(patch)) {
         for (const root of roots) {
           if (classifySimSlot(root?.source) !== configured.slot) continue
-          const found = await findConfiguredCommunityRoot(root, configured.slot, configured.communityFolder)
-          if (!found) continue
           if (injective) {
-            const vendorPath = path.join(found.targetPath, vendorPackage)
-            if (!await isDirectory(vendorPath)) continue
-            slots.push({ slot: configured.slot, ...found, targetPath: vendorPath })
+            // 注入式：机模包可能位于该槽位任一候选社区目录（旧 Community 与
+            // Community2024 并存很常见），逐个候选找机模包，找不到再换下一个
+            const communityRoots = await findConfiguredCommunityRoots(root, configured.slot, configured.communityFolder)
+            let matched = null
+            for (const found of communityRoots) {
+              const vendorPath = path.join(found.targetPath, vendorPackage)
+              if (await isDirectory(vendorPath)) {
+                matched = { slot: configured.slot, ...found, targetPath: vendorPath }
+                break
+              }
+            }
+            if (!matched) continue
+            slots.push(matched)
             break
           }
+          const found = await findConfiguredCommunityRoot(root, configured.slot, configured.communityFolder)
+          if (!found) continue
           slots.push({ slot: configured.slot, ...found })
           break
         }

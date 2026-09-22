@@ -285,3 +285,42 @@ test('falls back to the primary-derived root when the registry scan finds nothin
   assert.equal(detected.targetPath, resRoot)
   await fs.rm(root, { recursive: true, force: true })
 })
+
+test('injective patch finds the vendor package in Community2024 even when a legacy Community folder exists', async () => {
+  const root = await temporaryDirectory('injective-community2024-')
+  const packageRoot = path.join(root, 'packages')
+  // SU4 用户典型布局：新旧两个社区目录并存，机模装在 Community2024
+  await fs.mkdir(path.join(packageRoot, 'Community2024', 'fycyc-aircraft-c919x', 'html_ui'), { recursive: true })
+  await fs.mkdir(path.join(packageRoot, 'Community', 'some-other-addon'), { recursive: true })
+
+  const targets = await detectPatchTargets([
+    {
+      id: 'fycyc919x-efb-zh-cn',
+      targetKind: 'addon-inject',
+      targetFolders: ['fycyc-aircraft-c919x'],
+      dualSim: { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }] }
+    }
+  ], { packageRoots: [{ packageRoot, source: 'Steam / MSFS 2024' }] })
+
+  assert.equal(targets['fycyc919x-efb-zh-cn'].targetPath, path.join(packageRoot, 'Community2024', 'fycyc-aircraft-c919x'))
+  await fs.rm(root, { recursive: true, force: true })
+})
+
+test('injective patch still prefers the configured Community folder when the vendor lives there', async () => {
+  const root = await temporaryDirectory('injective-community-first-')
+  const packageRoot = path.join(root, 'packages')
+  await fs.mkdir(path.join(packageRoot, 'Community2024', 'some-other-addon'), { recursive: true })
+  await fs.mkdir(path.join(packageRoot, 'Community', 'ifly-aircraft-737max8', 'html_ui'), { recursive: true })
+
+  const targets = await detectPatchTargets([
+    {
+      id: 'ifly737max-efb-zh-cn',
+      targetKind: 'addon-inject',
+      targetFolders: ['ifly-aircraft-737max8'],
+      dualSim: { slots: [{ slot: 'msfs2024', communityFolder: 'Community' }] }
+    }
+  ], { packageRoots: [{ packageRoot, source: 'Steam / MSFS 2024' }] })
+
+  assert.equal(targets['ifly737max-efb-zh-cn'].targetPath, path.join(packageRoot, 'Community', 'ifly-aircraft-737max8'))
+  await fs.rm(root, { recursive: true, force: true })
+})
