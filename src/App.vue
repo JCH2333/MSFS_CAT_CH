@@ -139,7 +139,12 @@ const developmentBridge = {
     popup: async () => ({ ok: true, announcements: [] })
   },
   support: {
-    qr: async () => ({ ok: false, error: 'development' })
+    qr: async () => ({ ok: false, error: 'development' }),
+    messages: async () => ({ ok: true, messages: [
+      { id: 1, content: '感谢大佬的 66 元赞助！', displayOrder: 10 },
+      { id: 2, content: '一包烟钱，支持汉化更新', displayOrder: 20 },
+      { id: 3, content: 'GSX 汉化牛逼，已赞助', displayOrder: 30 }
+    ] })
   },
   external: { open: async () => false }
 }

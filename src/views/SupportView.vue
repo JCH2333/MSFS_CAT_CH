@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { Heart, LoaderCircle, TriangleAlert } from '@lucide/vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Heart, LoaderCircle, MessageCircleHeart, TriangleAlert } from '@lucide/vue'
 
 const qrDataUrl = ref('')
 const qrStatus = ref('loading')
+const danmakuRows = ref([])
 
 async function loadQr() {
   qrDataUrl.value = ''
@@ -21,8 +22,47 @@ async function loadQr() {
   qrStatus.value = 'error'
 }
 
+// 弹幕：把留言按奇偶拆成两行，每行内容复制一份实现无缝循环；
+// 速度随内容量调整（内容越多走得越慢），悬停暂停。
+const DANMAKU_BASE_SECONDS = 26
+const danmakuStyle = computed(() => (row) => ({
+  animationDuration: `${Math.max(18, DANMAKU_BASE_SECONDS + row.length * 2.2)}s`
+}))
+
+function buildDanmakuRows(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return []
+  const texts = messages.map((message) => message.content.trim()).filter(Boolean)
+  if (texts.length === 0) return []
+  const perRow = texts.length >= 6 ? 2 : 1
+  const rows = Array.from({ length: perRow }, () => [])
+  texts.forEach((text, index) => rows[index % perRow].push(text))
+  return rows
+    .filter((row) => row.length > 0)
+    .map((row) => [...row, ...row]) // 无缝循环：同一份内容连续两遍，位移 -50% 后重绕
+}
+
+async function loadDanmaku() {
+  try {
+    const result = await window.gsxTool?.support?.messages?.()
+    if (result?.ok) danmakuRows.value = buildDanmakuRows(result.messages)
+  } catch {
+    danmakuRows.value = []
+  }
+}
+
+let qrTimer = null
 // 每次进入赞助页都重新从分发服务器拉取并解密赞助码。
-onMounted(loadQr)
+onMounted(() => {
+  loadQr()
+  loadDanmaku()
+  qrTimer = setInterval(() => {
+    loadQr()
+    loadDanmaku()
+  }, 5 * 60 * 1000)
+})
+onBeforeUnmount(() => {
+  if (qrTimer) clearInterval(qrTimer)
+})
 </script>
 
 <template>
@@ -48,5 +88,58 @@ onMounted(loadQr)
       </div>
       <small class="support-author-line">作者：b站 一只剑齿虎呀</small>
     </div>
+
+    <div v-if="danmakuRows.length" class="danmaku-area" role="marquee" aria-label="赞助者留言">
+      <p class="eyebrow danmaku-eyebrow"><MessageCircleHeart :size="12" />SPONSOR WALL</p>
+      <div v-for="(row, rowIndex) in danmakuRows" :key="rowIndex" class="danmaku-row" :class="{ reverse: rowIndex % 2 === 1 }">
+        <div class="danmaku-track" :style="danmakuStyle(row)">
+          <span v-for="(text, index) in row" :key="index" class="danmaku-item">
+            {{ text }}<span class="danmaku-sep">✦</span>
+          </span>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
+
+<style scoped>
+/* 弹幕区：赞助码下方整宽横条，留言循环滚动，悬停暂停 */
+.danmaku-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(26, 28, 24, 0.5);
+  overflow: hidden;
+}
+.danmaku-eyebrow { display: flex; align-items: center; gap: 5px; margin: 0 0 2px; opacity: 0.85; }
+.danmaku-row { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.danmaku-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  width: max-content;
+  animation: danmaku-scroll linear infinite;
+}
+.danmaku-row:hover .danmaku-track { animation-play-state: paused; }
+.danmaku-row.reverse .danmaku-track { animation-direction: reverse; }
+.danmaku-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 0;
+  margin-right: 26px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.danmaku-sep { margin-left: 26px; color: var(--signal); opacity: 0.6; font-size: 10px; }
+@keyframes danmaku-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .danmaku-track { animation: none; }
+}
+</style>

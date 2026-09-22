@@ -6,6 +6,8 @@ const FEEDBACK_ENDPOINT_PATH = '/api/feedback'
 const FEEDBACK_QUERY_ENDPOINT_PREFIX = '/api/feedback/query/'
 const FEEDBACK_MAX_CONTENT_LENGTH = 2000
 const FEEDBACK_MAX_USERNAME_LENGTH = 50
+const FEEDBACK_MAX_EMAIL_LENGTH = 254
+const FEEDBACK_EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const FEEDBACK_MAX_IMAGES = 10
 const FEEDBACK_MAX_IMAGE_BYTES = 5 * 1024 * 1024
 const FEEDBACK_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp'])
@@ -51,8 +53,17 @@ function validateFeedbackPayload(payload = {}) {
     return { ok: false, message: `用户名不能超过 ${FEEDBACK_MAX_USERNAME_LENGTH} 字` }
   }
 
+  // 可选邮箱（进度邮件订阅）：trim 后为空按未订阅提交；填写则校验格式
+  const email = typeof payload?.email === 'string' ? payload.email.trim() : ''
+  if (email.length > FEEDBACK_MAX_EMAIL_LENGTH) {
+    return { ok: false, message: '邮箱不能超过 254 字' }
+  }
+  if (email && !FEEDBACK_EMAIL_PATTERN.test(email)) {
+    return { ok: false, message: '邮箱格式不正确，请检查后重试（也可留空）' }
+  }
+
   const images = payload?.images
-  if (images === undefined || images === null) return { ok: true, content, username, images: [] }
+  if (images === undefined || images === null) return { ok: true, content, username, email, images: [] }
   if (!Array.isArray(images)) return { ok: false, message: '截图数据无效' }
   if (images.length > FEEDBACK_MAX_IMAGES) {
     return { ok: false, message: `截图最多 ${FEEDBACK_MAX_IMAGES} 张` }
@@ -69,7 +80,7 @@ function validateFeedbackPayload(payload = {}) {
     if (!detectImageFormat(bytes)) return invalidImage(index, '必须是 png、jpg、jpeg 或 webp 图片')
   }
 
-  return { ok: true, content, username, images: [...images] }
+  return { ok: true, content, username, email, images: [...images] }
 }
 
 async function submitFeedback(payload, { fetchImpl = globalThis.fetch } = {}) {
@@ -95,6 +106,7 @@ async function submitFeedback(payload, { fetchImpl = globalThis.fetch } = {}) {
       body: JSON.stringify({
         content: validated.content,
         username: validated.username,
+        ...(validated.email ? { email: validated.email } : {}),
         images: validated.images,
         ...(logText ? { logText } : {}),
         ...(gameLogText ? { gameLogText } : {})
@@ -212,6 +224,7 @@ async function loadFeedbackImages(filePaths, readFileImpl = fsp.readFile) {
 }
 
 module.exports = {
+  FEEDBACK_EMAIL_PATTERN,
   FEEDBACK_ENDPOINT_PATH,
   FEEDBACK_QUERY_ENDPOINT_PREFIX,
   FEEDBACK_MAX_CONTENT_LENGTH,

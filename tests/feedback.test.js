@@ -41,13 +41,13 @@ test('detects png, jpeg, and webp images by magic bytes only', () => {
 test('accepts a valid feedback payload and trims the content', () => {
   const result = validateFeedbackPayload({ content: '  安装补丁后界面乱码  ', images: [PNG_BASE64] })
 
-  assert.deepEqual(result, { ok: true, content: '安装补丁后界面乱码', username: '', images: [PNG_BASE64] })
+  assert.deepEqual(result, { ok: true, content: '安装补丁后界面乱码', username: '', email: '', images: [PNG_BASE64] })
 })
 
 test('keeps a provided username after trimming', () => {
   const result = validateFeedbackPayload({ content: '带用户名的反馈', username: '  飞行员小王  ' })
 
-  assert.deepEqual(result, { ok: true, content: '带用户名的反馈', username: '飞行员小王', images: [] })
+  assert.deepEqual(result, { ok: true, content: '带用户名的反馈', username: '飞行员小王', email: '', images: [] })
 })
 
 test('treats a blank username as anonymous', () => {
@@ -66,7 +66,7 @@ test('rejects a username longer than 50 characters', () => {
 test('treats missing images as an empty list', () => {
   const result = validateFeedbackPayload({ content: '没有截图的反馈' })
 
-  assert.deepEqual(result, { ok: true, content: '没有截图的反馈', username: '', images: [] })
+  assert.deepEqual(result, { ok: true, content: '没有截图的反馈', username: '', email: '', images: [] })
 })
 
 test('rejects empty or whitespace-only content', () => {
@@ -335,4 +335,43 @@ test('rejects an oversized selected screenshot', async () => {
 
   await assert.rejects(loadFeedbackImages([bigPath]), /5MB/)
   await fs.rm(root, { recursive: true, force: true })
+})
+
+test('email is optional, trimmed, validated and forwarded with the submission', async () => {
+  const submittedBodies = []
+  const fetchImpl = async (url, options = {}) => {
+    submittedBodies.push(JSON.parse(options.body))
+    return { ok: true, json: async () => ({ code: 200, data: { feedbackCode: 'FB-TEST01' } }) }
+  }
+
+  // 缺省与空白：按未订阅提交（不携带 email 字段）
+  assert.equal(validateFeedbackPayload({ content: '问题' }).email, '')
+  const result = await submitFeedback({ content: '问题', email: '   ' }, { fetchImpl })
+  assert.equal(result.ok, true)
+  assert.equal('email' in submittedBodies.at(-1), false)
+
+  // 合法邮箱：trim 后随请求转发
+  const withEmail = await submitFeedback({ content: '问题', email: ' user@example.com ' }, { fetchImpl })
+  assert.equal(withEmail.ok, true)
+  assert.equal(submittedBodies.at(-1).email, 'user@example.com')
+
+  // 非法格式：拒绝且不发请求
+  const bad = await submitFeedback({ content: '问题', email: 'not-an-email' }, { fetchImpl })
+  assert.equal(bad.ok, false)
+  assert.match(bad.message, /邮箱格式不正确/)
+  assert.equal(submittedBodies.length, 2)
+})
+
+test('sponsor messages payload is sanitized field by field', () => {
+  const { sanitizeMessages } = require('../electron/sponsor-messages')
+  const cleaned = sanitizeMessages([
+    { id: 1, content: '  感谢赞助 '.padEnd(1), displayOrder: 10 },
+    { content: 'x'.repeat(300), id: 2 },
+    { content: '   ' },
+    'not-an-object'
+  ])
+  assert.equal(cleaned.length, 2)
+  assert.equal(cleaned[0].content, '感谢赞助')
+  assert.equal(cleaned[1].content.length, 100)
+  assert.deepEqual(sanitizeMessages(null), [])
 })

@@ -58,7 +58,8 @@ contextBridge.exposeInMainWorld('gsxTool', {
     popup: () => ipcRenderer.invoke('announcements:popup')
   },
   support: {
-    qr: () => ipcRenderer.invoke('support:qr')
+    qr: () => ipcRenderer.invoke('support:qr'),
+    messages: () => ipcRenderer.invoke('sponsor:messages')
   },
   feedback: {
     chooseImages: () => ipcRenderer.invoke('feedback:choose-images'),

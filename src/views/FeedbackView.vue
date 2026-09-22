@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Copy,
   LoaderCircle,
+  MailWarning,
   MessageSquareText,
   Paperclip,
   Search,
@@ -21,17 +22,20 @@ const props = defineProps({
 const MAX_IMAGES = 10
 const MAX_CONTENT_LENGTH = 2000
 const MAX_USERNAME_LENGTH = 50
+const MAX_EMAIL_LENGTH = 254
+const EMAIL_REMINDER_KEY = 'feedback-email-reminder-acknowledged'
+const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 const content = ref('')
 const username = ref('')
+const email = ref('')
 const images = ref([])
 const submitting = ref(false)
 const submitted = ref(false)
 const feedbackCode = ref('')
 const codeCopied = ref(false)
 const errorMessage = ref('')
-
-const canSubmit = computed(() => !submitting.value && !submitted.value && content.value.trim().length > 0)
+const emailReminderVisible = ref(false)
 
 // ─── 反馈码查询 ───
 const queryCode = ref('')
@@ -60,14 +64,37 @@ async function chooseImages() {
   }
 }
 
-async function submit() {
-  if (!canSubmit.value) return
+function emailAcknowledged() {
+  try {
+    return localStorage.getItem(EMAIL_REMINDER_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function acknowledgeEmailReminder() {
+  try {
+    localStorage.setItem(EMAIL_REMINDER_KEY, '1')
+  } catch {
+    // 存储不可用时仅本次生效
+  }
+  emailReminderVisible.value = false
+}
+
+// 弹窗两个出口都视为「已提醒过」：之后再提交不再弹窗
+function skipEmailAndSubmit() {
+  acknowledgeEmailReminder()
+  performSubmit()
+}
+
+async function performSubmit() {
   submitting.value = true
   errorMessage.value = ''
   try {
     const result = await props.bridge.feedback.submit({
       content: content.value,
       username: username.value,
+      email: email.value.trim(),
       images: images.value.map((image) => image.base64)
     })
     if (result?.ok) {
@@ -83,6 +110,26 @@ async function submit() {
   } finally {
     submitting.value = false
   }
+}
+
+const trimmedEmail = computed(() => email.value.trim())
+
+const emailInvalid = computed(() => trimmedEmail.value.length > 0
+  && (trimmedEmail.value.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(trimmedEmail.value)))
+
+const canSubmit = computed(() => !submitting.value
+  && !submitted.value
+  && content.value.trim().length > 0
+  && !emailInvalid.value)
+
+async function submit() {
+  if (!canSubmit.value) return
+  // 选填邮箱：首次不填写时弹窗提醒一次（不填将无法通过邮件获取反馈进度）
+  if (!trimmedEmail.value && !emailAcknowledged()) {
+    emailReminderVisible.value = true
+    return
+  }
+  await performSubmit()
 }
 
 async function copyFeedbackCode() {
@@ -109,6 +156,7 @@ async function copyFeedbackCode() {
 function resetForm() {
   content.value = ''
   username.value = ''
+  email.value = ''
   images.value = []
   errorMessage.value = ''
   submitted.value = false
@@ -186,6 +234,19 @@ function resetQuery() {
           <span>留空则匿名提交</span>
         </div>
 
+        <div class="feedback-username">
+          <input
+            v-model="email"
+            type="email"
+            :maxlength="MAX_EMAIL_LENGTH"
+            placeholder="邮箱（选填）"
+            :disabled="submitting"
+            :class="{ 'feedback-email-invalid': emailInvalid }"
+            @blur="email = email.trim()"
+          />
+          <span>{{ emailInvalid ? '邮箱格式看起来不对，请检查' : '填写后通过邮件接收处理结果' }}</span>
+        </div>
+
         <div v-if="images.length" class="feedback-images">
           <figure v-for="(image, index) in images" :key="`${image.name}-${index}`" class="feedback-image">
             <img :src="`data:${image.type};base64,${image.base64}`" :alt="image.name" />
@@ -223,6 +284,9 @@ function resetQuery() {
         <CheckCircle2 :size="30" />
         <strong>反馈已提交</strong>
         <p>感谢你的反馈，我们会尽快查看并处理。</p>
+        <p v-if="trimmedEmail" class="feedback-subscribed-note">
+          确认邮件已发送至 <strong>{{ trimmedEmail }}</strong>，处理结果也会通过该邮箱通知你。
+        </p>
         <div v-if="feedbackCode" class="feedback-code-box">
           <span class="feedback-code-label">你的反馈码</span>
           <div class="feedback-code-row">
@@ -284,5 +348,70 @@ function resetQuery() {
         <button class="button button-secondary feedback-query-reset" type="button" @click="resetQuery">重新查询</button>
       </div>
     </div>
+
+    <!-- 邮箱提醒弹窗（选填邮箱；仅首次不填写时提醒一次） -->
+    <div v-if="emailReminderVisible" class="modal-backdrop" role="presentation" @click.self="acknowledgeEmailReminder">
+      <section class="email-reminder-dialog" role="dialog" aria-modal="true" aria-labelledby="email-reminder-title">
+        <div class="email-reminder-icon"><MailWarning :size="28" /></div>
+        <p class="eyebrow">EMAIL NOTIFICATION</p>
+        <h2 id="email-reminder-title">不填写邮箱吗？</h2>
+        <p class="email-reminder-text">
+          填写邮箱后，我们会<strong>立即邮件确认收到反馈</strong>，并在<strong>处理完成后邮件通知你结果</strong>。
+          不填写将无法通过邮件获取反馈进度，仍可凭反馈码在下方手动查询。
+        </p>
+        <div class="dialog-actions email-reminder-actions">
+          <button class="button button-secondary" type="button" @click="skipEmailAndSubmit">
+            不填邮箱，直接提交
+          </button>
+          <button class="button button-primary" type="button" @click="acknowledgeEmailReminder">返回填写邮箱</button>
+        </div>
+      </section>
+    </div>
   </section>
 </template>
+
+<style scoped>
+/* 邮箱提醒弹窗：沿用全局 modal-backdrop / button 体系，卡片布局对齐 free-notice-dialog */
+.email-reminder-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(480px, 100%);
+  padding: 30px 30px 24px;
+  text-align: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: rgba(26, 28, 24, 0.88);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+}
+.email-reminder-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(227, 178, 83, 0.4);
+  border-radius: 999px;
+  color: var(--warning);
+  background: rgba(227, 178, 83, 0.08);
+}
+.email-reminder-dialog h2 { margin: 0 0 10px; font-size: 19px; }
+.email-reminder-text {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+.email-reminder-text strong { color: var(--text-primary); }
+.email-reminder-actions { width: 100%; justify-content: center; gap: 10px; margin-top: 16px; }
+.feedback-email-invalid { border-color: rgba(240, 170, 115, 0.6) !important; }
+.feedback-subscribed-note {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.feedback-subscribed-note strong { color: var(--signal); }
+</style>

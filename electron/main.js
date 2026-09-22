@@ -19,6 +19,7 @@ const nodeFs = require('node:fs')
 const { randomUUID } = require('node:crypto')
 const { GsxUpdater } = require('./gsx-updater')
 const { fetchSponsorQr } = require('./support-qr')
+const { fetchSponsorMessages } = require('./sponsor-messages')
 const { UpdateCheckTimeoutError, downloadUpdate, serverSoftwareFeed, startRequiredUpdate } = require('./software-updater')
 
 let mainWindow = null
@@ -520,6 +521,8 @@ function registerIpc() {
   ipcMain.handle('announcements:popup', () => fetchPopupAnnouncements())
 
   ipcMain.handle('support:qr', () => fetchSponsorQr())
+  // 赞助页滚动弹幕留言（公开清单，失败返回空列表）
+  ipcMain.handle('sponsor:messages', () => fetchSponsorMessages())
 
   // msfslog 游戏日志工具：状态 / 开关 / 最近日志读取 / 系统打开
   ipcMain.handle('msfslog:status', async () => {
@@ -594,6 +597,7 @@ function registerIpc() {
     return submitFeedback({
       content: validated.content,
       username: validated.username,
+      email: validated.email,
       images: validated.images,
       logText,
       gameLogText: gameLog.text
