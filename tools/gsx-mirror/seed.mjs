@@ -7,10 +7,12 @@
 //
 // 用法：
 //   NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://127.0.0.1:7897 \
-//   GSX_ADMIN_USERNAME=JCH2333 GSX_ADMIN_PASSWORD=*** \
+//   GSX_ADMIN_TOKEN=<管理端JWT> 或 GSX_ADMIN_USERNAME=JCH2333 GSX_ADMIN_PASSWORD=*** \
 //   node tools/gsx-mirror/seed.mjs [--dry-run] [--force] [--version 4.0.23]
 //
-// - 每个组件先 HEAD ETag 与服务器已发布版本比对，一致则跳过
+// - 变更检测统一用 GitHub API 资产 digest 与服务器已发布 sha256 比对
+//   （一次 API 调用即得全部资产 digest，不依赖资产 CDN 的 HEAD）；
+//   仅当组件存在多分卷（.zip.002+）时回退 HEAD ETag 比对
 // - 官方分卷 .zip.001/.002… 自动拼接为单个 zip
 // - 含内嵌 manifest.json 的社区包自动读取 package_version 作为版本号
 // - couatl 侧组件无版本信息，需 --version 传入（或沿用服务器已有版本）
@@ -46,6 +48,7 @@ const versionArgIndex = args.indexOf('--version')
 const CLI_VERSION = versionArgIndex >= 0 ? args[versionArgIndex + 1] : null
 
 const SERVER_ORIGIN = (process.env.GSX_ADMIN_ORIGIN || 'http://47.109.31.236:20075').replace(/\/$/, '')
+const ADMIN_TOKEN = process.env.GSX_ADMIN_TOKEN
 const ADMIN_USERNAME = process.env.GSX_ADMIN_USERNAME
 const ADMIN_PASSWORD = process.env.GSX_ADMIN_PASSWORD
 const WORKDIR = process.env.GSX_WORKDIR || path.join(process.cwd(), '.local-lab', 'gsx-seed-cache')
@@ -56,6 +59,10 @@ function log(message) {
 
 function normalizeEtag(value) {
   return String(value || '').trim().replace(/^"|"$/g, '')
+}
+
+function normalizeDigest(value) {
+  return String(value || '').trim().replace(/^sha256:/i, '').toLowerCase()
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
@@ -82,6 +89,26 @@ async function checkUpdateLock() {
   }
 }
 
+/** 一次 API 调用取全部资产：组件名 → { digest（纯 hex）, volumes（分卷数） } */
+async function fetchRelease() {
+  const response = await fetchWithTimeout(RELEASE_API, {
+    headers: { 'User-Agent': 'msfs-cat-ch-seed', Accept: 'application/vnd.github+json' }
+  }, 30000)
+  if (!response.ok) throw new Error(`GitHub API 请求失败：HTTP ${response.status}`)
+  const release = await response.json()
+  const assets = new Map()
+  for (const asset of release.assets || []) {
+    const match = /^(.+)\.zip\.(\d{3})$/.exec(asset.name || '')
+    if (!match) continue
+    const name = match[1]
+    const entry = assets.get(name) || { digest: null, volumes: 0 }
+    entry.volumes = Math.max(entry.volumes, Number(match[2]))
+    if (asset.digest) entry.digest = normalizeDigest(asset.digest)
+    assets.set(name, entry)
+  }
+  return { tag: release.tag_name, assets }
+}
+
 async function fetchRemoteEtag(component) {
   const response = await fetchWithTimeout(`${DOWNLOAD_BASE}/${component}.zip.001`, {
     method: 'HEAD',
@@ -91,9 +118,10 @@ async function fetchRemoteEtag(component) {
   return normalizeEtag(response.headers.get('etag'))
 }
 
-async function adminLogin() {
+async function adminToken() {
+  if (ADMIN_TOKEN) return ADMIN_TOKEN
   if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
-    throw new Error('缺少 GSX_ADMIN_USERNAME / GSX_ADMIN_PASSWORD 环境变量')
+    throw new Error('缺少 GSX_ADMIN_TOKEN 或 GSX_ADMIN_USERNAME / GSX_ADMIN_PASSWORD 环境变量')
   }
   const response = await fetchWithTimeout(`${SERVER_ORIGIN}/api/auth/login`, {
     method: 'POST',
@@ -189,12 +217,8 @@ async function main() {
   log(`服务器：${SERVER_ORIGIN}${DRY_RUN ? '（dry-run，不做任何变更）' : ''}`)
   await checkUpdateLock()
 
-  const releaseResponse = await fetchWithTimeout(RELEASE_API, {
-    headers: { 'User-Agent': 'msfs-cat-ch-seed', Accept: 'application/vnd.github+json' }
-  }, 30000)
-  if (!releaseResponse.ok) throw new Error(`GitHub API 请求失败：HTTP ${releaseResponse.status}`)
-  const release = await releaseResponse.json()
-  log(`官方 latest release：${release.tag_name}（${(release.assets || []).length} 个资产）`)
+  const { tag, assets } = await fetchRelease()
+  log(`官方 latest release：${tag}（${assets.size} 个分卷组件）`)
 
   const manifestResponse = await fetchWithTimeout(`${SERVER_ORIGIN}/api/gsx/manifest.json`, {}, 15000)
   const serverManifest = manifestResponse.ok ? await manifestResponse.json() : { packages: [] }
@@ -204,40 +228,58 @@ async function main() {
   }
 
   let pendingChanges = 0
+  const changedComponents = []
   for (const component of COMPONENTS) {
-    const remoteEtag = await fetchRemoteEtag(component.name)
+    const official = assets.get(component.name)
+    if (!official || !official.digest) {
+      log(`${component.name}：官方 release 缺少资产，跳过`)
+      continue
+    }
     const published = publishedByComponent.get(component.name)
-    if (published && normalizeEtag(published.etag) === remoteEtag && !FORCE) {
-      log(`${component.name}：无变化（etag ${remoteEtag.slice(0, 12)}…）`)
+    let drifted
+    let driftBasis
+    if (official.volumes === 1 && published?.sha256) {
+      // 主路径：API digest vs 服务器 sha256（同一份字节，单分卷时恒等）
+      drifted = normalizeDigest(published.sha256) !== official.digest
+      driftBasis = `digest ${official.digest.slice(0, 12)}…`
+    } else {
+      // 多分卷或服务器无 sha256：回退 HEAD ETag 比对
+      const remoteEtag = await fetchRemoteEtag(component.name)
+      drifted = !(published && normalizeEtag(published.etag) === remoteEtag)
+      driftBasis = `etag ${remoteEtag.slice(0, 12)}…`
+    }
+    if (!drifted && !FORCE) {
+      log(`${component.name}：无变化（${driftBasis}）`)
       continue
     }
     pendingChanges += 1
+    changedComponents.push(component.name)
     const version = CLI_VERSION
       || (published && published.version)
       || null
     if (DRY_RUN) {
-      log(`${component.name}：需要更新 → etag ${remoteEtag}，版本 ${version || '（需 --version 或上传时探测）'}`)
+      log(`${component.name}：需要更新 → ${driftBasis}，版本 ${version || '（需 --version 或上传时探测）'}`)
       continue
     }
     log(`${component.name}：下载官方分卷…`)
     const downloaded = await downloadComponent(component.name)
-    downloaded.etag = remoteEtag
+    downloaded.etag = await fetchRemoteEtag(component.name)
     const embedded = await readEmbeddedVersion(downloaded.filePath)
     const finalVersion = embedded || version
     if (!finalVersion) {
       throw new Error(`${component.name} 无法确定版本：组件内无 manifest.json，请用 --version 指定`)
     }
     log(`${component.name}：sha256=${downloaded.sha256}，版本 ${finalVersion}，上传中…`)
-    const token = await adminLogin()
+    const token = await adminToken()
     await uploadAndPublish(token, component.name, component.target, finalVersion, downloaded)
   }
 
   if (pendingChanges === 0) {
-    log('镜像已与官方一致，无需更新。')
+    log('RESULT: 镜像已与官方一致，无需更新。')
   } else if (DRY_RUN) {
-    log(`dry-run：共 ${pendingChanges} 个组件待镜像。`)
+    log(`RESULT: dry-run，共 ${pendingChanges} 个组件待镜像：${changedComponents.join(', ')}`)
   } else {
-    log(`完成：${pendingChanges} 个组件已镜像并发布。`)
+    log(`RESULT: 完成，${pendingChanges} 个组件已镜像并发布：${changedComponents.join(', ')}`)
   }
 }
 

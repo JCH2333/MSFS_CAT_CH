@@ -1,16 +1,23 @@
 # GSX 官方更新看门狗（服务器端定时检测 + 邮件通知）
 
-部署在分发服务器（47.109.31.236）`/home/admin/gsx-watch/`，每日 09:10（Asia/Shanghai）由
+部署在分发服务器（47.109.31.236）`/home/admin/gsx-watch/`，每 10 分钟由
 `/etc/cron.d/gsx-watch` 运行一次。检测 FSDT 官方 GitHub 发布资产
-（`virtualisoftware/fsdt-offline-installer`）的 ETag 变化，发现更新即发邮件提醒管理员。
+（`virtualisoftware/fsdt-offline-installer`）的 SHA-256 digest 变化，发现更新即发邮件提醒管理员。
 
-设计要点（与 `docs/adr/0005-gsx-update-mirror.md` 及 `.local-lab/notes.md` 的结论一致）：
+设计要点（与 `docs/adr/0005-gsx-update-mirror.md`、`docs/adr/0007-gsx-auto-mirror-sync.md` 及
+`.local-lab/notes.md` 的结论一致）：
 
-- **ETag 是权威的新版本信号**——官方更新器本身就用它，且比官网 changelog 页可靠（页面经常滞后十余个版本，且 403 反爬）。
-- **只检测与通知，不搬运负载**。镜像种子仍由开发机 `tools/gsx-mirror/seed.mjs` 执行（逐字节下载 → SHA-256 → 管理端 API 发布）。
+- **API digest 是权威的新版本信号**——一次 `api.github.com` 调用即返回全部资产的
+  SHA-256，不依赖时通时断的资产 CDN（官方更新器用的 ETag 信号由 seed 侧兜底）。
+- **只检测与通知，不搬运负载**。镜像同步由开发机 `tools/gsx-mirror/auto-seed.mjs`
+  （15 分钟计划任务）自动执行：漂移检测 → `seed.mjs` 逐字节下载上传 → 结果邮件。
 - 邮件发送成功才更新检测基线（`state/etags.state`），同一波次只提醒一次；发送失败下次运行自动重试。
-- 已镜像的 8 个组件在邮件中标注「已镜像」，其余官方资产标注「未收录·仅观察」。
+- 已镜像的 8 个组件在邮件中标注「自动同步进行中」，其余官方资产标注「未收录·仅观察」。
+  管理员唯一需要人工处理的是汉化补丁适配（GSX 更新会覆盖补丁文件）。
+- 每次运行写 `state/status.json`（官方 digest × 镜像 sha256 对账 + inSync 标记），
+  供人工检查与管理端后续展示。
 - SMTP 凭据在服务器 `etc/mail.ini` 由管理员自行填写（参考 `mail.ini.example`），绝不提交仓库或出现在聊天里。
+  开发机自动种子器的邮件也复用这份配置（scp 正文 + ssh 调 `send_mail.py`，本机不落 SMTP 凭据）。
 
 ## 文件
 
@@ -23,13 +30,14 @@
 ## 常用操作（服务器上）
 
 ```bash
-# 手动检测一次（不发送、不写基线）
+# 手动检测一次（不发送、不写基线；但会刷新 status.json）
 ~/gsx-watch/bin/watch.sh --dry-run
 
 # 发送测试邮件（需先配置 etc/mail.ini）
 ~/gsx-watch/bin/send_mail.py --test
 
-# 查看日志与待发通知
+# 查看检测快照、日志与待发通知
+cat ~/gsx-watch/state/status.json
 tail -20 ~/gsx-watch/log/watch.log
 cat ~/gsx-watch/state/mail-pending.txt
 ```
@@ -49,5 +57,5 @@ ssh admin@47.109.31.236 'chmod +x ~/gsx-watch/bin/*.sh ~/gsx-watch/bin/*.py'
 ```
 SHELL=/bin/bash
 PATH=/usr/bin:/bin
-10 9 * * * admin /home/admin/gsx-watch/bin/watch.sh >> /home/admin/gsx-watch/log/cron.log 2>&1
+*/10 * * * * admin /home/admin/gsx-watch/bin/watch.sh >> /home/admin/gsx-watch/log/cron.log 2>&1
 ```
