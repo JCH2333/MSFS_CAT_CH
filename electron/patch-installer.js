@@ -95,6 +95,18 @@ function ensureWithin(root, candidate) {
   return resolvedCandidate
 }
 
+// 权限受限（EPERM/EACCES）翻译：GSX 常被官方安装器装进 C:\Program Files (x86) 等
+// 受系统保护的位置，普通权限运行本应用时写目标会直接被拒。把裸异常换成可操作的
+// 中文指引（以管理员身份运行），避免用户面对一屏 EPERM。
+function translateWriteError(error, destination) {
+  if (error && (error.code === 'EPERM' || error.code === 'EACCES')) {
+    const hint = '若 GSX 安装在 C:\\Program Files 等受保护位置，请右键本软件选择"以管理员身份运行"后再安装补丁；' +
+      '若已关闭模拟器仍出现此提示，请检查杀毒软件的"受控文件夹访问"设置。'
+    return new Error('安装失败：目标目录受 Windows 系统保护或被占用（' + destination + '）。' + hint + '（' + error.code + '）')
+  }
+  return error
+}
+
 function normalizeContentRoot(value) {
   if (!value) return ''
   const normalized = path.normalize(value)
@@ -529,6 +541,131 @@ class PatchInstaller {
     return removed
   }
 
+  /**
+   * 重装前置卸载（2.3.1）：一键安装/升级新版本前，把该补丁的旧安装先卸载干净。
+   * - 托管安装且校验完好 → 走精确回滚 restore()（原文件从备份还原、补丁文件删除）；
+   * - 其余情况（托管但文件缺失/被改动、detected 识别安装）→ 尽力而为：仍然从备份
+   *   还原原文件，补丁引入的文件仅在哈希与安装记录一致时删除，被用户改过的保留；
+   * - 最后清理因删除产生的空目录（直至安装目标根为止）并移除旧安装记录。
+   * 目的：补丁包目录改名（如 zzz-* → zzz-JCH-*）或文件增删后，社区目录里不能残留
+   * 旧版本文件或空目录——残留目录会按字母序参与 MSFS 覆盖排序，旧目录可能压住新版本。
+   */
+  async uninstallForReinstall(patchIdInput) {
+    const patchId = ensureSafeId(patchIdInput)
+    const state = await this.readState()
+    const installation = state.installations[patchId]
+    if (!installation) {
+      return { mode: 'absent', removed: 0, restored: 0, quarantined: 0, keptModified: [], prunedDirectories: 0 }
+    }
+
+    const locations = (Array.isArray(installation.files) ? installation.files : [])
+      .map((file) => ({
+        targetPath: file.targetPath || installation.targetPath,
+        relativePath: file.relativePath
+      }))
+
+    const check = await this.inspectInstallation(installation)
+    if (installation.source !== 'detected' && check.state === 'intact') {
+      const restoreResult = await this.restore(patchId)
+      if (restoreResult.restored) {
+        const prunedDirectories = await this.pruneEmptyDirectories(locations)
+        return { mode: 'restored', removed: 0, restored: restoreResult.filesRestored, keptModified: [], prunedDirectories }
+      }
+      // restore 拒绝（存在冲突文件）→ 落入尽力而为清理，保用户改动文件
+    }
+
+    let removed = 0
+    let restored = 0
+    let quarantined = 0
+    const keptModified = []
+    for (const file of [...(installation.files || [])].reverse()) {
+      const targetPath = file.targetPath || installation.targetPath
+      const destination = ensureWithin(targetPath, path.join(targetPath, file.relativePath))
+      const currentStats = await fsp.stat(destination).catch(() => null)
+      if (!currentStats?.isFile()) continue
+      if (await sha256(destination) !== file.installedHash) {
+        // 引入文件被改动/损坏：挪进隔离区（内容不丢），安装位置让给新版本——
+        // 否则改名升级时旧目录清不干净，旧版本会按覆盖排序压住新版本。
+        // 隔离区独立于备份目录（备份目录在本方法末尾会整体删除）。
+        // 识别安装没有备份区：用户手工装的内容，原地保留。
+        if (!file.hadOriginal && installation.backupDirectory) {
+          const quarantineRoot = path.join(this.userDataDirectory, 'quarantine', patchId, String(Date.now()))
+          const quarantinePath = ensureWithin(quarantineRoot,
+            path.join(quarantineRoot, file.relativePath))
+          await fsp.mkdir(path.dirname(quarantinePath), { recursive: true })
+          try {
+            await fsp.rename(destination, quarantinePath)
+          } catch {
+            await fsp.copyFile(destination, quarantinePath).catch(() => {})
+            await fsp.rm(destination, { force: true })
+          }
+          quarantined += 1
+          continue
+        }
+        keptModified.push(file.relativePath)
+        continue
+      }
+      if (file.hadOriginal && file.backupPath) {
+        const backupStats = await fsp.stat(file.backupPath).catch(() => null)
+        if (backupStats?.isFile()) {
+          await fsp.copyFile(file.backupPath, destination)
+          restored += 1
+          continue
+        }
+      }
+      await fsp.rm(destination, { force: true })
+      removed += 1
+    }
+
+    const prunedDirectories = await this.pruneEmptyDirectories(locations)
+    delete state.installations[patchId]
+    await this.writeState(state)
+    await fsp.rm(installation.backupDirectory, { recursive: true, force: true }).catch(() => {})
+    return { mode: 'best-effort', removed, restored, quarantined, keptModified, prunedDirectories }
+  }
+
+  /**
+   * 清理文件删除后留下的空目录：收集所有受影响目录（最深优先），逐个「目录为空
+   * 才 rmdir」，直至安装目标根为止（根目录本身不删）。Windows 上刚删除的文件可能
+   * 短暂仍出现在 readdir 结果里（实时杀毒/索引服务持有句柄导致删除延迟生效），
+   * 因此间隔重试几轮，保证空目录一定被清掉。
+   */
+  async pruneEmptyDirectories(locations) {
+    let pruned = 0
+    const candidates = new Map()
+    for (const { targetPath, relativePath } of locations) {
+      if (!targetPath || !relativePath) continue
+      const root = path.resolve(targetPath)
+      let current = path.dirname(ensureWithin(root, path.join(root, relativePath)))
+      while (path.resolve(current) !== root) {
+        const key = path.resolve(current).toLowerCase()
+        if (!candidates.has(key)) candidates.set(key, path.resolve(current))
+        current = path.dirname(current)
+      }
+    }
+    // 最深的目录排前面：子目录删空后父目录才能跟着删
+    const ordered = [...candidates.values()].sort(
+      (a, b) => b.split(path.sep).length - a.split(path.sep).length
+    )
+    const removeIfEmpty = async (dirPath) => {
+      try {
+        const entries = await fsp.readdir(dirPath)
+        if (entries.length > 0) return false
+        await fsp.rmdir(dirPath)
+        return true
+      } catch {
+        return false
+      }
+    }
+    for (let attempt = 0; attempt < 4 && ordered.length > 0; attempt += 1) {
+      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 120))
+      for (const dirPath of ordered) {
+        if (await removeIfEmpty(dirPath)) pruned += 1
+      }
+    }
+    return pruned
+  }
+
   async inspectInstallation(installation) {
     const missingFiles = []
     const modifiedFiles = []
@@ -746,16 +883,17 @@ class PatchInstaller {
       resolvedPlanTargets = await this.resolvePlanTargets(patch, slotTargets[0].targetPath)
     }
 
-    const state = await this.readState()
-    const existingInstallation = state.installations[patchId]
-    if (existingInstallation) {
-      const currentCheck = await this.inspectInstallation(existingInstallation)
-      // Restore an unchanged managed install before applying a newer package.
-      // If the target changed, keep the current files as the new baseline.
-      if (existingInstallation.source !== 'detected' && currentCheck.state === 'intact') {
-        const restoreResult = await this.restore(patchId)
-        if (!restoreResult.restored) throw new Error('旧版本文件无法安全还原')
-      }
+    // 重装 = 先卸载旧版再装新版（2.3.1）：无论旧记录是托管还是识别安装、是否完好，
+    // 都先尽力卸载干净（哈希一致才删、保留用户改动文件、清理空目录），再安装新包。
+    // 防止包目录改名（zzz-* → zzz-JCH-*）后旧目录残留，在社区目录覆盖排序中压住新版本。
+    const reinstallReport = await this.uninstallForReinstall(patchId)
+    if (reinstallReport.quarantined > 0 || reinstallReport.keptModified.length > 0) {
+      this.emit(patchId, {
+        phase: 'prepare',
+        percent: 0,
+        message: `旧版本已清理：${reinstallReport.quarantined} 个被改动/损坏的旧文件移入备份区` +
+            (reinstallReport.keptModified.length > 0 ? `，${reinstallReport.keptModified.length} 个手工安装文件原样保留` : '')
+      })
     }
 
     const workingDirectory = await fsp.mkdtemp(path.join(os.tmpdir(), 'gsx-chinese-'))
@@ -887,8 +1025,12 @@ class PatchInstaller {
               await fsp.copyFile(destination, backupPath)
             }
 
-            await fsp.mkdir(path.dirname(destination), { recursive: true })
-            await fsp.copyFile(sourceFile, destination)
+            try {
+              await fsp.mkdir(path.dirname(destination), { recursive: true })
+              await fsp.copyFile(sourceFile, destination)
+            } catch (error) {
+              throw translateWriteError(error, destination)
+            }
             const installedHash = await sha256(destination)
             const installedSize = (await fsp.stat(destination)).size
             const fileRecord = {
@@ -1059,6 +1201,7 @@ class PatchInstaller {
 }
 
 module.exports = {
+  translateWriteError,
   PatchInstaller,
   currentWindowsFileTime,
   downloadToFile,
