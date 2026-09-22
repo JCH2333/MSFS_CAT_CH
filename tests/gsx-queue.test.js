@@ -89,3 +89,71 @@ test('withTicket appends the parameter safely', () => {
   assert.equal(withTicket('http://x/a.zip', 'b'), 'http://x/a.zip?ticket=b')
   assert.equal(withTicket('http://x/a.zip', null), 'http://x/a.zip')
 })
+
+test('begin without a ticket (paused/cooldown) waits and retries instead of throwing', async () => {
+  let begins = 0
+  const hints = []
+  const fetchImpl = async (url) => {
+    if (url.includes('/queue/begin')) {
+      begins += 1
+      if (begins === 1) return response({ status: 'paused', message: '服务器正在优先分发软件更新，下载稍后开放' })
+      if (begins === 2) return response({ status: 'cooldown', retryAfterSeconds: 5, message: '下载冷却中' })
+      return response({ status: 'ready', ticket: 'T-AFTER-WAIT' })
+    }
+    throw new Error('unexpected url ' + url)
+  }
+  const queue = createGsxQueueClient({
+    fetchImpl,
+    pollIntervalMs: 1,
+    clientId: 'CLIENT-3',
+    onQueue: (info) => hints.push(info)
+  })
+  const ticket = await queue.acquire()
+  assert.equal(ticket, 'T-AFTER-WAIT')
+  assert.equal(begins, 3)
+  assert.ok(hints.some((hint) => hint.paused), '应向界面汇报暂停提示')
+  assert.ok(hints.some((hint) => hint.cooldown), '应向界面汇报冷却提示')
+})
+
+test('download heartbeat answers server challenges through the queue client', async () => {
+  const calls = []
+  let polls = 0
+  const fetchImpl = async (url, options = {}) => {
+    calls.push({ url, method: options.method || 'GET' })
+    if (url.includes('/queue/begin')) return response({ status: 'ready', ticket: 'T-HB' })
+    if (url.includes('/queue/status')) {
+      polls += 1
+      return response(polls === 1 ? { status: 'ready', ticket: 'T-HB', challenge: 'N1' } : { status: 'ready', ticket: 'T-HB' })
+    }
+    if (url.includes('/queue/challenge')) return response({ ok: true })
+    throw new Error('unexpected url ' + url)
+  }
+  const queue = createGsxQueueClient({ fetchImpl, pollIntervalMs: 1, clientId: 'CLIENT-4' })
+  const download = createQueueAwareDownload(async (url) => url, queue, { heartbeatMs: 20 })
+  await download('http://x/1.zip', 'D:/1.zip')
+  await sleep(80)
+  const answers = calls.filter((call) => call.url.includes('/queue/challenge'))
+  assert.ok(answers.length >= 1, '心跳应自动应答挑战包（此前 fetchImpl 越界引用导致应答静默失败）')
+  assert.ok(answers.every((call) => call.method === 'POST'))
+})
+
+test('heartbeat releases the session when the ticket turns unknown so the next file re-acquires', async () => {
+  let begins = 0
+  const fetchImpl = async (url) => {
+    if (url.includes('/queue/begin')) {
+      begins += 1
+      return response({ status: 'ready', ticket: 'T-' + begins })
+    }
+    if (url.includes('/queue/status')) return response({ status: 'unknown' })
+    if (url.includes('/queue/done')) return response({ ok: true })
+    throw new Error('unexpected url ' + url)
+  }
+  const queue = createGsxQueueClient({ fetchImpl, pollIntervalMs: 1, clientId: 'CLIENT-5' })
+  const download = createQueueAwareDownload(async (url) => url, queue, { heartbeatMs: 20, idleReleaseMs: 60000 })
+  const first = await download('http://x/1.zip', 'D:/1.zip')
+  assert.ok(first.includes('ticket=T-1'))
+  await sleep(80)
+  const second = await download('http://x/2.zip', 'D:/2.zip')
+  assert.ok(second.includes('ticket=T-2'), '票失效后应重新取票而不是拿死票下载')
+  assert.ok(begins >= 2)
+})

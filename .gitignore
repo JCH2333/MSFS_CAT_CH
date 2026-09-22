@@ -91,3 +91,6 @@ tools/gsx-image-localizer/__pycache__/
 # 桌面端开发运行残留
 /LocalStorage/
 /cookies.dat
+
+# 无水印分流包（本地构建产物）
+/无水印分流包/
