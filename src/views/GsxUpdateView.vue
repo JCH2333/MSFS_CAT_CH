@@ -5,6 +5,7 @@ import {
   Plane, RefreshCw, Rocket, ShieldCheck, Trash2, TriangleAlert
 } from '@lucide/vue'
 import GsxTutorialDialog from '../components/GsxTutorialDialog.vue'
+import GsxMiniGames from '../components/GsxMiniGames.vue'
 import activateWizardHome from '../assets/gsx/activate-1-wizard-home.png'
 import activateChooseOnline from '../assets/gsx/activate-2-choose-online.png'
 import activateLicenseKey from '../assets/gsx/activate-3-license-key.png'
@@ -27,7 +28,22 @@ const status = reactive({
   stale: false,
   error: null
 })
-const operation = reactive({ busy: false, phase: '', percent: 0, message: '', error: null, applied: [], received: 0, total: 0 })
+const operation = reactive({
+  busy: false,
+  phase: '',
+  percent: 0,
+  message: '',
+  error: null,
+  applied: [],
+  received: 0,
+  total: 0,
+  currentPhase: '',
+  queuePosition: null,
+  speed: 0,
+  lastSample: null,
+  startedAt: 0,
+  elapsedMs: 0
+})
 const errorMessage = ref('')
 const done = ref(false)
 const patchCare = ref(null)
@@ -145,17 +161,17 @@ function formatDuration(seconds) {
   return minutes > 0 ? `${minutes} 分 ${rest} 秒` : `${rest} 秒`
 }
 
-function sampleSpeed(received) {
+function sampleSpeed(flow, received) {
   const now = Date.now()
-  if (installFlow.lastSample && Number.isFinite(received) && received >= installFlow.lastSample.received) {
-    const seconds = (now - installFlow.lastSample.t) / 1000
+  if (flow.lastSample && Number.isFinite(received) && received >= flow.lastSample.received) {
+    const seconds = (now - flow.lastSample.t) / 1000
     if (seconds >= 0.25) {
-      const instant = (received - installFlow.lastSample.received) / seconds
-      installFlow.speed = installFlow.speed > 0 ? installFlow.speed * 0.6 + instant * 0.4 : instant
-      installFlow.lastSample = { t: now, received }
+      const instant = (received - flow.lastSample.received) / seconds
+      flow.speed = flow.speed > 0 ? flow.speed * 0.6 + instant * 0.4 : instant
+      flow.lastSample = { t: now, received }
     }
   } else {
-    installFlow.lastSample = Number.isFinite(received) ? { t: now, received } : null
+    flow.lastSample = Number.isFinite(received) ? { t: now, received } : null
   }
 }
 
@@ -165,6 +181,7 @@ function startStatusTicker() {
   clearInterval(statusTicker)
   statusTicker = setInterval(() => {
     installFlow.elapsedMs = Date.now() - installFlow.startedAt
+    if (operation.busy && operation.startedAt) operation.elapsedMs = Date.now() - operation.startedAt
   }, 250)
 }
 
@@ -178,6 +195,20 @@ const statusPercent = computed(() => {
   // 假进度动画：0 → 10% 匀速走 20 秒（解压前常有 10-20 秒准备期），真实进度超过后取实值
   const fake = Math.min(10, (installFlow.elapsedMs / 1000) * 0.5)
   return Math.max(Math.min(100, installFlow.percent || 0), fake)
+})
+const updateStatusPercent = computed(() => {
+  if (!operation.busy) return Math.min(100, operation.percent || 0)
+  const fake = Math.min(10, (operation.elapsedMs / 1000) * 0.5)
+  return Math.max(Math.min(100, operation.percent || 0), fake)
+})
+const updateNetSpeedLabel = computed(() =>
+  operation.busy && NET_PHASES.has(operation.currentPhase) ? formatSpeed(operation.speed) : '—')
+const updateDiskSpeedLabel = computed(() =>
+  operation.busy && DISK_PHASES.has(operation.currentPhase) ? formatSpeed(operation.speed) : '—')
+const updateElapsedLabel = computed(() => formatDuration(operation.elapsedMs / 1000))
+const updateEtaLabel = computed(() => {
+  if (!operation.busy || !NET_PHASES.has(operation.currentPhase) || !operation.speed || !operation.total) return '- 秒'
+  return formatDuration((operation.total - operation.received) / operation.speed)
 })
 const netSpeedLabel = computed(() =>
   installFlow.busy && NET_PHASES.has(installFlow.currentPhase) ? formatSpeed(installFlow.speed) : '—')
@@ -195,6 +226,7 @@ const etaLabel = computed(() => {
 const progressPercent = computed(() => {
   if (!operation.busy && ['complete'].includes(operation.phase)) return 100
   if (!operation.busy && operation.phase === 'error') return 0
+  if (operation.busy) return updateStatusPercent.value
   return Math.min(100, Math.max(0, operation.percent || 0))
 })
 
@@ -377,11 +409,18 @@ async function startUpdate() {
   operation.busy = true
   operation.phase = 'starting'
   operation.percent = 0
+  operation.received = 0
+  operation.total = 0
+  operation.speed = 0
+  operation.lastSample = null
+  operation.currentPhase = ''
+  operation.queuePosition = null
+  operation.startedAt = Date.now()
+  operation.elapsedMs = 0
+  startStatusTicker()
   operation.message = '准备更新…'
   operation.error = null
   operation.applied = []
-  operation.received = 0
-  operation.total = 0
   errorMessage.value = ''
   done.value = false
   patchCare.value = null
@@ -447,6 +486,26 @@ const unsubscribeProgress = props.bridge.gsx.onProgress((progress) => {
   }
   if (uninstallFlow.busy && progress.phase === 'complete') {
     uninstallFlow.message = progress.message || '卸载完成'
+    return
+  }
+  if (operation.busy) {
+    operation.currentPhase = progress.phase || ''
+    if (progress.phase === 'queue') {
+      operation.queuePosition = progress.position ?? null
+      operation.message = progress.message || '服务器繁忙，排队中…'
+      return
+    }
+    operation.queuePosition = null
+    if (Number.isFinite(progress.percent)) operation.percent = progress.percent
+    if (progress.message) operation.message = progress.message
+    if (Number.isFinite(progress.received)) {
+      operation.received = progress.received
+      sampleSpeed(operation, progress.received)
+    }
+    if (Number.isFinite(progress.total)) operation.total = progress.total
+    if (progress.phase === 'error') {
+      operation.error = progress.error || progress.message
+    }
     return
   }
   operation.phase = progress.phase
@@ -698,16 +757,18 @@ onBeforeUnmount(() => {
               </span>
             </div>
             <div class="gsx-hero-action">
+              <span v-if="operation.busy" class="gsx-chip gsx-chip-busy">
+                <LoaderCircle :size="13" class="spin" />
+                {{ operation.currentPhase === 'queue' ? '排队等待中…' : '更新进行中' }}
+              </span>
               <button
-                v-if="status.updateAvailable && !status.stale"
+                v-else-if="status.updateAvailable && !status.stale"
                 class="gsx-primary"
                 type="button"
-                :disabled="operation.busy"
                 @click="startUpdate"
               >
-                <LoaderCircle v-if="operation.busy" :size="15" class="spin" />
-                <CloudDownload v-else :size="15" />
-                {{ operation.busy ? '正在更新…' : `更新 GSX · ${totalMegabytes}` }}
+                <CloudDownload :size="15" />
+                更新 GSX · {{ totalMegabytes }}
               </button>
               <span v-else-if="status.stale" class="gsx-chip gsx-chip-warn">
                 <TriangleAlert :size="13" />
@@ -739,9 +800,16 @@ onBeforeUnmount(() => {
         <section v-if="operation.busy || done || operation.phase === 'error'" class="gsx-panel gsx-progress" :data-state="operation.phase === 'error' ? 'error' : done ? 'done' : 'running'">
           <div class="gsx-progress-head">
             <strong>{{ operation.message || (done ? '更新完成' : '更新进度') }}</strong>
+            <span v-if="operation.busy && operation.queuePosition" class="gsx-chip gsx-chip-warn">排队第 {{ operation.queuePosition }} 位</span>
             <span class="gsx-progress-num">{{ progressPercent }}%</span>
           </div>
           <div class="gsx-track"><span :style="{ width: progressPercent + '%' }" /></div>
+          <div v-if="operation.busy" class="gsx-statusbar-stats">
+            <span>网速 <b>{{ updateNetSpeedLabel }}</b></span>
+            <span>硬盘写入 <b>{{ updateDiskSpeedLabel }}</b></span>
+            <span>已用 <b>{{ updateElapsedLabel }}</b></span>
+            <span>剩余约 <b>{{ updateEtaLabel }}</b></span>
+          </div>
           <p v-if="operation.total > 0 && (operation.busy || done)" class="gsx-progress-bytes">
             {{ formatSize(operation.received) }} / {{ formatSize(operation.total) }}
           </p>
@@ -836,6 +904,9 @@ onBeforeUnmount(() => {
         </section>
       </template>
     </template>
+
+    <!-- 排队与下载等待期间的小游戏区（任一流程进行中即出现，完成后自动消失） -->
+    <GsxMiniGames v-if="installFlow.busy || operation.busy" />
   </section>
 </template>
 
@@ -888,6 +959,7 @@ onBeforeUnmount(() => {
 .gsx-flow-arrow { color: var(--text-muted); }
 .gsx-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; }
 .gsx-chip-ok { border: 1px solid rgba(98, 214, 163, 0.32); background: rgba(98, 214, 163, 0.08); color: var(--signal); }
+.gsx-chip-busy { border: 1px solid rgba(98, 214, 163, 0.4); background: rgba(98, 214, 163, 0.1); color: var(--signal); padding: 4px 12px; font-size: 12px; }
 .gsx-chip-warn { border: 1px solid rgba(227, 178, 83, 0.3); background: rgba(227, 178, 83, 0.08); color: var(--warning); }
 .gsx-hero-action { margin-left: auto; }
 .gsx-primary {
