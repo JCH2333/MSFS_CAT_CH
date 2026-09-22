@@ -473,7 +473,7 @@ const unsubscribeProgress = props.bridge.gsx.onProgress((progress) => {
     if (progress.message) installFlow.message = progress.message
     if (Number.isFinite(progress.received)) {
       installFlow.received = progress.received
-      sampleSpeed(progress.received)
+      sampleSpeed(installFlow, progress.received)
     }
     if (Number.isFinite(progress.total)) installFlow.total = progress.total
     if (progress.phase === 'error') installFlow.error = progress.error || progress.message

@@ -31,6 +31,26 @@ import { PENDING_STORAGE_KEY, createPendingRecord, parsePendingRecord, pendingRe
 
 const ANNOUNCEMENT_POPUP_HISTORY_LIMIT = 50
 
+let demoProgressHandler = null
+async function runDemoPreset() {
+  const total = 7211335440
+  let received = 0
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    received = Math.min(total, received + total / 600)
+    const percent = Math.min(100, Math.floor((received / total) * 100))
+    demoProgressHandler?.({
+      kind: 'install', phase: 'package-download', percent,
+      received, total,
+      message: `正在预置 fsdreamteam-gsx-pro-v4.0.10.zip… ${percent}%`
+    })
+    if (received >= total) {
+      demoProgressHandler?.({ kind: 'install', phase: 'deploy', percent: 100, received: total, total, message: '部署完成（演示）' })
+      return { downloaded: ['fsdreamteam-gsx-pro-v4.0.10.zip'], skipped: [] }
+    }
+  }
+}
+
 const developmentBridge = {
   app: { getInfo: async () => ({ version: '0.1.0', platform: 'win32', packaged: false }), quit: async () => {} },
   catalog: {
@@ -69,7 +89,11 @@ const developmentBridge = {
     status: async () => ({ installed: false, pending: [], updateAvailable: false }),
     startUpdate: async () => { throw new Error('请在桌面应用中更新 GSX') },
     onProgress: () => () => {},
-    lifecycle: async () => ({
+    lifecycle: async () => (location.search.includes('demo=gsx') ? {
+      infrastructure: { present: true },
+      activation: { activated: true },
+      product: { installed: false }
+    } : {
       infrastructure: { present: false },
       activation: { activated: false },
       product: { installed: false }
@@ -79,7 +103,19 @@ const developmentBridge = {
     uninstall: async () => { throw new Error('请在桌面应用中卸载 GSX') },
     installManifest: async () => { throw new Error('请在桌面应用中获取安装清单') },
     startBootstrap: async () => { throw new Error('请在桌面应用中下载官方安装器') },
-    startPackagePreset: async () => { throw new Error('请在桌面应用中预置安装包') }
+    startPackagePreset: async () => { throw new Error('请在桌面应用中预置安装包') },
+    // 演示模式（?demo=gsx）：浏览器预览时模拟下载进度，仅供 UI 验证
+    ...(typeof location !== 'undefined' && location.search.includes('demo=gsx') ? {
+      installManifest: async () => ({
+        bootstrap: { assetName: 'FSDT_Universal_Installer.exe', version: '2.5.0.3', size: 64303152, sha256: '0'.repeat(64), downloadUrl: '' },
+        packages: [
+          { role: 'product', cacheName: 'fsdreamteam-gsx-pro-v4.0.10.zip', version: '4.0.10', size: 5365307519, sha256: '0'.repeat(64), downloadUrl: '' },
+          { role: 'extra', cacheName: 'fsdreamteam-gsx-world-of-jetways-v4.0.10.zip', version: '4.0.10', size: 1846022921, sha256: '0'.repeat(64), downloadUrl: '' }
+        ]
+      }),
+      onProgress: (handler) => { demoProgressHandler = handler; return () => { demoProgressHandler = null } },
+      startPackagePreset: () => runDemoPreset()
+    } : {})
   },
   feedback: {
     chooseImages: async () => [],
@@ -129,7 +165,9 @@ const loadingCatalog = ref(false)
 // 以内置修订版弹窗；此后服务器推送更新的修订版（主进程验签后下发）同样强制重新同意。
 const storedAcceptedRevision = parseAcceptedAgreementRevision(localStorage.getItem('msfs-cat-ch-agreements'))
 const agreementAccepted = ref(storedAcceptedRevision !== null)
-const showAgreement = ref(!agreementAccepted.value || storedAcceptedRevision !== AGREEMENT_REVISION)
+// 浏览器演示模式（?demo=gsx）跳过协议门：仅开发预览用，打包版不受影响
+const isDemoPreview = typeof location !== 'undefined' && location.search.includes('demo=gsx')
+const showAgreement = ref(!isDemoPreview && (!agreementAccepted.value || storedAcceptedRevision !== AGREEMENT_REVISION))
 // 服务器推送的更新修订版（{ revision, sections }，正文已在主进程完成签名与哈希校验）
 const remoteAgreement = ref(null)
 // 补丁安装成功提示（含游戏内 hotfix 警告）与 GSX 版本不匹配拦截弹窗

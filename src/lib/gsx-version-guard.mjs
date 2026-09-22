@@ -7,7 +7,7 @@
 //   文件以适配版本为准，强行安装会把新版本的版本标记与文件内容倒退回旧版
 //   （2026-09 事故：v1.2.8 在 GSX 4.0.23 上覆盖版本标记，客户端误报"幽灵 4.0.21"、
 //   更新页与补丁页互相死锁），必须拦截并提示等待适配新版。
-import { compareVersions, isSemanticVersion } from '../../electron/versioning.js'
+import { compareVersions, isSemanticVersion } from './versioning.mjs'
 
 export function assessGsxPatchVersion(localVersion, addonVersion) {
   if (!localVersion || !addonVersion) return 'ok'
