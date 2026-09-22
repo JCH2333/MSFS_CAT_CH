@@ -86,7 +86,7 @@ For interface changes, also inspect desktop and narrow layouts and check the bro
 
 ## Client Build And Test Loop
 
-Every client change follows this loop without exception: build a fresh local installer (`npm run dist:win`), silently cover-install it for the user to test, and only push or publish the update after the user confirms that exact build. Silent install notes: close the running app first (`taskkill /F /IM MSFS_CAT_CH.exe`), resolve the real install location from the `HKCU\...\Uninstall` registry key (this machine uses a custom dir, not the default), and run `cmd /c "MSFS_CAT_CH-Setup-<version>.exe /S /D=<install dir>"` — the NSIS `/D=` value must stay unquoted (avoid Git Bash arg mangling; with `MSYS_NO_PATHCONV=1` use single-slash `cmd /c`, not `//c`).
+Every client change follows this loop without exception: build a fresh local installer (`npm run dist:win`), silently cover-install it for the user to test, and only push or publish the update after the user confirms that exact build. Silent install notes: close the running app first (`taskkill /F /IM MSFS_CAT_CH.exe`), resolve the real install location (this machine uses a custom dir, not the default; the `HKCU\...\Uninstall` key may not exist — resolve the Desktop `MSFS_CAT_CH.lnk` target via PowerShell `WScript.Shell` instead), and run `cmd /c "MSFS_CAT_CH-Setup-<version>.exe /S /D=<install dir>"` — the NSIS `/D=` value must stay unquoted (avoid Git Bash arg mangling; with `MSYS_NO_PATHCONV=1` use single-slash `cmd /c`, not `//c`). If `dist:win` fails with `EPERM rename win-unpacked.tmp`, an orphaned `node.exe` from a previous failed build still holds the directory (find its PID with Sysinternals `handle64 -a win-unpacked`, kill it, `rm -rf release`, rebuild).
 
 ## Git And Releases
 
