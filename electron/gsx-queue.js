@@ -1,16 +1,18 @@
 const { buildServerUrl } = require('./distribution-server')
 
 // 分发服务器下载排队客户端：大文件（GSX 安装器/完整包/热更组件）按“先来后到”
-// 过闸。流程：begin 取票（携带稳定 clientId，等待中重试/重启应用拿回同一排位）→
-// 轮询 status 直到 ready → 携票下载 → 流程结束后 done 归还槽位。
+// 过闸。流程：begin 取票（携带稳定 clientId，等待中重试/重启拿回同一排位）→
+// 轮询 status 直到 ready（途中自动应答服务端挑战包）→ 携票下载 → done 归还。
 //
-// 会话化：createQueueAwareDownload 返回的下载函数会在首次使用时取票，并在整个
-// 流程期间复用同一张票（下载间隙校验/解压不重新排队），空闲超过 idleReleaseMs
-// 才归还槽位；服务端租约以“下载请求/轮询”为心跳续期。
+// 服务端特殊状态：
+// - paused   ：OTA 优先分发中，下载稍后开放（自动轮询恢复）
+// - cooldown ：同 IP 两次大文件下载之间的冷却间隔（自动等待后继续）
+// - banned   ：IP 被封禁（报错并展示解封指引，重试无用）
 
 const QUEUE_BEGIN_PATH = '/api/gsx/queue/begin'
 const QUEUE_STATUS_PATH = '/api/gsx/queue/status'
 const QUEUE_DONE_PATH = '/api/gsx/queue/done'
+const QUEUE_CHALLENGE_PATH = '/api/gsx/queue/challenge'
 
 function defaultSleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -20,7 +22,7 @@ function createGsxQueueClient({
   fetchImpl = globalThis.fetch,
   onQueue = () => {},
   pollIntervalMs = 3000,
-  timeoutMs = 21600000, // 排队等待上限（6 小时）；clientId 粘性保证超时重试不丢排位
+  timeoutMs = 21600000, // 排队等待上限（6 小时）；clientId/IP 粘性保证超时重试不丢排位
   clientId = null
 } = {}) {
   async function requestJson(url, options = {}) {
@@ -29,32 +31,58 @@ function createGsxQueueClient({
       signal: AbortSignal.timeout(15000),
       ...options
     })
-    if (!response.ok) throw new Error(`排队服务请求失败：HTTP ${response.status}`)
-    return response.json()
+    const body = await response.json().catch(() => null)
+    if (!response.ok) {
+      const message = body?.message || body?.error || `HTTP ${response.status}`
+      const error = new Error(message)
+      error.statusCode = response.status
+      error.serverBody = body
+      throw error
+    }
+    return body
   }
 
-  // 取票并阻塞到就绪；返回票号。onQueue({ position }) 向界面汇报排位。
+  // 取票并阻塞到就绪；返回票号。onQueue({ position, yourIp, message }) 汇报排位与提示。
   async function acquire({ scope = 'gsx' } = {}) {
     const deadline = Date.now() + timeoutMs
     const beginBody = JSON.stringify({ scope, clientId })
-    let begin = await requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: beginBody })
+    const sendBegin = () => requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: beginBody })
+    let begin = await sendBegin()
+    if (begin.status === 'banned') throw new Error(begin.message || '您的IP因异常行为被封禁，请联系管理员解封')
     let ticket = begin.ticket
     if (!ticket) throw new Error('排队服务未返回票号')
     if (begin.status === 'ready') return ticket
-    onQueue({ position: begin.position ?? null })
+    onQueue({ position: begin.position ?? null, yourIp: begin.yourIp, message: begin.message })
+
     for (;;) {
       if (Date.now() > deadline) throw new Error('排队等待超时，请稍后重试（会保留您的排队位）')
       await defaultSleep(pollIntervalMs)
       const state = await requestJson(`${QUEUE_STATUS_PATH}?ticket=${encodeURIComponent(ticket)}`)
+      if (state.status === 'banned') throw new Error(state.message || '您的IP因异常行为被封禁，请联系管理员解封')
+      if (state.status === 'paused') {
+        onQueue({ paused: true, message: state.message || '服务器正在优先分发软件更新，下载稍后开放' })
+        continue
+      }
+      if (state.status === 'cooldown') {
+        onQueue({ cooldown: true, message: '下载冷却中，稍后自动继续' })
+        continue
+      }
+      if (state.challenge) {
+        await requestJson(QUEUE_CHALLENGE_PATH, {
+          method: 'POST',
+          body: JSON.stringify({ ticket, nonce: state.challenge })
+        }).catch(() => {})
+      }
       if (state.status === 'ready') return ticket
       if (state.status === 'waiting') {
         onQueue({ position: state.position ?? null })
         continue
       }
-      // 票已失效（服务端等待超期等）：重新取票——clientId 粘性会尽量找回排位
-      begin = await requestJson(QUEUE_BEGIN_PATH, { method: 'POST', body: beginBody })
+      // 票已失效（服务端等待超期等）：重新取票——clientId/IP 粘性会尽量找回排位
+      begin = await sendBegin()
       ticket = begin.ticket ?? ticket
       if (begin.status === 'ready') return ticket
+      if (begin.status === 'banned') throw new Error(begin.message || '您的IP因异常行为被封禁，请联系管理员解封')
       onQueue({ position: begin.position ?? null })
     }
   }
@@ -93,7 +121,7 @@ function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 
     if (typeof idleTimer.unref === 'function') idleTimer.unref()
   }
 
-  const wrapped = async (url, destination, onProgress) => {
+  return async (url, destination, onProgress) => {
     if (!session) {
       const ticket = await queue.acquire()
       session = { ticket }
@@ -112,20 +140,13 @@ function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 
       throw error
     }
   }
-  // 主动让出带宽槽位（宽限期内原顺位恢复）
-  wrapped.releaseSession = async () => {
-    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null }
-    const current = session
-    session = null
-    if (current) await queue.release(current.ticket).catch(() => {})
-  }
-  return wrapped
 }
 
 module.exports = {
   QUEUE_BEGIN_PATH,
   QUEUE_STATUS_PATH,
   QUEUE_DONE_PATH,
+  QUEUE_CHALLENGE_PATH,
   createGsxQueueClient,
   createQueueAwareDownload,
   withTicket
