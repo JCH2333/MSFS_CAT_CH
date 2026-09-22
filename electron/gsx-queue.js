@@ -97,7 +97,11 @@ function createGsxQueueClient({
     }
   }
 
-  return { acquire, release, clientId }
+  async function pollStatus(ticket) {
+    return requestJson(`${QUEUE_STATUS_PATH}?ticket=${encodeURIComponent(ticket)}`)
+  }
+
+  return { acquire, release, pollStatus, clientId }
 }
 
 function withTicket(url, ticket) {
@@ -110,6 +114,7 @@ function withTicket(url, ticket) {
 function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 } = {}) {
   let session = null // { ticket }
   let idleTimer = null
+  let heartbeat = null
 
   function touchIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer)
@@ -121,25 +126,55 @@ function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 
     if (typeof idleTimer.unref === 'function') idleTimer.unref()
   }
 
-  return async (url, destination, onProgress) => {
+  function stopHeartbeat() {
+    if (heartbeat) { clearInterval(heartbeat); heartbeat = null }
+  }
+
+  // 下载会话心跳：每 60 秒轮询一次票状态（续租 + 自动应答挑战包）
+  function startHeartbeat() {
+    if (heartbeat) return
+    heartbeat = setInterval(async () => {
+      if (!session) return
+      try {
+        const state = await queue.pollStatus(session.ticket)
+        if (state?.challenge) {
+          await fetchImpl(buildServerUrl(QUEUE_CHALLENGE_PATH), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticket: session.ticket, nonce: state.challenge })
+          }).catch(() => {})
+        }
+      } catch { /* 心跳失败不中断下载，租约仍有余量 */ }
+    }, 60000)
+    if (typeof heartbeat.unref === 'function') heartbeat.unref()
+  }
+
+  // 主动让出带宽槽位（校验/解压等本地阶段），服务端宽限标记保留排位
+  async function releaseSession() {
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null }
+    stopHeartbeat()
+    const current = session
+    session = null
+    if (current) await queue.release(current.ticket).catch(() => {})
+  }
+
+  const wrapped = async (url, destination, onProgress) => {
     if (!session) {
       const ticket = await queue.acquire()
       session = { ticket }
+      startHeartbeat()
     }
     const ticket = session.ticket
     touchIdleTimer()
     try {
       return await downloadImpl(withTicket(url, ticket), destination, onProgress)
     } catch (error) {
-      // 下载失败即结束会话：让出槽位，避免后续文件拿失效票
-      if (idleTimer) clearTimeout(idleTimer)
-      idleTimer = null
-      const current = session
-      session = null
-      if (current) await queue.release(current.ticket).catch(() => {})
+      await releaseSession()
       throw error
     }
   }
+  wrapped.releaseSession = releaseSession
+  return wrapped
 }
 
 module.exports = {
