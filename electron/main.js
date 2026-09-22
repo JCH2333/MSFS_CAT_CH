@@ -272,6 +272,8 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
     runForcedUpdateGate()
+    // 运行时 OTA 巡检：发布更新后，打开着的客户端最迟 10 分钟内收到并强制安装
+    startRuntimeUpdateWatch()
   })
   mainWindow.on('closed', () => { mainWindow = null })
 }
@@ -352,6 +354,25 @@ function configureUpdater() {
   autoUpdater.on('error', () => {
     setUpdateStatus({ state: 'error', message: '暂时无法检查软件更新，请稍后再试' })
   })
+}
+
+// 运行时 OTA 周期巡检间隔：发布更新后，打开着的客户端最迟 10 分钟内收到并强制安装
+const RUNTIME_UPDATE_CHECK_MS = 10 * 60 * 1000
+
+function startRuntimeUpdateWatch() {
+  if (!app.isPackaged) return
+  setInterval(() => {
+    const state = latestUpdateStatus?.state
+    if (['checking', 'downloading', 'downloaded', 'installing'].includes(state)) return
+    startRequiredSoftwareUpdate().then((status) => {
+      if (status?.state === 'available') {
+        logger?.line('INFO', 'update', '运行时检测到新版本，自动下载（完成后将强制安装并重启）')
+        downloadUpdate(autoUpdater).catch((error) => {
+          logger?.line('WARN', 'update', `运行时更新下载失败：${error.message}`)
+        })
+      }
+    }).catch(() => {})
+  }, RUNTIME_UPDATE_CHECK_MS)
 }
 
 async function startRequiredSoftwareUpdate() {

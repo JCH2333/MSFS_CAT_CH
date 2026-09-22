@@ -93,7 +93,7 @@ function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 
     if (typeof idleTimer.unref === 'function') idleTimer.unref()
   }
 
-  return async (url, destination, onProgress) => {
+  const wrapped = async (url, destination, onProgress) => {
     if (!session) {
       const ticket = await queue.acquire()
       session = { ticket }
@@ -112,6 +112,14 @@ function createQueueAwareDownload(downloadImpl, queue, { idleReleaseMs = 180000 
       throw error
     }
   }
+  // 主动让出带宽槽位（宽限期内原顺位恢复）
+  wrapped.releaseSession = async () => {
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null }
+    const current = session
+    session = null
+    if (current) await queue.release(current.ticket).catch(() => {})
+  }
+  return wrapped
 }
 
 module.exports = {

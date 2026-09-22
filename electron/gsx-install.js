@@ -359,6 +359,7 @@ function createGsxInstall({
     const { manifest, plan } = await planPackages()
     const pending = plan.filter((item) => item.action === 'download')
     if (pending.length === 0) {
+      await download.releaseSession?.()
       return { manifest, downloaded: [], skipped: plan.map((item) => item.pkg.cacheName) }
     }
 
@@ -401,6 +402,8 @@ function createGsxInstall({
       finishedBytes += pkg.size
       downloaded.push(pkg.cacheName)
     }
+    // 下载阶段结束：进入本地解压前主动让出带宽槽位（宽限期内原顺位恢复）
+    await download.releaseSession?.()
     return {
       manifest,
       downloaded,

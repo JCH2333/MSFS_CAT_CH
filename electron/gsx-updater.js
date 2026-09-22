@@ -546,6 +546,8 @@ class GsxUpdater {
       }
     }
 
+    // 组件下载结束：让出排队带宽槽位（宽限期内原顺位恢复）
+    await this.downloadImpl.releaseSession?.()
     this.emit({ phase: 'complete', percent: 100, received: totalBytes, total: totalBytes, applied, message: 'GSX 更新完成' })
     return { state: 'complete', applied, skipped }
   }
