@@ -435,7 +435,13 @@ function createGsxInstall({
           skipped.push(productName)
           continue
         }
-        throw new Error(`部署目标已存在但不完整（${target}），请先在「卸载 GSX Pro」中清理后重试`)
+        // 空目录残留（旧版本卸载/中断遗留）：直接清理后照常部署，免去手动卸载步骤
+        const leftoverEntries = await fs.readdir(target).catch(() => null)
+        if (Array.isArray(leftoverEntries) && leftoverEntries.length === 0) {
+          await fs.rmdir(target)
+        } else {
+          throw new Error(`部署目标已存在但不完整（${target}）。若确认是旧版本残留且无重要文件，可手动删除该文件夹后重试`)
+        }
       }
       pending.push({ pkg, productName, target })
     }

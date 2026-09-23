@@ -364,6 +364,30 @@ test('deployPackages skips products that are already deployed', async () => {
   assert.equal(result.linked.length, 1, '已部署产品仍需补齐社区链接')
 })
 
+test('deployPackages cleans an empty leftover target directory and deploys normally', async () => {
+  const cacheDirectory = await temporaryDirectory('gsx-deploy-empty-cache-')
+  const packagesCacheDirectory = await temporaryDirectory('gsx-deploy-empty-pc-')
+  const addonRoot = await temporaryDirectory('gsx-deploy-empty-addon-')
+  const communityDirectory = path.join(addonRoot, 'community2024')
+  await fs.mkdir(communityDirectory, { recursive: true })
+  // 旧版本残留：目录存在但为空（用户报障场景）
+  const leftover = path.join(addonRoot, 'MSFS', 'fsdreamteam-gsx-pro')
+  await fs.mkdir(leftover, { recursive: true })
+  const { manifest } = await buildDeployFixture({ packagesCacheDirectory })
+  const client = createGsxInstall({
+    cacheDirectory,
+    packagesCacheDirectory,
+    fetchImpl: async () => responseStub(manifest),
+    statFs: async () => ({ bsize: 4096, bavail: 64 * 1024 * 1024 })
+  })
+  const result = await client.deployPackages({
+    addonRoot,
+    communityTargets: [{ directory: communityDirectory, slot: 'msfs2024' }]
+  })
+  assert.deepEqual(result.deployed, ['fsdreamteam-gsx-pro'])
+  assert.equal(await fs.readFile(path.join(leftover, 'manifest.json'), 'utf8'), JSON.stringify({ package_version: '4.0.10' }))
+})
+
 test('deployPackages refuses a partial deployment target instead of overwriting', async () => {
   const cacheDirectory = await temporaryDirectory('gsx-deploy-part-cache-')
   const packagesCacheDirectory = await temporaryDirectory('gsx-deploy-part-pc-')

@@ -47,8 +47,9 @@ function setUpdateStatus(payload) {
   send('updates:status', payload)
 }
 
-// GSX 更新会覆盖已部署的汉化补丁文件；文本/按钮补丁必然受影响，
-// 语音补丁只有当本次更新包含 GSX_sounds 组件时才受影响（差量更新会跳过未变化的组件）。
+// GSX 更新会覆盖已部署的汉化补丁文件；更新前先还原官方文件（文本/按钮补丁必然
+// 受影响，语音补丁仅在本次更新包含 GSX_sounds 组件时受影响），更新完成后失效
+// 对应补丁安装记录——重装由用户在「汉化补丁」页手动进行。
 const GSX_TEXT_PATCH_ID = 'gsx-pro-zh-cn'
 const GSX_VOICE_PATCH_ID = 'gsx-pro-zh-cn-voice'
 const GSX_VOICE_COMPONENT = 'GSX_sounds'
@@ -154,9 +155,9 @@ async function runGsxOneClickInstallFlow() {
   })
   logger?.line('INFO', 'gsx', `一键安装部署完成：deployed=${deployResult.deployed.length} skipped=${deployResult.skipped.length} links=${deployResult.linked.length}`)
   send('gsx:progress', { kind: 'install', phase: 'deploy', percent: 100, message: '本体部署完成，正在更新到最新版本…' })
-  // 自动连跑：镜像更新到最新版本 + 受影响汉化补丁自动重装，用户零多余操作
+  // 自动连跑：镜像更新到最新版本，用户零多余操作；汉化补丁由用户按需重装
   const updateResult = await runGsxUpdateFlow()
-  logger?.line('INFO', 'gsx', `一键安装全部完成：applied=${updateResult?.applied?.length ?? 0} patchReinstalled=${updateResult?.patchCare?.reinstalled?.length ?? 0}`)
+  logger?.line('INFO', 'gsx', `一键安装全部完成：applied=${updateResult?.applied?.length ?? 0} patchForgotten=${updateResult?.patchCare?.forgotten ?? 0}`)
   return { deploy: deployResult, update: updateResult }
 }
 
@@ -206,37 +207,16 @@ async function runGsxUpdateFlow() {
   // 2) 执行 GSX 更新
   const updateResult = await gsxUpdater.applyUpdate()
   if (updateResult.state !== 'complete') {
-    return { ...updateResult, patchCare: { restored, reinstalled: [], failed: [], skipped: restoreSkipped } }
+    return { ...updateResult, patchCare: { restored, forgotten: 0, skipped: restoreSkipped } }
   }
 
-  // 3) 自动重装受影响的汉化补丁（从服务器取最新已发布版本）
-  const reinstalled = []
-  const failed = []
-  send('gsx:progress', { phase: 'patch-reinstall', percent: 100, message: 'GSX 已更新，正在重装汉化补丁…' })
-  const { catalog: freshCatalog } = await catalog.refresh()
-  const patchEntries = affectedPatchIds
-    .map((patchId) => freshCatalog.patches.find((patch) => patch.id === patchId))
-    .filter(Boolean)
-  const targets = await detectPatchTargets(patchEntries, {
-    appData: app.getPath('appData'),
-    localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local')
-  })
-  for (const entry of patchEntries) {
-    const targetPath = targets[entry.id]?.targetPath
-    try {
-      if (entry.status !== 'published') throw new Error('服务器目录中暂无已发布版本')
-      if (!targetPath) throw new Error('未检测到安装目标')
-      send('gsx:progress', { phase: 'patch-reinstall', percent: 100, message: `正在重装汉化补丁（${entry.id} v${entry.version}）…` })
-      await installer.install(entry, targetPath)
-      reinstalled.push(entry.id)
-    } catch (error) {
-      failed.push(`${entry.id}: ${error.message}`)
-    }
-  }
+  // 3) 更新完成后不再自动重装汉化补丁/中文语音：还原后 GSX 为官方原版，
+  //    这里同步失效补丁安装记录，由用户在「汉化补丁」页自行安装适配新版本的补丁
+  const forgotten = restored.length ? await installer.forgetInstallations(restored) : 0
 
   return {
     ...updateResult,
-    patchCare: { restored, reinstalled, failed, skipped: restoreSkipped }
+    patchCare: { restored, forgotten, skipped: restoreSkipped }
   }
 }
 

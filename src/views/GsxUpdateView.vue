@@ -87,7 +87,7 @@ const TUTORIALS = {
     sections: [
       { text: '点击「一键安装」后，应用把 GSX 本体完整包（约 7.3 GB）从国内服务器直连下载到本地缓存，全程逐字节 SHA-256 校验，不连接国外网络。' },
       { text: '下载完成后由本应用直接解压部署到官方目录结构（Addon Manager\\MSFS\\<包名>），并在模拟器社区目录创建链接——不需要打开官方安装器。' },
-      { text: '部署完成后，应用会自动通过国内镜像把 GSX 更新到最新版本，并自动重装受影响的汉化补丁——全程无需任何手动操作。' },
+      { text: '部署完成后，应用会自动通过国内镜像把 GSX 更新到最新版本——全程无需任何手动操作。更新完成后 GSX 为官方原版，如需汉化，请到「汉化补丁」页安装适配版本的补丁。' },
       { text: '页面自动刷新显示最新状态后，直接启动模拟器即可使用。' }
     ]
   }
@@ -440,7 +440,8 @@ async function startUpdate() {
     patchCare.value = result?.patchCare || null
     skippedComponents.value = result?.skipped || []
     emit('updated')
-    if (patchCare.value?.reinstalled?.length) emit('patch-installed')
+    // 补丁记录已失效（不再自动重装）：通知补丁页刷新安装状态
+    if (patchCare.value?.restored?.length) emit('patch-installed')
     await loadStatus()
   } catch (error) {
     operation.phase = 'error'
@@ -679,8 +680,8 @@ onBeforeUnmount(() => {
             </div>
             <p class="gsx-step-body">
               点击「一键安装」：应用把 GSX 本体完整包从国内服务器下载到本地缓存（逐字节 SHA-256 校验），
-              <b>直接解压部署</b>到官方目录结构并在模拟器社区目录创建链接，随后<b>自动更新到最新版本</b>并
-              自动重装受影响的汉化补丁——全程无需打开官方安装器，也不连接国外网络。
+              <b>直接解压部署</b>到官方目录结构并在模拟器社区目录创建链接，随后<b>自动更新到最新版本</b>
+              ——全程无需打开官方安装器，也不连接国外网络。更新完成后可到「汉化补丁」页按需安装汉化。
             </p>
             <div v-if="!(installFlow.busy && installFlow.kind === 'preset')" class="gsx-step-actions">
               <button
@@ -710,8 +711,8 @@ onBeforeUnmount(() => {
               </div>
             </div>
             <p v-if="installFlow.presetDone && !installFlow.busy" class="gsx-step-note">
-              GSX Pro 已安装并更新到最新版本（官方内容逐字节镜像），受影响的汉化补丁也已自动重装。
-              直接启动模拟器即可使用；如需重装汉化，请到「汉化补丁」页。
+              GSX Pro 已安装并更新到最新版本（官方内容逐字节镜像）。直接启动模拟器即可使用；
+              如需汉化，请到「汉化补丁」页安装适配版本的补丁。
             </p>
             <p v-if="installFlow.error && installFlow.kind === 'preset'" class="gsx-step-note gsx-note-warn">
               <TriangleAlert :size="12" />
@@ -823,14 +824,10 @@ onBeforeUnmount(() => {
               跳过 {{ item.component }}：{{ item.reason }}
             </p>
           </div>
-          <div v-if="done && patchCare" class="gsx-patchcare">
-            <p v-if="patchCare.reinstalled?.length" class="gsx-patchcare-ok">
-              <CheckCircle2 :size="13" />
-              汉化补丁已自动重装：{{ patchCare.reinstalled.join('、') }}
-            </p>
-            <p v-if="patchCare.failed?.length" class="gsx-patchcare-warn">
+          <div v-if="done && patchCare?.restored?.length" class="gsx-patchcare">
+            <p class="gsx-patchcare-warn">
               <TriangleAlert :size="13" />
-              部分补丁自动重装失败（{{ patchCare.failed.join('；') }}），请到「汉化补丁」页手动重装。
+              GSX 更新会还原官方文件：受影响的汉化补丁（{{ patchCare.restored.join('、') }}）已还原并失效，请到「汉化补丁」页重新安装适配版本。
             </p>
           </div>
         </section>
@@ -858,7 +855,7 @@ onBeforeUnmount(() => {
           </header>
           <ul>
             <li>GSX 为付费插件，本页面仅供<b>已购买正版</b>的用户使用；安装包与更新包均为 FSDreamTeam 官方文件的逐字节镜像，经 SHA-256 校验后部署。</li>
-            <li>更新前会自动还原已安装的 GSX 汉化补丁，更新完成后<b>自动重装</b>受影响的汉化，无需手动操作。</li>
+            <li>更新前会自动还原已安装的 GSX 汉化补丁（安装记录同步失效）；GSX 更新不会自动重装汉化，请更新后在「汉化补丁」页安装适配版本。</li>
             <li>更新与部署前请完全退出微软模拟飞行；过程保持电源与网络连接。</li>
             <li>支持 MSFS 2020 与 2024：GSX Pro 本体为两代模拟器共用，热更组件与部署目标一致；未安装 GSX World 的用户会自动跳过对应组件。</li>
             <li>未安装 GSX 时请使用上方三步<b>一键安装</b>（国内直连）；如提示基础组件不完整，先完成第一步的官方安装器安装即可修复。</li>
