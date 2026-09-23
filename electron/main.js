@@ -303,6 +303,21 @@ function sleepMs(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// 排队状态文案：cooldown（票主冷却暂缓晋级）对用户呈现为「握手验证」，
+// 避免"明明有空槽位却显示排队第 1 位"的困惑；OTA 暂停透传服务端文案。
+function queueProgressPayload(info = {}) {
+  if (info.cooldown) {
+    return { position: null, state: 'handshake', message: '正在握手验证中，稍后自动开始下载…' }
+  }
+  if (info.paused) {
+    return { position: null, state: 'paused', message: info.message || '服务器正在优先分发软件更新，稍后自动开始…' }
+  }
+  if (info.position) {
+    return { position: info.position, state: 'queue', message: `服务器繁忙，排队中：第 ${info.position} 位` }
+  }
+  return { position: null, state: 'queue', message: '服务器繁忙，排队中…' }
+}
+
 async function runForcedUpdateGate() {
   if (!app.isPackaged) { releaseGate(); return }
   try { mainWindow?.setEnabled(false) } catch {}
@@ -700,7 +715,7 @@ app.whenReady().then(async () => {
     return created
   })()
   const updaterQueue = createGsxQueueClient({
-    onQueue: (info) => send('gsx:progress', { phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' }),
+    onQueue: (info) => send('gsx:progress', { phase: 'queue', ...queueProgressPayload(info) }),
     clientId: queueClientId,
   })
   gsxUpdater = new GsxUpdater({
@@ -716,7 +731,7 @@ app.whenReady().then(async () => {
   })
   gsxInstaller = createGsxInstaller({ processLister: gsxUpdater.processLister })
   const installQueue = createGsxQueueClient({
-    onQueue: (info) => send('gsx:progress', { kind: 'install', phase: 'queue', position: info.position ?? null, message: info.position ? `服务器繁忙，排队中：第 ${info.position} 位` : '服务器繁忙，排队中…' }),
+    onQueue: (info) => send('gsx:progress', { kind: 'install', phase: 'queue', ...queueProgressPayload(info) }),
     clientId: queueClientId,
   })
   gsxInstall = createGsxInstall({
