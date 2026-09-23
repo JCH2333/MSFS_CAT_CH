@@ -435,64 +435,135 @@ function isAllowedDownloadUrl(input) {
   return url.protocol === serverOriginProtocol() && ALLOWED_DOWNLOAD_HOSTS.has(url.hostname)
 }
 
-async function downloadToFile(url, destination, onProgress, redirectsRemaining = 6) {
-  if (!isAllowedDownloadUrl(url)) {
-    throw new Error('补丁下载地址不是受信任的云端服务器地址')
-  }
-
-  await fsp.mkdir(path.dirname(destination), { recursive: true })
-  const temporaryPath = `${destination}.part`
-
+// 单次下载尝试：支持 Range 断点续传（.part 已写字节从断点继续），失败保留
+// 非 0 字节的 .part 供续传。错误与完成严格区分——绝不在失败后 rename。
+function downloadAttempt(url, destination, temporaryPath, onProgress, redirectsRemaining, hooks) {
   return new Promise((resolve, reject) => {
-    // 过渡期 IP 源为 http，正式域名源为 https：按 URL 协议选择请求模块
-    const transport = url.protocol === 'https:' ? https : require('node:http')
-    const request = transport.get(url, { headers: { 'User-Agent': 'msfs-cat-ch' } }, (response) => {
-      const status = response.statusCode || 0
-      if (status >= 300 && status < 400 && response.headers.location) {
-        response.resume()
-        if (redirectsRemaining <= 0) {
-          reject(new Error('补丁下载重定向次数过多'))
+    const guard = hooks.urlGuard ?? isAllowedDownloadUrl
+    if (!guard(url.toString())) {
+      reject(new Error('补丁下载地址不是受信任的云端服务器地址'))
+      return
+    }
+    const getTransport = hooks.getTransport ?? ((u) => (u.protocol === 'https:' ? https : require('node:http')))
+
+    let baseOffset = 0
+    fsp.stat(temporaryPath).then((stats) => {
+      baseOffset = stats.size > 0 ? stats.size : 0
+      start()
+    }).catch(() => { start() })
+
+    function start() {
+      const headers = { 'User-Agent': 'msfs-cat-ch' }
+      if (baseOffset > 0) headers.Range = `bytes=${baseOffset}-`
+      const request = getTransport(url).get(url, { headers }, (response) => {
+        const status = response.statusCode || 0
+        if (status >= 300 && status < 400 && response.headers.location) {
+          response.resume()
+          if (redirectsRemaining <= 0) {
+            reject(new Error('补丁下载重定向次数过多'))
+            return
+          }
+          const nextUrl = new URL(response.headers.location, url).toString()
+          downloadAttempt(nextUrl, destination, temporaryPath, onProgress, redirectsRemaining - 1, hooks).then(resolve, reject)
           return
         }
-        const nextUrl = new URL(response.headers.location, url).toString()
-        downloadToFile(nextUrl, destination, onProgress, redirectsRemaining - 1).then(resolve, reject)
-        return
-      }
-      if (status !== 200) {
-        response.resume()
-        reject(new Error(`补丁下载失败：HTTP ${status}`))
-        return
-      }
-
-      const total = Number(response.headers['content-length'] || 0)
-      let received = 0
-      const output = fs.createWriteStream(temporaryPath)
-      response.on('data', (chunk) => {
-        received += chunk.length
-        onProgress?.({ phase: 'download', received, total })
-      })
-      response.on('error', reject)
-      output.on('error', reject)
-      output.on('close', async () => {
-        try {
-          await fsp.rename(temporaryPath, destination)
-          resolve(destination)
-        } catch (error) {
-          reject(error)
+        let resuming = baseOffset > 0
+        if (status === 200 && resuming) resuming = false // 服务器不支持 Range：从头重写
+        if (status !== 200 && status !== 206) {
+          response.resume()
+          reject(new Error(`补丁下载失败：HTTP ${status}`))
+          return
         }
+        if (status === 206) {
+          const match = /bytes (\d+)-/.exec(String(response.headers['content-range'] || ''))
+          if (!match || Number(match[1]) !== baseOffset) {
+            // 断点与服务器内容对不上：丢弃 .part 从头再来
+            response.resume()
+            fsp.rm(temporaryPath, { force: true }).catch(() => {}).finally(() => {
+              downloadAttempt(url, destination, temporaryPath, onProgress, redirectsRemaining - 1, hooks).then(resolve, reject)
+            })
+            return
+          }
+        }
+
+        const total = Number(response.headers['content-length'] || 0) + (resuming ? baseOffset : 0)
+        let received = resuming ? baseOffset : 0
+        let ended = false
+        let settled = false
+        let failure = null
+        const output = fs.createWriteStream(temporaryPath, { flags: resuming ? 'a' : 'w' })
+        const keepPartIfResumable = () => (
+          fsp.stat(temporaryPath)
+            .then((stats) => (stats.size > 0 ? null : fsp.rm(temporaryPath, { force: true })))
+            .catch(() => {})
+        )
+        const fail = (error) => {
+          if (settled) return
+          settled = true
+          failure = error
+          try { request.destroy() } catch {}
+          try { response.destroy() } catch {}
+          try { output.destroy() } catch {}
+          keepPartIfResumable().finally(() => reject(error))
+        }
+        const wrapTransportError = (error) => new Error(
+          `下载中断，已保留断点，重试将自动续传（${error.message}）`
+        )
+        response.on('data', (chunk) => {
+          received += chunk.length
+          onProgress?.({ phase: 'download', received, total })
+        })
+        response.on('end', () => { ended = true })
+        response.on('error', (error) => fail(wrapTransportError(error)))
+        output.on('error', (error) => fail(wrapTransportError(error)))
+        request.on('error', (error) => fail(wrapTransportError(error)))
+        output.on('close', () => {
+          if (settled) return
+          settled = true
+          // 修复历史竞态：失败（含响应错误/提前清理）时绝不再 rename，
+          // 否则会对着已删除/不完整的 .part 报出误导性的 ENOENT。
+          if (failure) {
+            keepPartIfResumable().finally(() => reject(failure))
+            return
+          }
+          const truncated = total > 0 && received < total
+          if (!ended || truncated) {
+            keepPartIfResumable().finally(() => reject(new Error(
+              truncated
+                ? `下载不完整（${received}/${total} 字节），已保留断点，重试将自动续传`
+                : '下载中断，已保留断点，重试将自动续传'
+            )))
+            return
+          }
+          fsp.rename(temporaryPath, destination).then(() => resolve(destination)).catch(reject)
+        })
+        response.pipe(output)
       })
-      response.pipe(output)
-    })
-    request.setTimeout(30000, () => {
-      const error = new Error('补丁下载超时')
-      error.code = 'ETIMEDOUT'
-      request.destroy(error)
-    })
-    request.on('error', reject)
-  }).catch(async (error) => {
-    await fsp.rm(temporaryPath, { force: true }).catch(() => {})
-    throw error
+      request.setTimeout(30000, () => {
+        const error = new Error('补丁下载超时')
+        error.code = 'ETIMEDOUT'
+        request.destroy(error)
+      })
+    }
   })
+}
+
+// 大文件（GSX 完整包 5GB 级）单连接可达半小时：中断保留 .part 断点续传并自动重试，
+// 瞬时网络闪断不再需要用户从头下载。
+async function downloadToFile(url, destination, onProgress, redirectsRemaining = 6, hooks = {}) {
+  const targetUrl = typeof url === 'string' ? new URL(url) : url
+  const temporaryPath = `${destination}.part`
+  await fsp.mkdir(path.dirname(destination), { recursive: true })
+  let lastError = null
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await downloadAttempt(targetUrl, destination, temporaryPath, onProgress, redirectsRemaining, hooks)
+    } catch (error) {
+      lastError = error
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 2000))
+    }
+  }
+  throw lastError
 }
 
 class PatchInstaller {
