@@ -22,23 +22,37 @@ async function loadQr() {
   qrStatus.value = 'error'
 }
 
-// 弹幕：把留言按奇偶拆成两行，每行内容复制一份实现无缝循环；
-// 速度随内容量调整（内容越多走得越慢），悬停暂停。
-const DANMAKU_BASE_SECONDS = 26
-const danmakuStyle = computed(() => (row) => ({
-  animationDuration: `${Math.max(18, DANMAKU_BASE_SECONDS + row.length * 2.2)}s`
+// 弹幕：留言随机洗牌（忽略展示顺序），按行拆分后从右向左循环飘过；
+// 每行速度不同制造错落感，悬停暂停。
+const DANMAKU_BASE_SECONDS = 20
+const danmakuStyle = computed(() => (row, index) => ({
+  animationDuration: `${Math.max(22, DANMAKU_BASE_SECONDS + row.length * 1.6 + index * 6)}s`
 }))
+
+function shuffle(list) {
+  const arr = [...list]
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
 
 function buildDanmakuRows(messages) {
   if (!Array.isArray(messages) || messages.length === 0) return []
-  const texts = messages.map((message) => message.content.trim()).filter(Boolean)
+  const texts = shuffle(messages.map((message) => message.content.trim()).filter(Boolean))
   if (texts.length === 0) return []
   const perRow = texts.length >= 6 ? 2 : 1
   const rows = Array.from({ length: perRow }, () => [])
   texts.forEach((text, index) => rows[index % perRow].push(text))
+  // 每行内容至少铺满 8 条（不足则整组重复），再复制一份实现无缝循环
   return rows
     .filter((row) => row.length > 0)
-    .map((row) => [...row, ...row]) // 无缝循环：同一份内容连续两遍，位移 -50% 后重绕
+    .map((row) => {
+      const filled = []
+      while (filled.length < 8) filled.push(...row)
+      return [...filled, ...filled]
+    })
 }
 
 async function loadDanmaku() {
@@ -91,8 +105,8 @@ onBeforeUnmount(() => {
 
     <div v-if="danmakuRows.length" class="danmaku-area" role="marquee" aria-label="赞助者留言">
       <p class="eyebrow danmaku-eyebrow"><MessageCircleHeart :size="12" />SPONSOR WALL</p>
-      <div v-for="(row, rowIndex) in danmakuRows" :key="rowIndex" class="danmaku-row" :class="{ reverse: rowIndex % 2 === 1 }">
-        <div class="danmaku-track" :style="danmakuStyle(row)">
+      <div v-for="(row, rowIndex) in danmakuRows" :key="rowIndex" class="danmaku-row">
+        <div class="danmaku-track" :style="danmakuStyle(row, rowIndex)">
           <span v-for="(text, index) in row" :key="index" class="danmaku-item">
             {{ text }}<span class="danmaku-sep">✦</span>
           </span>
@@ -124,7 +138,6 @@ onBeforeUnmount(() => {
   animation: danmaku-scroll linear infinite;
 }
 .danmaku-row:hover .danmaku-track { animation-play-state: paused; }
-.danmaku-row.reverse .danmaku-track { animation-direction: reverse; }
 .danmaku-item {
   display: inline-flex;
   align-items: center;
