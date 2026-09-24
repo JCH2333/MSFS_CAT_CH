@@ -2,13 +2,14 @@ const fs = require('node:fs/promises')
 const path = require('node:path')
 const { buildServerUrl, isTrustedServerUrl } = require('./distribution-server')
 const { isSemanticVersion } = require('./versioning')
+const { adjudicateChannelResponse, isEnforceRequired } = require('./channel-signing')
 
 const CATALOG_MANIFEST_PATH = '/api/catalog/manifest.json'
 const CATALOG_URL = buildServerUrl(CATALOG_MANIFEST_PATH)
 const PATCH_STATUSES = new Set(['planned', 'published', 'withdrawn'])
 const TARGET_KINDS = new Set(['addon', 'addon-inject', 'gsx-audio', 'gsx-combined'])
 const INSTALL_PLAN_TARGETS = new Set(['primary', 'gsx-runtime-res'])
-const CATALOG_TIMEOUT_MS = 5000
+const CATALOG_TIMEOUT_MS = 12000
 
 function assertString(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
@@ -228,26 +229,55 @@ function validateCatalog(input) {
 }
 
 class ServerCatalog {
-  constructor({ cacheDirectory, fetchImpl = globalThis.fetch, catalogUrl = CATALOG_URL, timeoutMs = CATALOG_TIMEOUT_MS }) {
+  constructor({ cacheDirectory, fetchImpl = globalThis.fetch, catalogUrl = CATALOG_URL, timeoutMs = CATALOG_TIMEOUT_MS, channelPublicKey } = {}) {
     this.cacheDirectory = cacheDirectory
     this.cachePath = path.join(cacheDirectory, 'patch-catalog.json')
     this.fetchImpl = fetchImpl
     this.catalogUrl = catalogUrl
     this.timeoutMs = timeoutMs
+    // 渠道验签公钥：生产一律使用内嵌作者公钥（channel-signing 默认值），仅供测试注入
+    this.channelPublicKey = channelPublicKey
+    // 单飞锁：并发 refresh 共用同一次请求/写盘（第 1 轮攻击报告附带发现：
+    // 并发写 patch-catalog.json.tmp 后 rename ENOENT）
+    this.inFlightRefresh = null
   }
 
   async readCache() {
     try {
-      return validateCatalog(JSON.parse(await fs.readFile(this.cachePath, 'utf8')))
+      const parsed = JSON.parse(await fs.readFile(this.cachePath, 'utf8'))
+      if (parsed && typeof parsed === 'object' && parsed.cacheSchema === 2 && parsed.payload) {
+        // cacheSchema 2：缓存服务端原始响应载荷（验签必须对原始字节口径的对象进行，
+        // validateCatalog 重建后的对象与签名对象不一致）；签名缺失过渡放行，验签失败拒绝
+        const payload = parsed.payload
+        const body = parsed.signature
+          ? { ...payload, signatureAlgorithm: parsed.signatureAlgorithm, signature: parsed.signature }
+          : payload
+        const verdict = adjudicateChannelResponse({ kind: 'catalog', body, publicKey: this.channelPublicKey })
+        if (!verdict.accept) return null
+        return validateCatalog(verdict.payload)
+      }
+      // 旧版缓存：裸目录对象（无签名语义，向后兼容）。ENFORCE_REQUIRED 翻转后
+      // 旧格式一律作废重取（返回 null → refresh 重新拉取带签名目录），而不是
+      // 硬拒呈现或放行未验证数据（评审教训：避免升级用户目录空白）
+      if (isEnforceRequired()) return null
+      return validateCatalog(parsed)
     } catch {
       return null
     }
   }
 
-  async writeCache(catalog) {
+  async writeCache(catalog, rawPayload, signature = null) {
     await fs.mkdir(this.cacheDirectory, { recursive: true })
     const temporaryPath = `${this.cachePath}.tmp`
-    await fs.writeFile(temporaryPath, JSON.stringify(catalog, null, 2), 'utf8')
+    const envelope = {
+      cacheSchema: 2,
+      // rawPayload 缺省（旧调用方）时以规范化目录为载荷——此时签名应为 null，
+      // 缓存按未签名口径回读
+      payload: rawPayload ?? catalog,
+      signatureAlgorithm: signature?.signatureAlgorithm ?? null,
+      signature: signature?.signature ?? null
+    }
+    await fs.writeFile(temporaryPath, JSON.stringify(envelope, null, 2), 'utf8')
     await fs.rename(temporaryPath, this.cachePath)
   }
 
@@ -262,19 +292,35 @@ class ServerCatalog {
     if (!response.ok) {
       throw new Error(`补丁目录服务器返回 HTTP ${response.status}`)
     }
-    return validateCatalog(await response.json())
+    const body = await response.json()
+    // 渠道验签：坏签名硬拒绝；未签名（服务端尚未部署）过渡期放行（fail-open 不退让）
+    const verdict = adjudicateChannelResponse({ kind: 'catalog', body, publicKey: this.channelPublicKey })
+    if (!verdict.accept) {
+      throw new Error('补丁目录验签失败，已拒绝被篡改的数据')
+    }
+    return {
+      catalog: validateCatalog(verdict.payload),
+      rawPayload: verdict.payload,
+      signature: verdict.verified ? { signatureAlgorithm: 'ed25519', signature: body.signature } : null
+    }
   }
 
   // 2.0 起目录只来自分发服务器；服务器不可用时读取本地缓存（可能过期），无缓存则报错。
   async refresh() {
+    if (this.inFlightRefresh) return this.inFlightRefresh
+    this.inFlightRefresh = this.doRefresh().finally(() => { this.inFlightRefresh = null })
+    return this.inFlightRefresh
+  }
+
+  async doRefresh() {
     try {
-      const catalog = await this.fetchCatalog(this.catalogUrl)
-      await this.writeCache(catalog)
-      return { catalog, source: 'server', stale: false, error: null }
+      const { catalog, rawPayload, signature } = await this.fetchCatalog(this.catalogUrl)
+      await this.writeCache(catalog, rawPayload, signature)
+      return { catalog, source: 'server', stale: false, error: null, signature: signature ? 'verified' : 'unsigned' }
     } catch (error) {
       const cached = await this.readCache()
       if (cached) {
-        return { catalog: cached, source: 'cache', stale: true, error: error.message }
+        return { catalog: cached, source: 'cache', stale: true, error: error.message, signature: 'unknown' }
       }
       throw new Error(`无法从云端服务器读取补丁目录：${error.message}`)
     }
