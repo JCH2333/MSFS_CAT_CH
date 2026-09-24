@@ -9,7 +9,7 @@ const { ensureDeviceId, reportAgreementAcceptance } = require('./legal-evidence'
 const { checkAgreementUpdate, getAgreementText } = require('./agreements-secure')
 const { AppLogger, mirrorConsoleToLogger } = require('./app-logger')
 const { createMsfsLogBridge } = require('./msfslog')
-const { classifySimSlot, configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
+const { classifySimSlot, configDirectories, configuredRoots, detectGsxRuntimeResTarget, detectPatchTargets, addonManagerRootsFromPrimaryPath, recordedGsxRuntimeResRoots } = require('./installation-targets')
 const { createGsxInstaller } = require('./gsx-installer')
 const { createGsxInstall } = require('./gsx-install')
 const { createGsxQueueClient, createQueueAwareDownload } = require('./gsx-queue')
@@ -53,6 +53,25 @@ function setUpdateStatus(payload) {
 const GSX_TEXT_PATCH_ID = 'gsx-pro-zh-cn'
 const GSX_VOICE_PATCH_ID = 'gsx-pro-zh-cn-voice'
 const GSX_VOICE_COMPONENT = 'GSX_sounds'
+
+// id29 反馈：自部署完成后 couatl 不自启动（exe.xml 缺 couatl 注册，官方 Relink 即是补这个）。
+// 检测各模拟器配置目录的 exe.xml：只要存在配置目录且全部没有 couatl 条目，给出可行动指引。
+async function assertCouatlAutostart({ appData, localAppData }) {
+  const fsPromises = require('node:fs/promises')
+  const dirs = configDirectories({ appData, localAppData })
+  let sawConfigDir = false
+  let sawCouatl = false
+  for (const dir of dirs) {
+    const content = await fsPromises.readFile(path.join(dir.directory, 'exe.xml'), 'utf8').catch(() => null)
+    if (content == null) continue
+    sawConfigDir = true
+    if (/couatl/i.test(content)) sawCouatl = true
+  }
+  if (sawConfigDir && !sawCouatl) {
+    throw new Error('未检测到 couatl 引擎自启动注册（exe.xml 缺少 couatl 条目）：进入模拟器后 GSX 将不会启动。' +
+      '请在 FSDT Universal Installer 中点击 Relink，或重新运行第一步的官方安装器选择修复后再继续。')
+  }
+}
 
 // 卸载 GSX 产品（官方作用域）：仅移除 MSFS 社区包与产品文件，引擎目录、
 // 激活状态与机场配置保留。已安装的 GSX 汉化补丁记录一并失效（产品文件随之删除）。
@@ -119,6 +138,8 @@ async function runGsxOneClickInstallFlow() {
   if (!infrastructure.present) throw new Error('请先完成第一步：安装 FSDT 官方安装器')
   const activation = await gsxInstaller.detectActivation()
   if (!activation.activated) throw new Error('请先完成第二步：激活 GSX Pro')
+  // id29：exe.xml 缺 couatl 注册时 GSX 进游戏无反应——下载 7GB 前先拦下并给出 Relink 指引
+  await assertCouatlAutostart({ appData: app.getPath('appData'), localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local') })
 
   const communityRoots = await configuredRoots({
     appData: app.getPath('appData'),
@@ -190,6 +211,7 @@ async function runGsxUpdateFlow() {
   const affectedPatchIds = [GSX_TEXT_PATCH_ID]
   if (pendingComponents.has(GSX_VOICE_COMPONENT)) affectedPatchIds.push(GSX_VOICE_PATCH_ID)
 
+  await assertCouatlAutostart({ appData: app.getPath('appData'), localAppData: process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local') })
   // 1) 还原受影响的汉化补丁（使用本地备份，不产生下载）
   const installations = await installer.listInstallations()
   const restored = []

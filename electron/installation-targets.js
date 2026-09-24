@@ -117,6 +117,24 @@ async function findConfiguredCommunityRoot(root, slot, communityFolder) {
   return roots[0] || null
 }
 
+/** 各模拟器配置目录（exe.xml 所在位置），枚举来源与 configuredRoots 一致 */
+function configDirectories({ appData, localAppData, configLocations }) {
+  const locations = configLocations || [
+    ...(appData ? DEFAULT_CONFIG_LOCATIONS.map((entry) => ({ ...entry, filePath: path.join(appData, entry.relativePath) })) : []),
+    ...(localAppData ? STORE_CONFIG_LOCATIONS.map((entry) => ({ ...entry, filePath: path.join(localAppData, 'Packages', entry.relativePath) })) : [])
+  ]
+  const seen = new Set()
+  const directories = []
+  for (const location of locations) {
+    const directory = path.dirname(location.filePath)
+    const key = path.resolve(directory).toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    directories.push({ directory, source: location.source })
+  }
+  return directories
+}
+
 async function configuredRoots({ appData, localAppData, configLocations }) {
   const locations = configLocations || [
     ...(appData ? DEFAULT_CONFIG_LOCATIONS.map((entry) => ({ ...entry, filePath: path.join(appData, entry.relativePath) })) : []),
@@ -392,6 +410,7 @@ async function detectPatchTargets(patches, options = {}) {
 
 module.exports = {
   addonManagerRootsFromPrimaryPath,
+  configDirectories,
   addonManagerRootsFromRecordedResPath,
   classifySimSlot,
   configuredRoots,

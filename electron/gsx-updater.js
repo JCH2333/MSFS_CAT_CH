@@ -38,7 +38,27 @@ const BASE_PACKAGE_FILES = [
   'InGamePanels/fsdreamteam-ingamepanels-gsx.spb'
 ]
 
-function normalizeEtag(value) {
+// 热更拷贝到 couatl/GSX 目录时目标 .wav 等可能被杀毒软件扫描或残留进程占用：
+  // EPERM/EACCES/EBUSY 短暂重试后再失败，翻译为可行动的中文指引（用户反馈 FB-6PWZXZ）。
+  async function copyFileWithRetry(source, destination, attempts = 3) {
+    let lastError = null
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        await fs.copyFile(source, destination)
+        return
+      } catch (error) {
+        lastError = error
+        if (!['EPERM', 'EACCES', 'EBUSY'].includes(error.code)) throw error
+        await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)))
+      }
+    }
+    throw new Error(
+      '更新失败：目标文件被占用或受保护（' + destination + '）。' +
+      '请确认微软模拟飞行与 couatl 引擎已完全退出、关闭杀毒软件的"受控文件夹访问"，必要时以管理员身份运行本软件后重试。（' + (lastError.code || '未知') + '）'
+    )
+  }
+
+  function normalizeEtag(value) {
   return String(value || '').trim().replace(/^"+|"+$/g, '')
 }
 
@@ -489,7 +509,7 @@ class GsxUpdater {
           } catch {
             backupPath = null
           }
-          await fs.copyFile(stagedFile, destination)
+          await copyFileWithRetry(stagedFile, destination)
           journal.push({ destination, backupPath })
         }
 
