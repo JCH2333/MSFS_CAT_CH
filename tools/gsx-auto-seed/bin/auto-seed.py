@@ -247,7 +247,60 @@ def upload_and_publish(token, name, target, version, etag, part_path, settings):
         publish_body = json.loads(response.read())
     if publish_body.get("code") != 200:
         raise RuntimeError("发布失败：%s" % publish_body.get("message"))
+    return package_id
 
+
+def verify_package_serving(settings, package_id, wait_seconds=24):
+    """像真实用户一样取票探测下载地址；返回 ok / queue-busy / 具体错误。"""
+    username, password = load_credentials()
+    request = urllib.request.Request(
+        settings["origin"] + "/api/auth/login",
+        data=json.dumps({"username": username, "password": password}).encode(),
+        headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        token = json.loads(response.read())["data"]["accessToken"]
+    begin_request = urllib.request.Request(
+        settings["origin"] + "/api/gsx/queue/begin",
+        data=json.dumps({"scope": "gsx", "clientId": "auto-seed-selfcheck"}).encode(),
+        headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(begin_request, timeout=20) as response:
+        begin = json.loads(response.read())
+    ticket = begin.get("ticket")
+    deadline = time.time() + wait_seconds
+    while not ticket:
+        if time.time() > deadline:
+            return "queue-busy"
+        time.sleep(3)
+        status = json.loads(urllib.request.urlopen(
+            settings["origin"] + "/api/gsx/queue/status?ticket=" + str(begin.get("last_ticket", "")),
+            timeout=15).read()) if False else None
+        begin = json.loads(urllib.request.urlopen(
+            settings["origin"] + "/api/gsx/queue/begin",
+            data=json.dumps({"scope": "gsx", "clientId": "auto-seed-selfcheck-" + str(package_id)}).encode(),
+            headers={"Content-Type": "application/json"}, timeout=20).read())
+        ticket = begin.get("ticket")
+    try:
+        probe = urllib.request.Request(
+            settings["origin"] + "/api/gsx/package/" + str(package_id) + "?ticket=" + ticket,
+            headers={"Range": "bytes=0-1023"})
+        with urllib.request.urlopen(probe, timeout=60) as response:
+            code = response.status
+    except urllib.error.HTTPError as error:
+        code = error.code
+        try:
+            error.response.read()
+        except Exception:
+            pass
+    finally:
+        try:
+            urllib.request.urlopen(
+                settings["origin"] + "/api/gsx/queue/done?ticket=" + ticket,
+                data=b"", method="POST", timeout=15)
+        except Exception:
+            pass
+    if code in (200, 206):
+        return "ok"
+    return "HTTP %s" % code
 
 def send_mail(subject, body):
     with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as handle:
@@ -366,7 +419,13 @@ def run(settings):
             if not version:
                 raise RuntimeError("无法确定版本（组件内无 manifest.json，且服务器无既有版本）")
             etag = fetch_etag(name, settings) or (asset.get("digest") or "")
-            upload_and_publish(token, name, target, version, etag, part_path, settings)
+            package_id = upload_and_publish(token, name, target, version, etag, part_path, settings)
+            # 发布后自检：像真实用户一样取票拉 1KB，确认存储文件对 nginx 可读（防 600 权限类 403 复发）
+            selfcheck = verify_package_serving(settings, package_id)
+            if selfcheck == "queue-busy":
+                log("  %s: 队列繁忙，跳过发布后自检" % name)
+            elif selfcheck != "ok":
+                raise RuntimeError("发布后自检失败：%s（疑似存储文件权限问题，请检查 storage 归属）" % selfcheck)
             completed.append("%s v%s" % (name, version))
             os.remove(part_path)
         except Exception as error:
