@@ -1,0 +1,3667 @@
+{
+ "pkg": "F:/games/community/Community2024/pmdg-aircraft-77w",
+ "scanned": 43,
+ "fileCount": 3,
+ "files": {
+  "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml": 899,
+  "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W_Cabin/model/77W_Cabin_Behavior.xml": 1,
+  "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Part_Interior_77W_Cabin/model/77W_Cabin_Behavior.xml": 1
+ },
+ "base": {
+  "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml": {
+   "sha256": "12d6ccc5445c16d0b3bb2bbc5f2bed1031fd1d21e890161d1d6f0ea338d2cdff",
+   "bytes": 1570195
+  },
+  "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W_Cabin/model/77W_Cabin_Behavior.xml": {
+   "sha256": "ec3d200f2d0389f542b1c1e6946ecfb9ae5b92761991a16a279851c304acca9e",
+   "bytes": 21650
+  },
+  "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Part_Interior_77W_Cabin/model/77W_Cabin_Behavior.xml": {
+   "sha256": "a314c836dfbcfbb4d68cddb58272660ad2143535a307b3a6b0b3e9162256d4d0",
+   "bytes": 22464
+  }
+ },
+ "literals": [
+  {
+   "value": "PRESS TO TEST",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Drag to move Left/Right",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HOLD",
+   "count": 5,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ARM REST UP/DOWN",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Extend/Stow Shade",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MAP",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NORMAL/EMERGENCY",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "OXYGEN TEST RESET",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STOW VISORS",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TOGA",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "UN-STOW VISORS",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VNAV",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WORK TABLE UNSTOW/STOW",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "/",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "+/-",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AM",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APP RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APP SELECT",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "B",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BARO",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BARO PUSH",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BRT",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "C",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CAB RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLICK TO POSITION CA TABLET HERE",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLICK TO POSITION FO TABLET HERE",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLR",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "D",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DECIMAL",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DEL",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DEP/ARR",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DSPL CTRL",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "E",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EXEC",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "F",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FILTER SELECT",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FIX",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLOOD",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLT RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FMC COMM",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "G",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "H",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HF L",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HF L RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HF R",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HF R RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HF SENSOR",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "I",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "IAS/MACH",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "INIT REF",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "J",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "K",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L1",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L2",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L3",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L4",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L5",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L6",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEGS",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "M",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MENU",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC CAB",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC FLT",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC HF L",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC HF R",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC PA",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC SAT 1",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC SAT 2",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC VHF C",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC VHF L",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC VHF R",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC/INT",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "N",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NAV RAD",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NEXT PAGE",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 0",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 1",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 2",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 3",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 4",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 5",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 6",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 7",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 8",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NUM 9",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "O",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "P",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PA RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PANEL",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PLAN",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PREV PAGE",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PROG",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Q",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R1",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R2",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R3",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R4",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R5",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R6",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RTE",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "S",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SAT 1 RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SAT 2 RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SP",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPKR RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "T",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "U",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "V",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF C",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF C RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF FRQ TFR",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF INNER FRQ",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF L",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF L RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF OUTER FRQ",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF PNL OFF",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF R",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VHF R RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VOR/ADF RECEIVER",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VOR/ADF SELECT",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "W",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "X",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Y",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Z",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A/P",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A/T DISENGAGE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ABS/REL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ABV/BLW",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ACPT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AIR COND RESET",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AIR DATA/ATT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALT SEL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALT SOURCE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALTN FLAPS",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AP DISC",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APP",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ARPT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ATC CODE LEFT INNER",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ATC CODE LEFT OUTER",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ATC CODE RIGHT INNER",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ATC CODE RIGHT OUTER",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BARO REF",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BARO SLEW",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BARO STD",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CABIN TEMP",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CANC",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO DOOR ARM OPEN/CLOSE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO DOOR LOCK/UNLOCK",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO DOOR OPEN/CLOSE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO FIRE AFT ARM",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO FIRE DISCH GUARD",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO FIRE FWD ARM",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CCD INBD",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CCD LWR CTR",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CCD SIDE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CEILING",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CHART LIGHT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CHR",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLOCK",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Compass Stow",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CREW AREA DOOR OPEN/CLOSE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CTR",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DATA",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DATE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DATE PUSH",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DIMMER PUSH/PULL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DOOR ARM/DISARM",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DOOR OPEN/CLOSE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Drag to move Up/Down",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EFIS MODE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EFIS RANGE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EMER LIGHTS",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EMER LIGHTS GUARD",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EQUIP COOLING",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ET",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EXTERIOR CAMERA",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "F/D",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLT DECK TEMP",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FPV",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GAIN",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GCS",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HDG SEL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Home",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "IDENT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "INBD BRIGHT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "INBD DSPL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "INBD TERR BRIGHT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L START",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOWER/RAISE YOKE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MAIN DECK CARGO FWD TEMP",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MAP PULL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MIC",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MINS REF",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MINS RST",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MINS SLEW",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MODE",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Move Clipboard",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MTRS",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NAV",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "OBS AUDIO",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Open/Close Door",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W_Cabin/model/77W_Cabin_Behavior.xml",
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Part_Interior_77W_Cabin/model/77W_Cabin_Behavior.xml"
+   ]
+  },
+  {
+   "value": "OPEN/CLOSE WINDOW",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "OUTBD BRIGHT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "POS",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PVD DIMMER",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R START",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RJCT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SET",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SHOULDER HEAT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SIDEWALL",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SILL LOAD",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STA",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TABLE LIGHT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TERR",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TEST",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TFC",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TFR",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TILT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "UNLOCK/LOCK WINDOW",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VOR L/ADF L",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VOR R/ADF R",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WARNING/CAUTION",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WPT",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WX",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WX+T",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WXR",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "XPNDR L/R",
+   "count": 2,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "-",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "+",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A/P DISENGAGE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A/T",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A/T ARM LEFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "A/T ARM RIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ADIRU",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AFT MANUAL PRESS OUTFLOW VALVE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AFT PRESS OUTFLOW VAVLE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AILERON TRIM (%((L:AileronTrimTT, number))%!1.2f!)",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AIR DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALT INCR MODE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALT PUSH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALT VENT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALT VENT GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALTN FLAPS GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALTN GEAR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALTN GEAR GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ALTN PITCH TRIM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ANTI ICE L ENGINE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ANTI ICE R ENGINE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ANTI ICE WING",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU BLEED AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU FIRE WARN UNSTOW/STOW",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU FIRE WARN/DISCH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU FIRE WARN/DISCH UNLOCK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU GEN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU POWER TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "APU POWER TEST GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ASI",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ASI PUSH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ATT RST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AUTOBRAKE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AUTOSTART",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "AUX FUEL PUMP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BACKUP WINDOW HEAT LEFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BACKUP WINDOW HEAT LEFT GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BACKUP WINDOW HEAT RIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BACKUP WINDOW HEAT RIGHT GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BANK LIMIT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BATTERY",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BEACON LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BROADBAND COM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "BROADBAND COM GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "C1 AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "C1 ELEC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "C2 AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "C2 ELEC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CABIN TELEPHONE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CABIN TELEPHONE GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CABIN/UTILITY",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CALL CARGO",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CALL CARGO AUDIO",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CALL GND",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CALL SUPRNMRY OXY",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CAM DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CAMERA LTS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CANC/RCL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO FIRE DISCH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO FIRE DISCH DEPRESSURIZE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO FIRE MAIN DECK ARM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO TEMP SELECT AFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CARGO TEMP SELECT BULK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CB",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CEILING LIGHTS DIM /BRT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CENTER BLEED AIR ISLN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CHKL DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLB CON",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLICK TO REMOVE CA TABLET",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLICK TO STOW CA TABLET",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CLICK TO STOW TABLET",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "COCKPIT CURTAIN OPEN/CLOSE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "COCKPIT DOOR OPEN/CLOSE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "COMM DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CREW REST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CVR ERASE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "CVR TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DOME",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "DOOR DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EEC LEFT ENG POWER TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EEC LEFT ENG POWER TEST GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EEC RIGHT ENG POWER TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EEC RIGHT ENG POWER TEST GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ELEC DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ELEV TRIM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EMER LIGHTS TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 1 FIRE WARN UNSTOW/STOW",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 1 FIRE WARN/DISCH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 1 FIRE WARN/DISCH UNLOCK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 1 FUEL CONTROL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 1 REVERSE THRUST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 1 THROTTLE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 2 FIRE WARN UNSTOW/STOW",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 2 FIRE WARN/DISCH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 2 FIRE WARN/DISCH UNLOCK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 2 FUEL CONTROL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 2 REVERSE THRUST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG 2 THROTTLE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "ENG DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EVAC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EVAC GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EVAC PRESS TO TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "EVENT RCD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FCTL DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FIRE/OVHT TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLAP OVRD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLAP OVRD GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLCH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FLOOR LIGHTS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FMC SEL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FOOT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FOOT HEAT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL CROSSFEED AFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL CROSSFEED FWD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL JETTISON ARM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL JETTISON L NOZZLE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL JETTISON L NOZZLE GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL JETTISON R NOZZLE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL JETTISON R NOZZLE GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL L CENTER PUMP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL L PUMPS AFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL L PUMPS FWD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL R CENTER PUMP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL R PUMPS AFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL R PUMPS FWD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL TO REMAIN DECR/INCR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FUEL TO REMAIN PULL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FWD MANUAL PRESS OUTFLOW VALVE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "FWD PRESS OUTFLOW VAVLE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "G/S INHIBIT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GASPER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GEAR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GEAR DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GEAR OVRD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GEAR OVRD GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GLARESHIELD FLOOD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GLARESHIELD PANEL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GND TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GND TEST GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GPWS RWY OVRD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GPWS RWY OVRD GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "GROUND SERVICE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HDG REF",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HDG REF GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HDG/TRK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HDG/TRK PUSH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HORN SHUTOFF",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HP/IN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "HYD DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "IAS/MACH SELECT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "IFE/PASS SEATS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "IND LTS TEST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "KEYBOARD UNSTOW/STOW",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L BACKUP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L BUS TIE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L DRIVE DISC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L DRIVE DISC GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L ELEC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L ENG",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L ENGINE EEC MODE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L ENGINE EEC MODE GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L FWD WINDOW HEAT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L MAIN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "L SIDE WINDOW HEAT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LANDING LIGHTS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LDG ALT DECR/INCR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LDG ALT PULL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT BLEED AIR ISLN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT ENG TRIM AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT INBD DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT LANDING LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT PACK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT RUNWAY TURNOFF LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT TRIM AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LEFT WIPER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LNAV",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOCK OVRD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOGO LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOWER CARGO AFT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOWER CARGO FWD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LOWER RECIRC FAN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LR/T",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LWR CTR DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LWR DSPL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "LWR TERR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MAIN DECK ALERT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MAIN DECK FLOW",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MANUAL PRESS OUTFLOW VALVES",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MANUAL TRIM CANCEL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MASTER BRIGHT ADJUST",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MASTER BRIGHT PUSH ON/OFF",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MOVE FLAP LEVER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "MOVE SPEED BRAKE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NAV DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NAV LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NO SMOKING",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "NOSE LANDING LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "OVHD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PARK BRAKE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PASS OXYGEN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PASS OXYGEN GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PRIMARY EXT POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PRIMARY FLIGHT COMPUTERS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "PRIMARY FLIGHT COMPUTERS GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R BACKUP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R BUS TIE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R DRIVE DISC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R DRIVE DISC GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R ELEC",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R ENG",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R ENGINE EEC MODE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R ENGINE EEC MODE GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R FWD WINDOW HEAT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R MAIN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "R SIDE WINDOW HEAT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RAM AIR TURBINE",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RAM AIR TURBINE GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RECIRC FANS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT BLEED AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT ENG TRIM AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT INBD DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT LANDING LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT PACK",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT RUNWAY TURNOFF LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT TRIM AIR",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RIGHT WIPER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RR/T",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RUDDER TRIM (%((L:RudderTrimTT, number))%!1.2f!)",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "RUNWAY TURNOFF LIGHTS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SAFETY BARRIER EXTEND/STOW",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SBY ADI",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SBY ALTIMETER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SBY ASI",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SBY ISFD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SEAT BELTS",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SECONDARY EXT POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS 1",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS 15",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS 20",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS 25",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS 30",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS 5",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SELECT FLAPS UP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SERV INTPH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPD BUG",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPD PUSH",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPEED BRAKE 50 PERCENT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPEED BRAKE ARM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPEED BRAKE DOWN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SPEED BRAKE UP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STAB CUTOUT C",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STAB CUTOUT C GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STAB CUTOUT R",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STAB CUTOUT R GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STANDBY POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STANDBY POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STAT DSP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STORM",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "Stow/Un-Stow Sunvisors",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "STROBE LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SUPRNMRY OXY",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "SUPRNMRY OXY GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAIL HYD VALVE 1 POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAIL HYD VALVE 1 POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAIL HYD VALVE 2 POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAIL HYD VALVE 2 POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAIL HYD VALVE 3 POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAIL HYD VALVE 3 POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TAXI LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TERR OVRD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TERR OVRD GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "THRUST ASYM COMP",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TOWING POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "TOWING POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "UPPER RECIRC FAN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "UPR DSPL",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "V/S / FPA",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "V/S FPA",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "V/S UP/DN",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "VOICE RECORDER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING HYD VALVE 1 POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING HYD VALVE 1 POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING HYD VALVE 2 POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING HYD VALVE 2 POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING HYD VALVE 3 POWER",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING HYD VALVE 3 POWER GUARD",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  },
+  {
+   "value": "WING LIGHT",
+   "count": 1,
+   "files": [
+    "SimObjects/Airplanes/PMDG 777-300ER/attachments/pmdg/Function_Interior_77W/model/77W_Cockpit_Behavior.xml"
+   ]
+  }
+ ]
+}

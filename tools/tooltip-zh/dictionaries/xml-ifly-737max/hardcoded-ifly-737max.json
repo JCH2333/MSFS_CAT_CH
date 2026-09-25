@@ -1,0 +1,3414 @@
+{
+ "pkg": "F:/games/community/Community/ifly-aircraft-737max8",
+ "scanned": 25,
+ "fileCount": 3,
+ "files": {
+  "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml": 1147,
+  "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml": 1147,
+  "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml": 1164
+ },
+ "literals": [
+  {
+   "value": "Receiver Switches",
+   "count": 285,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Slide Shade",
+   "count": 276,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Alpha/Numeric Keys",
+   "count": 234,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Table",
+   "count": 153,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Overhead Stowage Bins",
+   "count": 90,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Transmitter Selector (MIC SELECTOR) Switches",
+   "count": 90,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "CDU Function Keys",
+   "count": 84,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Line Select Keys",
+   "count": 72,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Frequency Selection Keypad",
+   "count": 66,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Radio Tuning Switch",
+   "count": 45,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Exterior Door Annunciations",
+   "count": 42,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MAP Switches",
+   "count": 42,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Keyboard",
+   "count": 36,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flag",
+   "count": 33,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Probe Heat Lights",
+   "count": 30,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Air Traffic Control (ATC) Code Switches",
+   "count": 27,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Handle",
+   "count": 24,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Frequency Selector",
+   "count": 18,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FUEL PUMP Switches",
+   "count": 18,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Landing Gear Indicator Light",
+   "count": 18,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SAT Switch",
+   "count": 18,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Armrest",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Autothrottle (A/T) Disengage Light",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Barometric (BARO) Selector",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Captain's Flight Kit/Reading Light Bracket",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "EMERGENCY/PRESS TO TEST Selector",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Hook",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Hydraulic Pump LOW PRESSURE Lights",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Main Tank FUEL PUMP LOW PRESSURE Lights",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Mode Switches",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "NORMAL/100%% Switch",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Pilot Seat",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Power Switch",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Safety Strap",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Sun Visor",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Takeoff/Go-Around (TO/GA) Switches",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TEST/RESET Switch",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "VOR/ADF Switch",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Window Heat ON Lights",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WINDOW HEAT Switches",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Window OVERHEAT Lights",
+   "count": 12,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "LANDING Light Switch",
+   "count": 11,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Alternate-Normal (ALT-NORM) Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AM Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU Generator (GEN) Switches",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "BELOW Glideslope (G/S) light",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Captain's Flight Kit/Reading Light Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Extinguisher Test (EXT TEST) Lights",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FAULT Light",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Filter Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Frequency Transfer Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "HF Sensitivity Control",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Landing Gear Indicator Lights",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Lavatory Door",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Push-to-Talk Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Radio Tuning Panel OFF Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "RUNWAY TURNOFF Light Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "STANDBY HYD Lights",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Temperature Selector",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TEST Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Toilet Cover",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Toilet Seat",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "VHF TEST Switch",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ZONE TEMP Lights",
+   "count": 9,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FLIGHT CONTROL Switches",
+   "count": 8,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight SPOILER Switches",
+   "count": 8,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Generator Drive Disconnect (DISCONNECT) Switches",
+   "count": 8,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Air Conditioning PACK Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ALIGN Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Approach (APP) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Autopilot (A/P) Disengage Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Autopilot Disengage Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Autothrottle Disengage Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Barometric (BARO) Reference Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Barometric (BARO) Standard (STD) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "BLEED Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Brake Temperature (BRAKE TEMP) Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Brightness Control",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Cabin Altitude Warning Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Captain's Flight Kit/Reading Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Cargo Fire ARM Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Center (CTR) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Center Tank FUEL PUMP LOW PRESSURE Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "CHART Light Control",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Clear (CLR) Key",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Clock Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Command Engage (CMD ENGAGE) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Control Cabin Door",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Control Column",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Control Wheel Steering Engage (CWS ENGAGE) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Course Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "COWL ANTI-ICE Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "COWL VALVE Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Curtain",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "DC FAIL Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Delete (DEL) Key",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Detector Select (DET SELECT) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Display Brightness Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Display Selector Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Electric Hydraulic Pump OVERHEAT Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ELECTRIC HYDRAULIC PUMPS Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Electronic Engine Control (EEC) Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ENG ANTI-ICE Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine (ENG) OVERHEAT Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ENGINE ANTI-ICE Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine BLEED Air Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine BOTTLE DISCHARGE Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ENGINE CONTROL Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine Fire Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ENGINE HYDRAULIC PUMPS Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine Start Levers",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ENGINE START Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine Valve Closed (ENG VALVE CLOSED) Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Execute (EXEC) Key",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Extinguisher (EXT) Test Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FILTER BYPASS Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Fire Switch Override",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight Control LOW PRESSURE Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight Director (F/D) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight Path Vector (FPV) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FMC Alert Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FOOT AIR Controls",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Frequency Selector(Inner)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Frequency Selector(Middle)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Frequency Selector(Outer)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "GAIN CONTROL",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Generator (GEN) Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Generator Drive (DRIVE) Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Generator Off Bus (GEN OFF BUS) Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Power (GRD PWR) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Inboard Display Brightness and Contrast Control (inner)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Inboard Display Brightness and Contrast Control (outer)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Inertial Reference System (IRS) Mode Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Inner Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Latch Mechanism Rod",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Left Map Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Left Map Light Bracket",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MACH AIRSPEED WARNING TEST Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MAIN PANEL Light Control",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MANUAL ALTITUDE CONTROL",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MAP Light Control",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MASTER CAUTION Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Master Fire Warning (FIRE WARN) Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Meters (MTRS) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MFD Information (INFO) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Minimums (MINS) Reference Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Minimums (MINS) Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Mode Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MODE SELECTOR",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Mode Selector Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ON DC Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Outboard Display Brightness and Contrast Control (inner)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Outboard Display Brightness and Contrast Control (outer)",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Outer Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Overheat Detector (OVHT DET) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "PACK Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "PROBE HEAT Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Radio Minimums (MINS) Reset (RST) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Range Selector",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Recirculation (RECIRC) FAN Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "REVERSER LIMITED Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "RUDDER PEDAL ADJUSTMENT Crank",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Select (SEL) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SOURCE OFF Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Space (SP) Key",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPAR VALVE CLOSED Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Stabilizer Trim Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Stabilizer Trim Wheel",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "STALL WARNING TEST Switches",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "System Annunciator Panel",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Takeoff Configuration Warning Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Test Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Traffic (TFC) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TRANSFER BUS OFF Lights",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Transfer Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "USB Charging Cable",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Vertical Situation Display (VSD) Switch",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Window",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WINDSHIELD AIR Controls",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Windshield WIPER Selectors",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WING–BODY OVERHEAT Light",
+   "count": 6,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ALTERNATE FLAPS Master Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Battery (BAT) Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "BUS TRANSFER Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Elevator Jam Landing Assist Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Emergency (EMER) EXIT LIGHTS Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Emergency Locator Transmitter Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight Recorder Test Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Passenger Oxygen (PASS OXYGEN) Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "STANDBY POWER Switch",
+   "count": 4,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AC Meters Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AFDS FLOOD Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Aft Entry Door",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Aft Service Door",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AILERON Trim Switches",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AIR Temperature (TEMP) Source Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Alternate (ALTN) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ALTERNATE FLAPS Position Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Altitude (ALT) HORN CUTOUT Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Altitude (ALT) SOURCE Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Altitude Hold (ALT HLD) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Altitude Intervention (ALT INTV) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Altitude Range Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Altitude Selector (SEL)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ANTI-COLLISION Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Antiskid Inoperative (ANTISKID INOP) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU BLEED Air Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU BOTTLE DISCHARGE Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU Detector Inoperative (DET INOP) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU Door (DOOR) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU FAULT Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU Fire Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU LOW OIL PRESSURE Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU OVERSPEED Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "APU Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ASSIST ON Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ATC Transponder Functional Test",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Attendant Call (ATTEND) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Attitude Reset (RST) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AUTO BRAKE DISARM Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AUTO BRAKE Select Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AUTO FAIL Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "AUTO Unlock (UNLK) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Automatic Slat Failure (AUTO SLAT FAIL) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Autopilot Disengage (DISENGAGE) Bar",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Autothrottle (A/T) ARM Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "BACKGROUND Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Bank Angle Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Battery Discharge (BAT DISCHARGE) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Brightness (BRT) Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Brightness Control Knob",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "CAB/UTIL Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Cargo Fire Discharge (DISCH) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Cargo Fire TEST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Changeover (C/O) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "CIRCUIT BREAKER Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Cockpit Door",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Combiner Filter",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Compass Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "CROSSFEED Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Crossfeed VALVE OPEN Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "DC Meters Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "DETECTOR FAULT Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Display Processing Computer- DPC",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Display Selector (DSPL SEL)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Displays Control Panel Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Dome Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "DUAL BLEED Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "EFire Switch Override",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Electrical (ELEC) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Emergency (EMER) EXIT LIGHTS NOT ARMED Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Emergency Exit Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Emergency Locator Transmitter Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine 1 Forward Thrust Lever",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine 1 Reverse Thrust Lever",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine 2 Forward Thrust Lever",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine 2 Reverse Thrust Lever",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Engine Transfer (ENG TFR) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Equipment (EQUIP) COOLING EXHAUST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Equipment (EQUIP) COOLING SUPPLY Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Equipment Cooling EQUIP SMOKE Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Equipment Cooling Exhaust OFF Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Equipment Cooling Supply OFF Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ERASE Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Extinguisher (EXT) TEST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FASTEN BELTS Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Fault/Inoperative (FAULT/INOP) and Overheat/Fire (OVHT/FIRE) TEST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Feel Differential Pressure (FEEL DIFF PRESS) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Fire Warning BELL CUTOUT Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "First Observer Seat",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight Altitude Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Flight Deck (FLT DK) Door Lock Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FLOOD Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FMC Source Select Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Forward Service Door",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FUEL FLOW Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "FWD Entry Door",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Global Positioning System (GPS) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "GNSS Landing System (GLS) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Call (GRD CALL) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Proximity FLAP INHIBIT Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Proximity GEAR INHIBIT Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Proximity Runway Inhibit (RUNWAY INHIBIT) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Proximity Terrain Inhibit (TERR INHIBIT) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ground Service Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Heading Select (HDG SEL) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Heading Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Hectopascal/Inch (HP/IN) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "High Altitude Landing Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "IAS/MACH Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ICE DETECTOR Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Identification (IDENT) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "IFE/PASS SEAT Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Ignition Select Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Inertial Reference System (IRS) Transfer Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Inoperative (INOP) light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Instrument Landing System (ILS) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ISOLATION VALVE Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Landing Altitude Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "LANDING GEAR Lever",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Landing Gear Lever Lock Override (LOCK OVRD) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Landing Gear Warning Cutout Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "LAVATORY SMOKE Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Leading Edge Annunciator Panel TEST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Level Change (LVL CHG) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "LNAV Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "LOCK FAIL Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "LOGO Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Mach Trim Failure (MACH TRIM FAIL) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Maintenance (MAINT) light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Maintenance Test (MAINT) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Manual Extension Handle(Left Gear)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Manual Extension Handle(Nose Gear)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Manual Extension Handle(Right Gear)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Manual Extension System Access Door",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MANUAL Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Master LIGHTS TEST and DIM SWITCH",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MFD Engine (ENG) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "MFD System (SYS) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "N1 Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "NO SMOKING Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "NOSE WHEEL STEER Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "OFF Light (amber)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "OFF Schedule (SCHED) DESCENT Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Outflow Valve Switch (spring-loaded to center)",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Overhead PANEL Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "P18 Circuit Breaker Panel Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "P8 Circuit Breaker Panel Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "PANEL Light Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "PARKING BRAKE Lever",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Passenger Oxygen On Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Pause the Sim",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "POSITION Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Pressurization Mode Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Reply selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "REVERSER AIR/GRD Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "REVERSER COMMAND Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "ROTATE TO TEST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Rudder Trim Control",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Runway Inoperative (INOP) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SERVICE INTERPHONE Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPD BRK ARMED",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPEED BRAKE ARMED Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPEED BRAKE DO NOT ARM Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Speed Intervention (SPD INTV) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPEED Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Speed Trim Failure (SPEED TRIM FAIL) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPEEDBRAKES EXTENDED Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SPOILERS Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Stabilizer Out Of Trim (STAB OUT OF TRIM) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Stabilizer Trim B/U (backup) Cutout Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Stabilizer Trim Override Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Stabilizer Trim PRI (primary) Cutout Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "STANDBY Power Off (PWR OFF) Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "SYSTEM CONTROL",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "System Display (SYS DSPL) Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TAT Test Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TAXI Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TONE Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TR UNIT Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Transponder (XPNDR) Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Transponder Mode Selector",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TRIM AIR Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "TRIP RESET Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Vertical Speed (V/S) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Vertical Speed Thumbwheel",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "VHF NAV Transfer Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "VNAV Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "VOICE RECORDER Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "VOR Localizer (LOC) Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WHEEL WELL Fire Warning Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WHEEL WELL Light Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WINDOW HEAT Test Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WING ANTI-ICE Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "WING Illumination Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "Wing-Body Overheat (OVHT) TEST Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "YAW DAMPER Light",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  },
+  {
+   "value": "YAW DAMPER Switch",
+   "count": 3,
+   "files": [
+    "SimObjects/Airplanes/iFly 737-MAX8/model/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/iFly/iFly737Max_INTERIOR.xml",
+    "SimObjects/Airplanes/iFly 737-MAX8/VCStyle/MSFS/iFly737Max_INTERIOR.xml"
+   ]
+  }
+ ]
+}
