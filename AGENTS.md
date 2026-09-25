@@ -4,6 +4,8 @@
 
 Before changing the project, read:
 
+-  for the current 2.4.0 dual-branch layout (main = normal fixes, antipiracy-2.4.0 = anti-piracy work in a separate worktree). Read it and keep it updated when touching either line.
+
 - `CONTEXT.md` for the domain model and current system shape.
 - Relevant decisions under `docs/adr/`.
 - `docs/patch-catalog.md` when changing patch discovery, packaging, installation, or restoration.
