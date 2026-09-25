@@ -1,0 +1,16 @@
+[server]
+; 分发服务器本机回环（脚本跑在服务器上）
+origin = http://127.0.0.1:20075
+
+[github]
+; 官方 release API（api.github.com 从阿里云稳定可达）
+release_api = https://api.github.com/repos/virtualisoftware/fsdt-offline-installer/releases/latest
+; 资产下载基址（objects.githubusercontent.com 时通时断，脚本以断点续传跨周期接力）
+download_base = https://github.com/virtualisoftware/fsdt-offline-installer/releases/latest/download
+; 直连连续失败后的兜底前缀（历史旧更新源同款）；置空并 use_fallback=false 可关闭
+fallback_prefix = https://ghfast.top/
+use_fallback = true
+
+[seed]
+; 连续失败多少个周期后发一次告警邮件（15 分钟一轮，8 ≈ 2 小时）
+failure_alert_threshold = 8

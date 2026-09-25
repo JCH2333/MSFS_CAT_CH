@@ -1,0 +1,3 @@
+SHELL=/bin/bash
+PATH=/usr/bin:/bin
+*/15 * * * * admin /home/admin/gsx-auto-seed/bin/auto-seed.py >> /home/admin/gsx-auto-seed/log/cron.log 2>&1

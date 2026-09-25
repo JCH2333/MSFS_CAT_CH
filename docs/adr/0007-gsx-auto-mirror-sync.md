@@ -51,8 +51,25 @@ ADR 0005 建立了 GSX 官方更新镜像：服务器看门狗（`tools/gsx-watc
   服务器 cron `*/10`、`state/status.json` 快照。
 - 镜像红线不变：逐字节下载、服务端独立算 SHA-256、尊重 update.lock 熔断。
 
+## 修订（2026-09-25：同步链路服务器自治化）
+
+开发机依赖成为单点（关机/代理关闭即停摆，告警邮件证实），同步链路整体迁移至服务器：
+
+- 新增服务器组件 `~/gsx-auto-seed/`（源码 `tools/gsx-auto-seed/`，python3+curl 零依赖），
+  cron 每 15 分钟：官方 digest 与镜像 sha256 漂移检测 → **断点续传下载**（.part 跨周期
+  保留，直连 CDN 时通时断的对策；直连连续失败后尝试 ghfast.top 兜底前缀）→ sha256
+  校验 → 本地回环经 gsx-mirror-bot 凭据登记发布（服务端复核 SHA-256 并自动下线同组件
+  旧行）→ 结果邮件走 gsx-watch SMTP（免 ssh 跳板）。
+- 检测（gsx-watch）不变；其"自动同步进行中"邮件措辞在服务器自治后依然成立。
+- 开发机 `GSX_AutoSeed` 计划任务在服务器全链路验证通过后**禁用保留**（手动兜底入口）；
+  `tools/gsx-mirror/auto-seed.mjs`/`seed.mjs` 保留为人工备用工具。
+- 邮件节流：每波成功一封；连续 8 个周期（≈2 小时）无法同步才告警一封。
+- 实测：服务器直连资产 CDN 可用但慢（9.7MB ≈ 82 秒），断点续传消化大文件；
+  全链路（下载→校验→登记→发布→邮件）已用最小组件实跑验证，manifest 无重复行。
+
 ## 参考
 
 0005-gsx-update-mirror.md
 tools/gsx-watch/README.md
 tools/gsx-mirror/seed.mjs / auto-seed.mjs
+tools/gsx-auto-seed/README.md
