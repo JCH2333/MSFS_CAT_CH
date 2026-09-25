@@ -413,7 +413,15 @@ class GsxUpdater {
         }
       }
     }
+    // 跨大版本守卫：镜像热更只覆盖目标版本的组件文件，不清理旧版本残留文件。
+    // 从 3.x 等老版本直接覆盖到 4.x 会留下混合安装（couatl 无法启动、游戏内面板
+    // 连锁失效——反馈 #29/#30/#32）。跨大版本必须走官方完整安装。
     const mirror = await this.loadMirrorManifest()
+    const localMajor = Number(String(install.version || '').split('.')[0])
+    const targetMajor = Number(String(mirror.manifest.latestVersion || '').split('.')[0])
+    if (Number.isFinite(localMajor) && Number.isFinite(targetMajor) && localMajor < targetMajor) {
+      throw new Error(`本机 GSX（${install.version}）过旧，无法直接热更到 ${mirror.manifest.latestVersion}：跨大版本的覆盖式更新会留下混合安装。请先用官方 Universal Installer 完整安装或升级 GSX 到 ${mirror.manifest.latestVersion}，再使用本更新功能`)
+    }
     const pending = await this.computePending(mirror.manifest.packages, { localVersion: install.version, addonRoot: install.addonRoot })
     if (pending.length === 0) return { state: 'current', applied: [], skipped: [] }
 

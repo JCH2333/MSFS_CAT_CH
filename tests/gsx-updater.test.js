@@ -479,3 +479,23 @@ test('clearAppliedState resets applied components for post-reinstall reconciliat
   const state = JSON.parse(await fs.readFile(path.join(userData, 'gsx-state.json'), 'utf8'))
   assert.deepEqual(state.appliedComponents, {})
 })
+
+test('GsxUpdater.applyUpdate rejects cross-major overlay updates from legacy GSX', async () => {
+  // 反馈 #29/#30/#32：GSX 3.8.6 直接覆盖到 4.x 会留下混合安装（couatl 无法启动、
+  // 游戏内面板连锁失效）。跨大版本必须拒绝并引导官方完整安装。
+  const userData = await temporaryDirectory('gsx-updater-major-')
+  const updater = new GsxUpdater({
+    userDataDirectory: userData,
+    processLister: async () => '',
+    detectInstall: async () => ({ installed: true, addonRoot: 'X:\gsx', version: '3.8.6', source: 'test' }),
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({ schemaVersion: 1, latestVersion: '4.0.23', packages: [manifestPackage()] })
+    })
+  })
+
+  await assert.rejects(() => updater.applyUpdate(), /3\.8\.6.*4\.0\.23|官方 Universal Installer/)
+  // 拒绝发生在下载/部署之前，不应留下任何状态文件
+  const stateExists = await fs.readFile(path.join(userData, 'gsx-state.json'), 'utf8').then(() => true).catch(() => false)
+  assert.equal(stateExists, false)
+})
