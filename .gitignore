@@ -94,3 +94,7 @@ tools/gsx-image-localizer/__pycache__/
 
 # 无水印分流包（本地构建产物）
 /无水印分流包/
+
+# 防盗版评审/交接材料与本地会话配置（不入公开仓库）
+/ASTRA-交接文档.md
+/.zcodeignore
